@@ -80,23 +80,23 @@ type TrustVector struct {
 	SourcedData      int8 `json:"sourced-data"`
 }
 
-type AttestationResults struct {
+type AttestationResult struct {
 	Status            *TrustTier   `json:"status"`
 	TrustVector       *TrustVector `json:"trust-vector,omitempty"`
 	RawEvidence       *[]byte      `json:"raw-evidence,omitempty"`
 	Timestamp         *time.Time   `json:"timestamp"`
-	AppraisalPolicyID *string      `json:"appraisal-policy-id"`
+	AppraisalPolicyID *string      `json:"appraisal-policy-id,omitempty"`
 	Extensions
 }
 
-func (o AttestationResults) ToJSON() ([]byte, error) {
+func (o AttestationResult) ToJSON() ([]byte, error) {
 	if err := o.Validate(); err != nil {
 		return nil, err
 	}
 	return json.Marshal(o)
 }
 
-func (o *AttestationResults) FromJSON(data []byte) error {
+func (o *AttestationResult) FromJSON(data []byte) error {
 	err := json.Unmarshal(data, o)
 	if err == nil {
 		return o.Validate()
@@ -104,7 +104,7 @@ func (o *AttestationResults) FromJSON(data []byte) error {
 	return err
 }
 
-func (o AttestationResults) Validate() error {
+func (o AttestationResult) Validate() error {
 	missing := []string{}
 
 	if o.Status == nil {
@@ -113,10 +113,6 @@ func (o AttestationResults) Validate() error {
 
 	if o.Timestamp == nil {
 		missing = append(missing, "'timestamp'")
-	}
-
-	if o.AppraisalPolicyID == nil {
-		missing = append(missing, "'appraisal-policy-id'")
 	}
 
 	if len(missing) == 0 {
@@ -131,15 +127,16 @@ type Extensions struct {
 	VeraisonVerifierAddedClaims *map[string]interface{} `json:"veraison.verifier-added-claims,omitempty"`
 }
 
-func (o *AttestationResults) Verify(data []byte, alg jwa.KeyAlgorithm, key interface{}) error {
+func (o *AttestationResult) Verify(data []byte, alg jwa.KeyAlgorithm, key interface{}) error {
 	buf, err := jws.Verify(data, jws.WithKey(alg, key))
 	if err != nil {
 		return fmt.Errorf("failed verifying JWT message: %w", err)
 	}
 
 	// TODO(tho) add any JWT specific checks on top of the base JWS verification
+	// See https://github.com/veraison/ar4si/issues/6
 
-	var ar AttestationResults
+	var ar AttestationResult
 
 	err = ar.FromJSON(buf)
 	if err != nil {
@@ -151,7 +148,7 @@ func (o *AttestationResults) Verify(data []byte, alg jwa.KeyAlgorithm, key inter
 	return nil
 }
 
-func (o AttestationResults) Sign(alg jwa.KeyAlgorithm, key interface{}) ([]byte, error) {
+func (o AttestationResult) Sign(alg jwa.KeyAlgorithm, key interface{}) ([]byte, error) {
 	payload, err := o.ToJSON()
 	if err != nil {
 		return nil, err

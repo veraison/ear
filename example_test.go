@@ -8,7 +8,7 @@ import (
 )
 
 func Example_encode_minimalist() {
-	ar := AttestationResults{
+	ar := AttestationResult{
 		Status:            &testStatus,
 		Timestamp:         &testTimestamp,
 		AppraisalPolicyID: &testPolicyID,
@@ -25,7 +25,7 @@ func Example_encode_minimalist() {
 func Example_encode_hefty() {
 	rawEvidence := []byte{0xde, 0xad, 0xbe, 0xef}
 
-	ar := AttestationResults{
+	ar := AttestationResult{
 		Status: &testStatus,
 		TrustVector: &TrustVector{
 			InstanceIdentity: 2,
@@ -75,7 +75,7 @@ func Example_decode_veraison_extensions() {
 			"foo": "bar"
 		}
 	}`
-	var ar AttestationResults
+	var ar AttestationResult
 	_ = ar.FromJSON([]byte(j))
 
 	fmt.Println(StatusTierToString[*ar.Status])

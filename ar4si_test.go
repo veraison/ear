@@ -33,7 +33,7 @@ var (
 	testTimestamp = time.Date(2022, 9, 26, 17, 29, 0, 0, time.UTC)
 	testPolicyID  = "https://veraison.example/policy/1/60a0068d"
 
-	testAttestationResultsWithVeraisonExtns = AttestationResults{
+	testAttestationResultsWithVeraisonExtns = AttestationResult{
 		Status:            &testStatus,
 		Timestamp:         &testTimestamp,
 		AppraisalPolicyID: &testPolicyID,
@@ -162,51 +162,24 @@ func TestTrustTier_UnmarshalJSON_fail(t *testing.T) {
 
 func TestToJSON_fail(t *testing.T) {
 	tvs := []struct {
-		ar       AttestationResults
+		ar       AttestationResult
 		expected string
 	}{
 		{
-			ar:       AttestationResults{},
-			expected: `missing mandatory field(s): 'status', 'timestamp', 'appraisal-policy-id'`,
-		},
-		{
-			ar: AttestationResults{
-				Status: &testStatus,
-			},
-			expected: `missing mandatory field(s): 'timestamp', 'appraisal-policy-id'`,
-		},
-		{
-			ar: AttestationResults{
-				Timestamp: &testTimestamp,
-			},
-			expected: `missing mandatory field(s): 'status', 'appraisal-policy-id'`,
-		},
-		{
-			ar: AttestationResults{
-				AppraisalPolicyID: &testPolicyID,
-			},
+			ar:       AttestationResult{},
 			expected: `missing mandatory field(s): 'status', 'timestamp'`,
 		},
 		{
-			ar: AttestationResults{
-				Status:    &testStatus,
-				Timestamp: &testTimestamp,
-			},
-			expected: `missing mandatory field(s): 'appraisal-policy-id'`,
-		},
-		{
-			ar: AttestationResults{
-				Timestamp:         &testTimestamp,
-				AppraisalPolicyID: &testPolicyID,
-			},
-			expected: `missing mandatory field(s): 'status'`,
-		},
-		{
-			ar: AttestationResults{
-				Status:            &testStatus,
-				AppraisalPolicyID: &testPolicyID,
+			ar: AttestationResult{
+				Status: &testStatus,
 			},
 			expected: `missing mandatory field(s): 'timestamp'`,
+		},
+		{
+			ar: AttestationResult{
+				Timestamp: &testTimestamp,
+			},
+			expected: `missing mandatory field(s): 'status'`,
 		},
 	}
 
@@ -227,16 +200,16 @@ func TestFromJSON_fail(t *testing.T) {
 		},
 		{
 			ar:       `[]`,
-			expected: `json: cannot unmarshal array into Go value of type ar4si.AttestationResults`,
+			expected: `json: cannot unmarshal array into Go value of type ar4si.AttestationResult`,
 		},
 		{
 			ar:       `{}`,
-			expected: `missing mandatory field(s): 'status', 'timestamp', 'appraisal-policy-id'`,
+			expected: `missing mandatory field(s): 'status', 'timestamp'`,
 		},
 	}
 
 	for i, tv := range tvs {
-		var ar AttestationResults
+		var ar AttestationResult
 
 		err := ar.FromJSON([]byte(tv.ar))
 		assert.EqualError(t, err, tv.expected, "failed test vector at index %d", i)
@@ -255,7 +228,7 @@ func TestVerify_pass(t *testing.T) {
 	require.NoError(t, err)
 
 	for _, tv := range tvs {
-		var ar AttestationResults
+		var ar AttestationResult
 
 		err := ar.Verify([]byte(tv), jwa.ES256, k)
 		assert.NoError(t, err)
@@ -286,7 +259,7 @@ func TestVerify_fail(t *testing.T) {
 		{
 			// empty attestation results
 			token:    `eyJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCJ9.e30.9Tvx3hVBNfkmVXTndrVfv9ZeNJgX59w0JpR2vyjUn8lGxL8VT7OggUeYSYFnxrouSi2TusNh61z8rLdOqxGA-A`,
-			expected: `failed parsing JWT payload: missing mandatory field(s): 'status', 'timestamp', 'appraisal-policy-id'`,
+			expected: `failed parsing JWT payload: missing mandatory field(s): 'status', 'timestamp'`,
 		},
 	}
 
@@ -294,7 +267,7 @@ func TestVerify_fail(t *testing.T) {
 	require.NoError(t, err)
 
 	for i, tv := range tvs {
-		var ar AttestationResults
+		var ar AttestationResult
 
 		err := ar.Verify([]byte(tv.token), jwa.ES256, k)
 		assert.EqualError(t, err, tv.expected, "failed test vector at index %d", i)
@@ -306,10 +279,10 @@ func TestSign_fail(t *testing.T) {
 	require.NoError(t, err)
 
 	// an empty AR is not a valid AR4SI payload
-	var ar AttestationResults
+	var ar AttestationResult
 
 	_, err = ar.Sign(jwa.ES256, sigK)
-	assert.EqualError(t, err, `missing mandatory field(s): 'status', 'timestamp', 'appraisal-policy-id'`)
+	assert.EqualError(t, err, `missing mandatory field(s): 'status', 'timestamp'`)
 }
 
 func TestRoundTrip_pass(t *testing.T) {
@@ -322,7 +295,7 @@ func TestRoundTrip_pass(t *testing.T) {
 	vfyK, err := jwk.ParseKey([]byte(testECDSAPublicKey))
 	require.NoError(t, err)
 
-	var actual AttestationResults
+	var actual AttestationResult
 
 	err = actual.Verify(token, jwa.ES256, vfyK)
 	assert.NoError(t, err)
@@ -340,7 +313,7 @@ func TestRoundTrip_tampering(t *testing.T) {
 	vfyK, err := jwk.ParseKey([]byte(testECDSAPublicKey))
 	require.NoError(t, err)
 
-	var actual AttestationResults
+	var actual AttestationResult
 
 	// Tamper with the signature.
 	// Note that since ES256 is randomized, this could result in different kinds
