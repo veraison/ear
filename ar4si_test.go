@@ -317,8 +317,8 @@ func TestRoundTrip_tampering(t *testing.T) {
 
 	// Tamper with the signature.
 	// Note that since ES256 is randomized, this could result in different kinds
-	// of specific verification errors and this is the reason why below we
-	// use ErrorContains rather than EqualError.
+	// of verification errors. Therefore we have to use ErrorContains rather
+	// than EqualError.
 	token[len(token)-1] ^= 1
 
 	err = actual.Verify(token, jwa.ES256, vfyK)

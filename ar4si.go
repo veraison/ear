@@ -69,17 +69,6 @@ func (o *TrustTier) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
-type TrustVector struct {
-	InstanceIdentity int8 `json:"instance-identity"`
-	Configuration    int8 `json:"configuration"`
-	Executables      int8 `json:"executables"`
-	FileSystem       int8 `json:"file-system"`
-	Hardware         int8 `json:"hardware"`
-	RuntimeOpaque    int8 `json:"runtime-opaque"`
-	StorageOpaque    int8 `json:"storage-opaque"`
-	SourcedData      int8 `json:"sourced-data"`
-}
-
 type AttestationResult struct {
 	Status            *TrustTier   `json:"status"`
 	TrustVector       *TrustVector `json:"trust-vector,omitempty"`
