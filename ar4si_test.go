@@ -29,6 +29,8 @@ var (
 		"d": "V8kgd2ZBRuh2dgyVINBUqpPDr7BOMGcF22CQMIUHtNM"
 	}`
 
+
+
 	testStatus    = TrustTierAffirming
 	testTimestamp = time.Date(2022, 9, 26, 17, 29, 0, 0, time.UTC)
 	testPolicyID  = "https://veraison.example/policy/1/60a0068d"
