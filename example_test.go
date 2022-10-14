@@ -87,3 +87,34 @@ func Example_decode_veraison_extensions() {
 	// v1
 	// baz
 }
+
+func Example_colors() {
+	j := `{
+		"status": "contraindicated",
+		"timestamp": "2022-09-26T17:29:00Z",
+		"appraisal-policy-id": "https://veraison.example/policy/1/60a0068d",
+		"trust-vector": {
+			"instance-identity": 96,
+			"configuration": 96,
+			"executables": 32,
+			"hardware": 2
+		}
+	}`
+
+	var ar AttestationResult
+	_ = ar.FromJSON([]byte(j))
+
+	short, color := true, true
+
+	fmt.Print(ar.TrustVector.Report(short, color))
+
+	// Output:
+	// Instance Identity [\033[41mcontraindicated\033[0m]: recognized but not trustworthy
+	// Configuration [\033[41mcontraindicated\033[0m]: unacceptable security vulnerabilities
+	// Executables [\033[43mwarning\033[0m]: recognized but known bugs or vulnerabilities
+	// File System [\033[47mnone\033[0m]: no claim being made
+	// Hardware [\033[42maffirming\033[0m]: genuine
+	// Runtime Opaque [\033[47mnone\033[0m]: no claim being made
+	// Storage Opaque [\033[47mnone\033[0m]: no claim being made
+	// Sourced Data [\033[47mnone\033[0m]: no claim being made
+}
