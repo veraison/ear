@@ -228,8 +228,8 @@ var (
 	}
 )
 
-// trustTier provides the trust tier bucket of the trustworthiness claim
-func (o TClaim) trustTier(color bool) string {
+// TrustTier provides the trust tier bucket of the trustworthiness claim
+func (o TClaim) TrustTier(color bool) string {
 	const (
 		rst    = `\033[0m`
 		red    = `\033[41m`
@@ -241,22 +241,22 @@ func (o TClaim) trustTier(color bool) string {
 	var s string
 
 	switch {
-	case o.isNone():
+	case o.IsNone():
 		s = "none"
 		if color {
 			s = white + s + rst
 		}
-	case o.isAffirming():
+	case o.IsAffirming():
 		s = "affirming"
 		if color {
 			s = green + s + rst
 		}
-	case o.isWarning():
+	case o.IsWarning():
 		s = "warning"
 		if color {
 			s = yellow + s + rst
 		}
-	case o.isContraindicated():
+	case o.IsContraindicated():
 		s = "contraindicated"
 		if color {
 			s = red + s + rst
@@ -269,32 +269,32 @@ func (o TClaim) trustTier(color bool) string {
 }
 
 func (o TClaim) trustTierTag(color bool) string {
-	return "[" + o.trustTier(color) + "]"
+	return "[" + o.TrustTier(color) + "]"
 }
 
-func (o TClaim) isNone() bool {
+func (o TClaim) IsNone() bool {
 	// none = [-1, 1]
 	return o >= -1 && o <= 1
 }
 
-func (o TClaim) isAffirming() bool {
+func (o TClaim) IsAffirming() bool {
 	// affirming = [-32, -2] U [2, 31]
 	return (o >= -32 && o <= -2) || (o >= 2 && o <= 31)
 }
 
-func (o TClaim) isWarning() bool {
+func (o TClaim) IsWarning() bool {
 	// warning = [-96, -33] U [32, 95]
 	return (o >= -96 && o <= -33) || (o >= 32 && o <= 95)
 }
 
-func (o TClaim) isContraindicated() bool {
+func (o TClaim) IsContraindicated() bool {
 	// contraindicated = [-128, -97] U [96, 127]
 	return (o >= -128 && o <= -97) || (o >= 96 && o <= 127)
 }
 
 func (o TClaim) detailsPrinter(dm detailsMap, short bool, color bool) string {
 	// "none" statuses have shared semantics
-	if o.isNone() {
+	if o.IsNone() {
 		return noneToString(o, short, color)
 	}
 
