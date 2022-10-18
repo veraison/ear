@@ -8,7 +8,6 @@ import (
 	"errors"
 	"fmt"
 	"strings"
-	"time"
 
 	"github.com/lestrrat-go/jwx/v2/jwa"
 	"github.com/lestrrat-go/jwx/v2/jws"
@@ -94,12 +93,12 @@ func (o *TrustTier) UnmarshalJSON(data []byte) error {
 // The AttestationResult is serialized to JSON and signed by the verifier using
 // JWT.
 type AttestationResult struct {
-	Status            *TrustTier   `json:"status"`
+	Status            *TrustTier   `json:"ear.status"`
 	Profile           *string      `json:"eat_profile"`
-	TrustVector       *TrustVector `json:"trust-vector,omitempty"`
-	RawEvidence       *[]byte      `json:"raw-evidence,omitempty"`
-	Timestamp         *time.Time   `json:"timestamp"` // TODO(tho) use "iat" instead?
-	AppraisalPolicyID *string      `json:"appraisal-policy-id,omitempty"`
+	TrustVector       *TrustVector `json:"ear.trustworthiness-vector,omitempty"`
+	RawEvidence       *[]byte      `json:"ear.raw-evidence,omitempty"`
+	IssuedAt          *int64       `json:"iat"`
+	AppraisalPolicyID *string      `json:"ear.appraisal-policy-id,omitempty"`
 	Extensions
 }
 
@@ -134,8 +133,8 @@ func (o AttestationResult) validate() error {
 		missing = append(missing, "'status'")
 	}
 
-	if o.Timestamp == nil {
-		missing = append(missing, "'timestamp'")
+	if o.IssuedAt == nil {
+		missing = append(missing, "'iat'")
 	}
 
 	if len(missing) == 0 && len(invalid) == 0 {

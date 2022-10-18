@@ -5,7 +5,6 @@ package ar4si
 
 import (
 	"testing"
-	"time"
 
 	"github.com/lestrrat-go/jwx/v2/jwa"
 	"github.com/lestrrat-go/jwx/v2/jwk"
@@ -30,14 +29,14 @@ var (
 	}`
 
 	testStatus             = TrustTierAffirming
-	testTimestamp          = time.Date(2022, 9, 26, 17, 29, 0, 0, time.UTC)
+	testIAT                = int64(1666091373)
 	testPolicyID           = "https://veraison.example/policy/1/60a0068d"
 	testProfile            = EatProfile
 	testUnsupportedProfile = "1.2.3.4.5"
 
 	testAttestationResultsWithVeraisonExtns = AttestationResult{
 		Status:            &testStatus,
-		Timestamp:         &testTimestamp,
+		IssuedAt:          &testIAT,
 		AppraisalPolicyID: &testPolicyID,
 		Profile:           &testProfile,
 		Extensions: Extensions{
@@ -170,17 +169,17 @@ func TestToJSON_fail(t *testing.T) {
 	}{
 		{
 			ar:       AttestationResult{},
-			expected: `missing mandatory 'eat_profile', 'status', 'timestamp'`,
+			expected: `missing mandatory 'eat_profile', 'status', 'iat'`,
 		},
 		{
 			ar: AttestationResult{
 				Status: &testStatus,
 			},
-			expected: `missing mandatory 'eat_profile', 'timestamp'`,
+			expected: `missing mandatory 'eat_profile', 'iat'`,
 		},
 		{
 			ar: AttestationResult{
-				Timestamp: &testTimestamp,
+				IssuedAt: &testIAT,
 			},
 			expected: `missing mandatory 'eat_profile', 'status'`,
 		},
@@ -188,14 +187,14 @@ func TestToJSON_fail(t *testing.T) {
 			ar: AttestationResult{
 				Profile: &testProfile,
 			},
-			expected: `missing mandatory 'status', 'timestamp'`,
+			expected: `missing mandatory 'status', 'iat'`,
 		},
 		{
 			ar: AttestationResult{
 				Status:  &testStatus,
 				Profile: &testUnsupportedProfile,
 			},
-			expected: `missing mandatory 'timestamp'; invalid value(s) for eat_profile (1.2.3.4.5)`,
+			expected: `missing mandatory 'iat'; invalid value(s) for eat_profile (1.2.3.4.5)`,
 		}}
 
 	for i, tv := range tvs {
@@ -219,7 +218,7 @@ func TestFromJSON_fail(t *testing.T) {
 		},
 		{
 			ar:       `{}`,
-			expected: `missing mandatory 'eat_profile', 'status', 'timestamp'`,
+			expected: `missing mandatory 'eat_profile', 'status', 'iat'`,
 		},
 	}
 
@@ -234,9 +233,9 @@ func TestFromJSON_fail(t *testing.T) {
 func TestVerify_pass(t *testing.T) {
 	tvs := []string{
 		// ok
-		`eyJhbGciOiJFUzI1NiJ9.eyJzdGF0dXMiOiJhZmZpcm1pbmciLCJlYXRfcHJvZmlsZSI6InRhZzpnaXRodWIuY29tL3ZlcmFpc29uL2FyNHNpLDIwMjItMTAtMTciLCJ0aW1lc3RhbXAiOiIyMDIyLTA5LTI2VDE3OjI5OjAwWiIsImFwcHJhaXNhbC1wb2xpY3ktaWQiOiJodHRwczovL3ZlcmFpc29uLmV4YW1wbGUvcG9saWN5LzEvNjBhMDA2OGQiLCJ2ZXJhaXNvbi5wcm9jZXNzZWQtZXZpZGVuY2UiOnsiazEiOiJ2MSIsImsyIjoidjIifSwidmVyYWlzb24udmVyaWZpZXItYWRkZWQtY2xhaW1zIjp7ImJhciI6ImJheiIsImZvbyI6ImJhciJ9fQ.KZRnCWkynxl9-L5v7mTuBlGwtnfYVb-B0jBS5qlVRkRfEDA_Er59ssqrjslzSkwnEoD8E2VkgXHGn0jn0_ZAUA`,
+		`eyJhbGciOiJFUzI1NiJ9.eyJlYXIuc3RhdHVzIjoiYWZmaXJtaW5nIiwiZWF0X3Byb2ZpbGUiOiJ0YWc6Z2l0aHViLmNvbS92ZXJhaXNvbi9hcjRzaSwyMDIyLTEwLTE3IiwiaWF0IjoxNjY2MDkxMzczLCJlYXIuYXBwcmFpc2FsLXBvbGljeS1pZCI6Imh0dHBzOi8vdmVyYWlzb24uZXhhbXBsZS9wb2xpY3kvMS82MGEwMDY4ZCIsInZlcmFpc29uLnByb2Nlc3NlZC1ldmlkZW5jZSI6eyJrMSI6InYxIiwiazIiOiJ2MiJ9LCJ2ZXJhaXNvbi52ZXJpZmllci1hZGRlZC1jbGFpbXMiOnsiYmFyIjoiYmF6IiwiZm9vIjoiYmFyIn19.vo2KoisD9Bf18z7oymoS0Ty2ekurZiGti62-jn10jSMNfvGZQBjr9mFe1AroHzpjLBSzYfvXk6xlKf0domS3yQ`,
 		// ok with trailing stuff (ignored)
-		`eyJhbGciOiJFUzI1NiJ9.eyJzdGF0dXMiOiJhZmZpcm1pbmciLCJlYXRfcHJvZmlsZSI6InRhZzpnaXRodWIuY29tL3ZlcmFpc29uL2FyNHNpLDIwMjItMTAtMTciLCJ0aW1lc3RhbXAiOiIyMDIyLTA5LTI2VDE3OjI5OjAwWiIsImFwcHJhaXNhbC1wb2xpY3ktaWQiOiJodHRwczovL3ZlcmFpc29uLmV4YW1wbGUvcG9saWN5LzEvNjBhMDA2OGQiLCJ2ZXJhaXNvbi5wcm9jZXNzZWQtZXZpZGVuY2UiOnsiazEiOiJ2MSIsImsyIjoidjIifSwidmVyYWlzb24udmVyaWZpZXItYWRkZWQtY2xhaW1zIjp7ImJhciI6ImJheiIsImZvbyI6ImJhciJ9fQ.KZRnCWkynxl9-L5v7mTuBlGwtnfYVb-B0jBS5qlVRkRfEDA_Er59ssqrjslzSkwnEoD8E2VkgXHGn0jn0_ZAUA.trailing-rubbish-is-ignored`,
+		`eyJhbGciOiJFUzI1NiJ9.eyJlYXIuc3RhdHVzIjoiYWZmaXJtaW5nIiwiZWF0X3Byb2ZpbGUiOiJ0YWc6Z2l0aHViLmNvbS92ZXJhaXNvbi9hcjRzaSwyMDIyLTEwLTE3IiwiaWF0IjoxNjY2MDkxMzczLCJlYXIuYXBwcmFpc2FsLXBvbGljeS1pZCI6Imh0dHBzOi8vdmVyYWlzb24uZXhhbXBsZS9wb2xpY3kvMS82MGEwMDY4ZCIsInZlcmFpc29uLnByb2Nlc3NlZC1ldmlkZW5jZSI6eyJrMSI6InYxIiwiazIiOiJ2MiJ9LCJ2ZXJhaXNvbi52ZXJpZmllci1hZGRlZC1jbGFpbXMiOnsiYmFyIjoiYmF6IiwiZm9vIjoiYmFyIn19.vo2KoisD9Bf18z7oymoS0Ty2ekurZiGti62-jn10jSMNfvGZQBjr9mFe1AroHzpjLBSzYfvXk6xlKf0domS3yQ.trailing-rubbish-is-ignored`,
 	}
 
 	k, err := jwk.ParseKey([]byte(testECDSAPublicKey))
@@ -274,7 +273,7 @@ func TestVerify_fail(t *testing.T) {
 		{
 			// empty attestation results
 			token:    `eyJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCJ9.e30.9Tvx3hVBNfkmVXTndrVfv9ZeNJgX59w0JpR2vyjUn8lGxL8VT7OggUeYSYFnxrouSi2TusNh61z8rLdOqxGA-A`,
-			expected: `failed parsing JWT payload: missing mandatory 'eat_profile', 'status', 'timestamp'`,
+			expected: `failed parsing JWT payload: missing mandatory 'eat_profile', 'status', 'iat'`,
 		},
 	}
 
@@ -297,7 +296,7 @@ func TestSign_fail(t *testing.T) {
 	var ar AttestationResult
 
 	_, err = ar.Sign(jwa.ES256, sigK)
-	assert.EqualError(t, err, `missing mandatory 'eat_profile', 'status', 'timestamp'`)
+	assert.EqualError(t, err, `missing mandatory 'eat_profile', 'status', 'iat'`)
 }
 
 func TestRoundTrip_pass(t *testing.T) {
