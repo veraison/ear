@@ -3,7 +3,8 @@
 
 package ar4si
 
-// TODO(tho) description
+// TrustVector is an implementation of the Trustworthiness Vector (and Claims)
+// described in §2.3 of draft-ietf-rats-ar4si-03, using a JSON serialization.
 type TrustVector struct {
 	InstanceIdentity TClaim `json:"instance-identity"`
 	Configuration    TClaim `json:"configuration"`
@@ -20,49 +21,49 @@ type TrustVector struct {
 // colors when printing the trust tier, respectively
 func (o TrustVector) Report(short, color bool) string {
 	s := "Instance Identity " +
-		o.InstanceIdentity.TrustTierTag(color) +
+		o.InstanceIdentity.trustTierTag(color) +
 		": " +
 		o.InstanceIdentity.asInstanceIdentityDetails(short, color) +
 		"\n"
 
 	s += "Configuration " +
-		o.Configuration.TrustTierTag(color) +
+		o.Configuration.trustTierTag(color) +
 		": " +
 		o.Configuration.asConfigurationDetails(short, color) +
 		"\n"
 
 	s += "Executables " +
-		o.Executables.TrustTierTag(color) +
+		o.Executables.trustTierTag(color) +
 		": " +
 		o.Executables.asExecutablesDetails(short, color) +
 		"\n"
 
 	s += "File System " +
-		o.FileSystem.TrustTierTag(color) +
+		o.FileSystem.trustTierTag(color) +
 		": " +
 		o.FileSystem.asFileSystemDetails(short, color) +
 		"\n"
 
 	s += "Hardware " +
-		o.Hardware.TrustTierTag(color) +
+		o.Hardware.trustTierTag(color) +
 		": " +
 		o.Hardware.asHardwareDetails(short, color) +
 		"\n"
 
 	s += "Runtime Opaque " +
-		o.RuntimeOpaque.TrustTierTag(color) +
+		o.RuntimeOpaque.trustTierTag(color) +
 		": " +
 		o.RuntimeOpaque.asRuntimeOpaqueDetails(short, color) +
 		"\n"
 
 	s += "Storage Opaque " +
-		o.StorageOpaque.TrustTierTag(color) +
+		o.StorageOpaque.trustTierTag(color) +
 		": " +
 		o.StorageOpaque.asStorageOpaqueDetails(short, color) +
 		"\n"
 
 	s += "Sourced Data " +
-		o.SourcedData.TrustTierTag(color) +
+		o.SourcedData.trustTierTag(color) +
 		": " +
 		o.SourcedData.asSourcedDataDetails(short, color) +
 		"\n"

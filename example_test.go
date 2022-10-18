@@ -9,9 +9,11 @@ import (
 
 func Example_encode_minimalist() {
 	ar := AttestationResult{
-		Status:            &testStatus,
+		Status: &testStatus,
+
 		Timestamp:         &testTimestamp,
 		AppraisalPolicyID: &testPolicyID,
+		Profile:           &testProfile,
 	}
 
 	j, _ := ar.ToJSON()
@@ -19,7 +21,7 @@ func Example_encode_minimalist() {
 	fmt.Println(string(j))
 
 	// Output:
-	// {"status":"affirming","timestamp":"2022-09-26T17:29:00Z","appraisal-policy-id":"https://veraison.example/policy/1/60a0068d"}
+	// {"status":"affirming","eat_profile":"tag:github.com/veraison/ar4si,2022-10-17","timestamp":"2022-09-26T17:29:00Z","appraisal-policy-id":"https://veraison.example/policy/1/60a0068d"}
 }
 
 func Example_encode_hefty() {
@@ -40,6 +42,7 @@ func Example_encode_hefty() {
 		RawEvidence:       &rawEvidence,
 		Timestamp:         &testTimestamp,
 		AppraisalPolicyID: &testPolicyID,
+		Profile:           &testProfile,
 	}
 
 	j, _ := ar.ToJSON()
@@ -47,7 +50,7 @@ func Example_encode_hefty() {
 	fmt.Println(string(j))
 
 	// Output:
-	// {"status":"affirming","trust-vector":{"instance-identity":2,"configuration":2,"executables":3,"file-system":2,"hardware":2,"runtime-opaque":2,"storage-opaque":2,"sourced-data":2},"raw-evidence":"3q2+7w==","timestamp":"2022-09-26T17:29:00Z","appraisal-policy-id":"https://veraison.example/policy/1/60a0068d"}
+	// {"status":"affirming","eat_profile":"tag:github.com/veraison/ar4si,2022-10-17","trust-vector":{"instance-identity":2,"configuration":2,"executables":3,"file-system":2,"hardware":2,"runtime-opaque":2,"storage-opaque":2,"sourced-data":2},"raw-evidence":"3q2+7w==","timestamp":"2022-09-26T17:29:00Z","appraisal-policy-id":"https://veraison.example/policy/1/60a0068d"}
 }
 
 func Example_encode_veraison_extensions() {
@@ -58,7 +61,7 @@ func Example_encode_veraison_extensions() {
 	fmt.Println(string(j))
 
 	// Output:
-	// {"status":"affirming","timestamp":"2022-09-26T17:29:00Z","appraisal-policy-id":"https://veraison.example/policy/1/60a0068d","veraison.processed-evidence":{"k1":"v1","k2":"v2"},"veraison.verifier-added-claims":{"bar":"baz","foo":"bar"}}
+	// {"status":"affirming","eat_profile":"tag:github.com/veraison/ar4si,2022-10-17","timestamp":"2022-09-26T17:29:00Z","appraisal-policy-id":"https://veraison.example/policy/1/60a0068d","veraison.processed-evidence":{"k1":"v1","k2":"v2"},"veraison.verifier-added-claims":{"bar":"baz","foo":"bar"}}
 }
 
 func Example_decode_veraison_extensions() {
@@ -73,7 +76,8 @@ func Example_decode_veraison_extensions() {
 		"veraison.verifier-added-claims": {
 			"bar": "baz",
 			"foo": "bar"
-		}
+		},
+		"eat_profile": "tag:github.com/veraison/ar4si,2022-10-17"
 	}`
 	var ar AttestationResult
 	_ = ar.FromJSON([]byte(j))
@@ -98,7 +102,8 @@ func Example_colors() {
 			"configuration": 96,
 			"executables": 32,
 			"hardware": 2
-		}
+		},
+		"eat_profile": "tag:github.com/veraison/ar4si,2022-10-17"
 	}`
 
 	var ar AttestationResult

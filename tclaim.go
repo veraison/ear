@@ -268,7 +268,7 @@ func (o TClaim) TrustTier(color bool) string {
 	return s
 }
 
-func (o TClaim) TrustTierTag(color bool) string {
+func (o TClaim) trustTierTag(color bool) string {
 	return "[" + o.TrustTier(color) + "]"
 }
 
