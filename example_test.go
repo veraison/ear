@@ -11,7 +11,7 @@ func Example_encode_minimalist() {
 	ar := AttestationResult{
 		Status: &testStatus,
 
-		Timestamp:         &testTimestamp,
+		IssuedAt:          &testIAT,
 		AppraisalPolicyID: &testPolicyID,
 		Profile:           &testProfile,
 	}
@@ -21,7 +21,7 @@ func Example_encode_minimalist() {
 	fmt.Println(string(j))
 
 	// Output:
-	// {"status":"affirming","eat_profile":"tag:github.com/veraison/ar4si,2022-10-17","timestamp":"2022-09-26T17:29:00Z","appraisal-policy-id":"https://veraison.example/policy/1/60a0068d"}
+	// {"ear.status":"affirming","eat_profile":"tag:github.com/veraison/ar4si,2022-10-17","iat":1666091373,"ear.appraisal-policy-id":"https://veraison.example/policy/1/60a0068d"}
 }
 
 func Example_encode_hefty() {
@@ -40,7 +40,7 @@ func Example_encode_hefty() {
 			SourcedData:      2,
 		},
 		RawEvidence:       &rawEvidence,
-		Timestamp:         &testTimestamp,
+		IssuedAt:          &testIAT,
 		AppraisalPolicyID: &testPolicyID,
 		Profile:           &testProfile,
 	}
@@ -50,7 +50,7 @@ func Example_encode_hefty() {
 	fmt.Println(string(j))
 
 	// Output:
-	// {"status":"affirming","eat_profile":"tag:github.com/veraison/ar4si,2022-10-17","trust-vector":{"instance-identity":2,"configuration":2,"executables":3,"file-system":2,"hardware":2,"runtime-opaque":2,"storage-opaque":2,"sourced-data":2},"raw-evidence":"3q2+7w==","timestamp":"2022-09-26T17:29:00Z","appraisal-policy-id":"https://veraison.example/policy/1/60a0068d"}
+	// {"ear.status":"affirming","eat_profile":"tag:github.com/veraison/ar4si,2022-10-17","ear.trustworthiness-vector":{"instance-identity":2,"configuration":2,"executables":3,"file-system":2,"hardware":2,"runtime-opaque":2,"storage-opaque":2,"sourced-data":2},"ear.raw-evidence":"3q2+7w==","iat":1666091373,"ear.appraisal-policy-id":"https://veraison.example/policy/1/60a0068d"}
 }
 
 func Example_encode_veraison_extensions() {
@@ -61,14 +61,14 @@ func Example_encode_veraison_extensions() {
 	fmt.Println(string(j))
 
 	// Output:
-	// {"status":"affirming","eat_profile":"tag:github.com/veraison/ar4si,2022-10-17","timestamp":"2022-09-26T17:29:00Z","appraisal-policy-id":"https://veraison.example/policy/1/60a0068d","veraison.processed-evidence":{"k1":"v1","k2":"v2"},"veraison.verifier-added-claims":{"bar":"baz","foo":"bar"}}
+	// {"ear.status":"affirming","eat_profile":"tag:github.com/veraison/ar4si,2022-10-17","iat":1666091373,"ear.appraisal-policy-id":"https://veraison.example/policy/1/60a0068d","veraison.processed-evidence":{"k1":"v1","k2":"v2"},"veraison.verifier-added-claims":{"bar":"baz","foo":"bar"}}
 }
 
 func Example_decode_veraison_extensions() {
 	j := `{
-		"status": "affirming",
-		"timestamp": "2022-09-26T17:29:00Z",
-		"appraisal-policy-id": "https://veraison.example/policy/1/60a0068d",
+		"ear.status": "affirming",
+		"iat":1666091373,
+		"ear.appraisal-policy-id": "https://veraison.example/policy/1/60a0068d",
 		"veraison.processed-evidence": {
 			"k1": "v1",
 			"k2": "v2"
@@ -94,10 +94,10 @@ func Example_decode_veraison_extensions() {
 
 func Example_colors() {
 	j := `{
-		"status": "contraindicated",
-		"timestamp": "2022-09-26T17:29:00Z",
-		"appraisal-policy-id": "https://veraison.example/policy/1/60a0068d",
-		"trust-vector": {
+		"ear.status": "contraindicated",
+		"iat":1666091373,
+		"ear.appraisal-policy-id": "https://veraison.example/policy/1/60a0068d",
+		"ear.trustworthiness-vector": {
 			"instance-identity": 96,
 			"configuration": 96,
 			"executables": 32,
