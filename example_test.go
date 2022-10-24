@@ -61,7 +61,7 @@ func Example_encode_veraison_extensions() {
 	fmt.Println(string(j))
 
 	// Output:
-	// {"ear.status":"affirming","eat_profile":"tag:github.com/veraison/ar4si,2022-10-17","iat":1666091373,"ear.appraisal-policy-id":"https://veraison.example/policy/1/60a0068d","veraison.processed-evidence":{"k1":"v1","k2":"v2"},"veraison.verifier-added-claims":{"bar":"baz","foo":"bar"}}
+	// {"ear.status":"affirming","eat_profile":"tag:github.com/veraison/ar4si,2022-10-17","iat":1666091373,"ear.appraisal-policy-id":"https://veraison.example/policy/1/60a0068d","ear.veraison.processed-evidence":{"k1":"v1","k2":"v2"},"ear.veraison.verifier-added-claims":{"bar":"baz","foo":"bar"}}
 }
 
 func Example_decode_veraison_extensions() {
@@ -69,11 +69,11 @@ func Example_decode_veraison_extensions() {
 		"ear.status": "affirming",
 		"iat":1666091373,
 		"ear.appraisal-policy-id": "https://veraison.example/policy/1/60a0068d",
-		"veraison.processed-evidence": {
+		"ear.veraison.processed-evidence": {
 			"k1": "v1",
 			"k2": "v2"
 		},
-		"veraison.verifier-added-claims": {
+		"ear.veraison.verifier-added-claims": {
 			"bar": "baz",
 			"foo": "bar"
 		},
