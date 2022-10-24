@@ -155,8 +155,8 @@ func (o AttestationResult) validate() error {
 // Extensions contains any proprietary claims that can be optionally attached to the
 // AttestationResult.  For now only veraison-specific extensions are supported.
 type Extensions struct {
-	VeraisonProcessedEvidence   *map[string]interface{} `json:"veraison.processed-evidence,omitempty"`
-	VeraisonVerifierAddedClaims *map[string]interface{} `json:"veraison.verifier-added-claims,omitempty"`
+	VeraisonProcessedEvidence   *map[string]interface{} `json:"ear.veraison.processed-evidence,omitempty"`
+	VeraisonVerifierAddedClaims *map[string]interface{} `json:"ear.veraison.verifier-added-claims,omitempty"`
 }
 
 // Verify cryptographically verifies the JWT data using the supplied key and
