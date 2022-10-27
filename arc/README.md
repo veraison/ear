@@ -1,5 +1,7 @@
 # Attestation Result Command
-
+The `arc` (attestation result command) command allows: 
+* synthesising attestation results in EAR (EAT Attestation Result) format,
+* verifying and displaying an EAR
 ## Create
 
 The `create` sub-command is used to synthesise an EAR given the full claims-set.
