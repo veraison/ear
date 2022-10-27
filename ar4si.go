@@ -107,7 +107,18 @@ func (o AttestationResult) ToJSON() ([]byte, error) {
 	if err := o.validate(); err != nil {
 		return nil, err
 	}
+
 	return json.Marshal(o)
+}
+
+// ToJSONPretty does the same as ToJSON but add NL and indentation to improve
+// readability
+func (o AttestationResult) ToJSONPretty() ([]byte, error) {
+	if err := o.validate(); err != nil {
+		return nil, err
+	}
+
+	return json.MarshalIndent(o, "", "  ")
 }
 
 // FromJSON de-serializes an AttestationResult object from its JSON
