@@ -14,12 +14,68 @@ type details struct {
 
 type detailsMap map[TrustClaim]details
 
+const (
+	// See details definitions below for detailed claim value interpretations.
+
+	// general
+	VerifierMalfunctionClaim    = TrustClaim(-1)
+	NoClaim                     = TrustClaim(0)
+	UnexpectedEvidenceClaim     = TrustClaim(1)
+	AffirmingClaim              = TrustClaim(2)
+	CryptoValidationFailedClaim = TrustClaim(99)
+
+	// instance identity
+	TrustworthyInstanceClaim       = TrustClaim(2)
+	InstanceIdentityAffirmingClaim = TrustClaim(2)
+	UntrustworthyInstanceClaim     = TrustClaim(96)
+	UnrecognizedInstanceClaim      = TrustClaim(97)
+
+	// config
+	ApprovedConfigClaim      = TrustClaim(2)
+	NoConfigVulnsClaim       = TrustClaim(3)
+	UnsafeConfigClaim        = TrustClaim(32)
+	UnsupportableConfigClaim = TrustClaim(96)
+
+	// exectuabes & runtime
+	ApprovedRuntimeClaim     = TrustClaim(2)
+	ApprovedBootClaim        = TrustClaim(3)
+	UnsafeRuntime            = TrustClaim(32)
+	UnrecognizedRuntimeClaim = TrustClaim(33)
+	ContraindicatedRuntime   = TrustClaim(96)
+
+	// file system
+	ApprovedFilesClaim        = TrustClaim(2)
+	UnrecognizedFilesClaim    = TrustClaim(32)
+	ContraindicatedFilesClaim = TrustClaim(96)
+
+	// hardware
+	GenuineHardwareClaim         = TrustClaim(2)
+	UnsafeHardwareClaim          = TrustClaim(32)
+	ContraindicatedHardwareClaim = TrustClaim(96)
+	UnrecognizedHardwareClaim    = TrustClaim(97)
+
+	// opaque runtime
+	EncryptedMemoryRuntimeClaim = TrustClaim(2)
+	IsolatedMemoryRuntimeClaim  = TrustClaim(32)
+	VisibleMemoryRuntimeClaim   = TrustClaim(96)
+
+	// opaque storage
+	HwKeysEncryptedSecretsClaim = TrustClaim(2)
+	SwKeysEncryptedSecretsClaim = TrustClaim(32)
+	UnencryptedSecretsClaim     = TrustClaim(96)
+
+	// sourced data
+	TrustedSourcesClaim         = TrustClaim(2)
+	UntrustedSourcesClaim       = TrustClaim(3)
+	ContraindicatedSourcesClaim = TrustClaim(96)
+)
+
 var (
 	noneDetails = detailsMap{
 		// Value -1: A verifier malfunction occurred during the Verifier's
 		// appraisal processing.
 		// NOTE: similar to HTTP 5xx (server error)
-		-1: {
+		VerifierMalfunctionClaim: {
 			short: "verifier malfunction",
 			long:  "A verifier malfunction occurred during the Verifier's appraisal processing.",
 		},
@@ -30,7 +86,7 @@ var (
 		// Trustworthiness Claim with enumeration '0', and no Trustworthiness
 		// Claim being provided.
 		// NOTE: not sure why this is grouped with -1 and 1.
-		0: {
+		NoClaim: {
 			short: "no claim being made",
 			long:  "The Evidence received is insufficient to make a conclusion.",
 		},
@@ -38,7 +94,7 @@ var (
 		// Verifier is unable to parse. An example might be that the wrong type
 		// of Evidence has been delivered.
 		// NOTE: similar to HTTP 4xx (client error)
-		1: {
+		UnexpectedEvidenceClaim: {
 			short: "unexpected evidence",
 			long:  "The Evidence received contains unexpected elements which the Verifier is unable to parse.",
 		},
@@ -49,19 +105,19 @@ var (
 	// should only be generated if the Verifier actually expects to recognize
 	// the unique identity of the Attester.)
 	instanceIdentityDetails = detailsMap{
-		2: {
+		TrustworthyInstanceClaim: {
 			short: "recognized and not compromised",
 			long:  "The Attesting Environment is recognized, and the associated instance of the Attester is not known to be compromised.",
 		},
-		96: {
+		UntrustworthyInstanceClaim: {
 			short: "recognized but not trustworthy",
 			long:  "The Attesting Environment is recognized, but its unique private key indicates a device which is not trustworthy.",
 		},
-		97: {
+		UnrecognizedInstanceClaim: {
 			short: "not recognized",
 			long:  "The Attesting Environment is not recognized; however the Verifier believes it should be.",
 		},
-		99: {
+		CryptoValidationFailedClaim: {
 			short: "cryptographic validation failed",
 			long:  "Cryptographic validation of the Evidence has failed.",
 		},
@@ -69,23 +125,23 @@ var (
 	// A Verifier has appraised an Attester's configuration, and is able to make
 	// conclusions regarding the exposure of known vulnerabilities.
 	configurationDetails = detailsMap{
-		2: {
+		ApprovedConfigClaim: {
 			short: "all recognized and approved",
 			long:  "The configuration is a known and approved config.",
 		},
-		3: {
+		NoConfigVulnsClaim: {
 			short: "no known vulnerabilities",
 			long:  "The configuration includes or exposes no known vulnerabilities",
 		},
-		32: {
+		UnsafeConfigClaim: {
 			short: "known vulnerabilities",
 			long:  "The configuration includes or exposes known vulnerabilities.",
 		},
-		96: {
+		UnsupportableConfigClaim: {
 			short: "unacceptable security vulnerabilities",
 			long:  "The configuration is unsupportable as it exposes unacceptable security vulnerabilities",
 		},
-		99: {
+		CryptoValidationFailedClaim: {
 			short: "cryptographic validation failed",
 			long:  "Cryptographic validation of the Evidence has failed.",
 		},
@@ -94,27 +150,27 @@ var (
 	// and/or other objects which have been loaded into the Target environment's
 	// memory.
 	executablesDetails = detailsMap{
-		2: {
+		ApprovedRuntimeClaim: {
 			short: "recognized and approved boot- and run-time",
 			long:  "Only a recognized genuine set of approved executables, scripts, files, and/or objects have been loaded during and after the boot process.",
 		},
-		3: {
+		ApprovedBootClaim: {
 			short: "recognized and approved boot-time",
 			long:  "Only a recognized genuine set of approved executables have been loaded during the boot process.",
 		},
-		32: {
+		UnsafeRuntime: {
 			short: "recognized but known bugs or vulnerabilities",
 			long:  "Only a recognized genuine set of executables, scripts, files, and/or objects have been loaded. However the Verifier cannot vouch for a subset of these due to known bugs or other known vulnerabilities.",
 		},
-		33: {
+		UnrecognizedRuntimeClaim: {
 			short: "unrecognized run-time",
 			long:  "Runtime memory includes executables, scripts, files, and/or objects which are not recognized.",
 		},
-		96: {
+		ContraindicatedRuntime: {
 			short: "contraindicated run-time",
 			long:  "Runtime memory includes executables, scripts, files, and/or object which are contraindicated.",
 		},
-		99: {
+		CryptoValidationFailedClaim: {
 			short: "cryptographic validation failed",
 			long:  "Cryptographic validation of the Evidence has failed.",
 		},
@@ -124,19 +180,19 @@ var (
 	// these directory and expected files are via an unspecified management
 	// interface.)
 	fileSystemDetails = detailsMap{
-		2: {
+		ApprovedFilesClaim: {
 			short: "all recognized and approved",
 			long:  "Only a recognized set of approved files are found.",
 		},
-		32: {
+		UnrecognizedFilesClaim: {
 			short: "unrecognized item(s) found",
 			long:  "The file system includes unrecognized executables, scripts, or files.",
 		},
-		96: {
+		ContraindicatedFilesClaim: {
 			short: "contraindicated item(s) found",
 			long:  "The file system includes contraindicated executables, scripts, or files.",
 		},
-		99: {
+		CryptoValidationFailedClaim: {
 			short: "cryptographic validation failed",
 			long:  "Cryptographic validation of the Evidence has failed.",
 		},
@@ -144,23 +200,23 @@ var (
 	// A Verifier has appraised any Attester hardware and firmware which are
 	// able to expose fingerprints of their identity and running code.
 	hardwareDetails = detailsMap{
-		2: {
+		GenuineHardwareClaim: {
 			short: "genuine",
 			long:  "An Attester has passed its hardware and/or firmware verifications needed to demonstrate that these are genuine/supported.",
 		},
-		32: {
+		UnsafeHardwareClaim: {
 			short: "genuine but known bugs or vulnerabilities",
 			long:  "An Attester contains only genuine/supported hardware and/or firmware, but there are known security vulnerabilities.",
 		},
-		96: {
+		ContraindicatedHardwareClaim: {
 			short: "genuine but contraindicated",
 			long:  "Attester hardware and/or firmware is recognized, but its trustworthiness is contraindicated.",
 		},
-		97: {
+		UnrecognizedHardwareClaim: {
 			short: "unrecognized",
 			long:  "A Verifier does not recognize an Attester's hardware or firmware, but it should be recognized.",
 		},
-		99: {
+		CryptoValidationFailedClaim: {
 			short: "cryptographic validation failed",
 			long:  "Cryptographic validation of the Evidence has failed.",
 		},
@@ -168,20 +224,20 @@ var (
 	// A Verifier has appraised the visibility of Attester objects in memory
 	// from perspectives outside the Attester.
 	runtimeOpaqueDetails = detailsMap{
-		2: {
+		EncryptedMemoryRuntimeClaim: {
 			short: "memory encryption",
 			long:  "the Attester's executing Target Environment and Attesting Environments are encrypted and within Trusted Execution Environment(s) opaque to the operating system, virtual machine manager, and peer applications.",
 		},
-		32: {
+		IsolatedMemoryRuntimeClaim: {
 			// TODO(tho) not sure about the shorthand
 			short: "memory isolation",
 			long:  "the Attester's executing Target Environment and Attesting Environments are inaccessible from any other parallel application or Guest VM running on the Attester's physical device.",
 		},
-		96: {
+		VisibleMemoryRuntimeClaim: {
 			short: "visible",
 			long:  "The Verifier has concluded that in memory objects are unacceptably visible within the physical host that supports the Attester.",
 		},
-		99: {
+		CryptoValidationFailedClaim: {
 			short: "cryptographic validation failed",
 			long:  "Cryptographic validation of the Evidence has failed.",
 		},
@@ -189,19 +245,19 @@ var (
 	// A Verifier has appraised that an Attester is capable of encrypting
 	// persistent storage.
 	storageOpaqueDetails = detailsMap{
-		2: {
+		HwKeysEncryptedSecretsClaim: {
 			short: "encrypted secrets with HW-backed keys",
 			long:  "the Attester encrypts all secrets in persistent storage via using keys which are never visible outside an HSM or the Trusted Execution Environment hardware.",
 		},
-		32: {
+		SwKeysEncryptedSecretsClaim: {
 			short: "encrypted secrets with non HW-backed keys",
 			long:  "the Attester encrypts all persistently stored secrets, but without using hardware backed keys.",
 		},
-		96: {
+		UnencryptedSecretsClaim: {
 			short: "unencrypted secrets",
 			long:  "There are persistent secrets which are stored unencrypted in an Attester.",
 		},
-		99: {
+		CryptoValidationFailedClaim: {
 			short: "cryptographic validation failed",
 			long:  "Cryptographic validation of the Evidence has failed.",
 		},
@@ -209,19 +265,19 @@ var (
 	// A Verifier has evaluated the integrity of data objects from external
 	// systems used by the Attester.
 	sourcedDataDetails = detailsMap{
-		2: {
+		TrustedSourcesClaim: {
 			short: "from attesters in the affirming tier",
 			long:  `All essential Attester source data objects have been provided by other Attester(s) whose most recent appraisal(s) had both no Trustworthiness Claims of "0" where the current Trustworthiness Claim is "Affirming", as well as no "Warning" or "Contraindicated" Trustworthiness Claims.`,
 		},
-		32: {
+		UntrustedSourcesClaim: {
 			short: "from unattested sources or attesters in the warning tier",
 			long:  `Attester source data objects come from unattested sources, or attested sources with "Warning" type Trustworthiness Claims`,
 		},
-		96: {
+		ContraindicatedSourcesClaim: {
 			short: "from attesters in the contraindicated tier",
 			long:  "Attester source data objects come from contraindicated sources.",
 		},
-		99: {
+		CryptoValidationFailedClaim: {
 			short: "cryptographic validation failed",
 			long:  "Cryptographic validation of the Evidence has failed.",
 		},
