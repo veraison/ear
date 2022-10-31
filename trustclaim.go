@@ -6,13 +6,13 @@ package ear
 import "fmt"
 
 // trustworthiness claim
-type TClaim int8
+type TrustClaim int8
 
 type details struct {
 	short, long string
 }
 
-type detailsMap map[TClaim]details
+type detailsMap map[TrustClaim]details
 
 var (
 	noneDetails = detailsMap{
@@ -229,7 +229,7 @@ var (
 )
 
 // TrustTier provides the trust tier bucket of the trustworthiness claim
-func (o TClaim) TrustTier(color bool) string {
+func (o TrustClaim) TrustTier(color bool) string {
 	const (
 		rst    = `\033[0m`
 		red    = `\033[41m`
@@ -268,31 +268,31 @@ func (o TClaim) TrustTier(color bool) string {
 	return s
 }
 
-func (o TClaim) trustTierTag(color bool) string {
+func (o TrustClaim) trustTierTag(color bool) string {
 	return "[" + o.TrustTier(color) + "]"
 }
 
-func (o TClaim) IsNone() bool {
+func (o TrustClaim) IsNone() bool {
 	// none = [-1, 1]
 	return o >= -1 && o <= 1
 }
 
-func (o TClaim) IsAffirming() bool {
+func (o TrustClaim) IsAffirming() bool {
 	// affirming = [-32, -2] U [2, 31]
 	return (o >= -32 && o <= -2) || (o >= 2 && o <= 31)
 }
 
-func (o TClaim) IsWarning() bool {
+func (o TrustClaim) IsWarning() bool {
 	// warning = [-96, -33] U [32, 95]
 	return (o >= -96 && o <= -33) || (o >= 32 && o <= 95)
 }
 
-func (o TClaim) IsContraindicated() bool {
+func (o TrustClaim) IsContraindicated() bool {
 	// contraindicated = [-128, -97] U [96, 127]
 	return (o >= -128 && o <= -97) || (o >= 96 && o <= 127)
 }
 
-func (o TClaim) detailsPrinter(dm detailsMap, short bool, color bool) string {
+func (o TrustClaim) detailsPrinter(dm detailsMap, short bool, color bool) string {
 	// "none" statuses have shared semantics
 	if o.IsNone() {
 		return noneToString(o, short, color)
@@ -312,39 +312,39 @@ func (o TClaim) detailsPrinter(dm detailsMap, short bool, color bool) string {
 	return s.long
 }
 
-func (o TClaim) asInstanceIdentityDetails(short, color bool) string {
+func (o TrustClaim) asInstanceIdentityDetails(short, color bool) string {
 	return o.detailsPrinter(instanceIdentityDetails, short, color)
 }
 
-func (o TClaim) asConfigurationDetails(short, color bool) string {
+func (o TrustClaim) asConfigurationDetails(short, color bool) string {
 	return o.detailsPrinter(configurationDetails, short, color)
 }
 
-func (o TClaim) asExecutablesDetails(short, color bool) string {
+func (o TrustClaim) asExecutablesDetails(short, color bool) string {
 	return o.detailsPrinter(executablesDetails, short, color)
 }
 
-func (o TClaim) asFileSystemDetails(short, color bool) string {
+func (o TrustClaim) asFileSystemDetails(short, color bool) string {
 	return o.detailsPrinter(fileSystemDetails, short, color)
 }
 
-func (o TClaim) asHardwareDetails(short, color bool) string {
+func (o TrustClaim) asHardwareDetails(short, color bool) string {
 	return o.detailsPrinter(hardwareDetails, short, color)
 }
 
-func (o TClaim) asRuntimeOpaqueDetails(short, color bool) string {
+func (o TrustClaim) asRuntimeOpaqueDetails(short, color bool) string {
 	return o.detailsPrinter(runtimeOpaqueDetails, short, color)
 }
 
-func (o TClaim) asStorageOpaqueDetails(short, color bool) string {
+func (o TrustClaim) asStorageOpaqueDetails(short, color bool) string {
 	return o.detailsPrinter(storageOpaqueDetails, short, color)
 }
 
-func (o TClaim) asSourcedDataDetails(short, color bool) string {
+func (o TrustClaim) asSourcedDataDetails(short, color bool) string {
 	return o.detailsPrinter(sourcedDataDetails, short, color)
 }
 
-func noneToString(tc TClaim, short, color bool) string {
+func noneToString(tc TrustClaim, short, color bool) string {
 	s, ok := noneDetails[tc]
 	if ok {
 		if short {

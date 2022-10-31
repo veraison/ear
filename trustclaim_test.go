@@ -49,11 +49,11 @@ var (
 	}
 )
 
-func TestTClaim_TrustTier_entire_range(t *testing.T) {
+func TestTrustClaim_TrustTier_entire_range(t *testing.T) {
 	for s, a := range ranges {
 		for _, i := range a {
 			color := false
-			assert.Equal(t, s, TClaim(i).TrustTier(color), "enum: %d", i)
+			assert.Equal(t, s, TrustClaim(i).TrustTier(color), "enum: %d", i)
 		}
 	}
 }

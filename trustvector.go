@@ -6,14 +6,14 @@ package ear
 // TrustVector is an implementation of the Trustworthiness Vector (and Claims)
 // described in §2.3 of draft-ietf-rats-ar4si-03, using a JSON serialization.
 type TrustVector struct {
-	InstanceIdentity TClaim `json:"instance-identity"`
-	Configuration    TClaim `json:"configuration"`
-	Executables      TClaim `json:"executables"`
-	FileSystem       TClaim `json:"file-system"`
-	Hardware         TClaim `json:"hardware"`
-	RuntimeOpaque    TClaim `json:"runtime-opaque"`
-	StorageOpaque    TClaim `json:"storage-opaque"`
-	SourcedData      TClaim `json:"sourced-data"`
+	InstanceIdentity TrustClaim `json:"instance-identity"`
+	Configuration    TrustClaim `json:"configuration"`
+	Executables      TrustClaim `json:"executables"`
+	FileSystem       TrustClaim `json:"file-system"`
+	Hardware         TrustClaim `json:"hardware"`
+	RuntimeOpaque    TrustClaim `json:"runtime-opaque"`
+	StorageOpaque    TrustClaim `json:"storage-opaque"`
+	SourcedData      TrustClaim `json:"sourced-data"`
 }
 
 // Report provides an annotated view of the TrustVector state.
