@@ -4,9 +4,11 @@
 package ear
 
 import (
+	"encoding/json"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 var (
@@ -52,8 +54,63 @@ var (
 func TestTrustClaim_TrustTier_entire_range(t *testing.T) {
 	for s, a := range ranges {
 		for _, i := range a {
-			color := false
-			assert.Equal(t, s, TrustClaim(i).TrustTier(color), "enum: %d", i)
+			assert.Equal(t, s, TrustClaim(i).GetTier().String(), "enum: %d", i)
 		}
 	}
+}
+
+func TestToTrustClaim(t *testing.T) {
+	v, err := ToTrustClaim(32)
+	require.NoError(t, err)
+	assert.Equal(t, UnsafeRuntimeClaim, *v)
+
+	_, err = ToTrustClaim(512)
+	assert.ErrorContains(t, err, "out of range for TrustClaim: 512")
+
+	v, err = ToTrustClaim("2")
+	require.NoError(t, err)
+	assert.Equal(t, TrustClaim(2), *v)
+
+	v, err = ToTrustClaim("unsafe_hw")
+	require.NoError(t, err)
+	assert.Equal(t, TrustClaim(32), *v)
+
+	v, err = ToTrustClaim("ApprovedFS")
+	require.NoError(t, err)
+	assert.Equal(t, ApprovedFilesClaim, *v)
+
+	v, err = ToTrustClaim("CRYPTO-FAILED")
+	require.NoError(t, err)
+	assert.Equal(t, CryptoValidationFailedClaim, *v)
+
+	v, err = ToTrustClaim("Trusted Sources")
+	require.NoError(t, err)
+	assert.Equal(t, TrustedSourcesClaim, *v)
+
+	v, err = ToTrustClaim(TrustedSourcesClaim)
+	require.NoError(t, err)
+	assert.Equal(t, TrustedSourcesClaim, *v)
+
+	tc := VerifierMalfunctionClaim
+	v, err = ToTrustClaim(&tc)
+	require.NoError(t, err)
+	assert.Equal(t, VerifierMalfunctionClaim, *v)
+
+	n := json.Number("-1")
+	v, err = ToTrustClaim(n)
+	require.NoError(t, err)
+	assert.Equal(t, VerifierMalfunctionClaim, *v)
+
+	_, err = ToTrustClaim("512")
+	assert.ErrorContains(t, err, "out of range for TrustClaim: 512")
+
+	_, err = getTrustClaimFromString("Bogus Claim")
+	assert.ErrorContains(t, err, `not a valid TrustClaim value: "Bogus Claim"`)
+}
+
+func TestTrustClaim_GetTier(t *testing.T) {
+	assert.Equal(t, TrustTierNone, VerifierMalfunctionClaim.GetTier())
+	assert.Equal(t, TrustTierAffirming, ApprovedBootClaim.GetTier())
+	assert.Equal(t, TrustTierWarning, UnsafeConfigClaim.GetTier())
+	assert.Equal(t, TrustTierContraindicated, UnsupportableConfigClaim.GetTier())
 }

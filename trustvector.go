@@ -3,6 +3,11 @@
 
 package ear
 
+import (
+	"fmt"
+	"strings"
+)
+
 // TrustVector is an implementation of the Trustworthiness Vector (and Claims)
 // described in §2.3 of draft-ietf-rats-ar4si-03, using a JSON serialization.
 type TrustVector struct {
@@ -14,6 +19,132 @@ type TrustVector struct {
 	RuntimeOpaque    TrustClaim `json:"runtime-opaque"`
 	StorageOpaque    TrustClaim `json:"storage-opaque"`
 	SourcedData      TrustClaim `json:"sourced-data"`
+}
+
+// AsMap() returns a map[string]TrustClaim with claims names mapped onto
+// corresponding TrustClaim values.
+func (o TrustVector) AsMap() map[string]TrustClaim {
+	return map[string]TrustClaim{
+		"instance-identity": o.InstanceIdentity,
+		"configuration":     o.Configuration,
+		"executables":       o.Executables,
+		"file-system":       o.FileSystem,
+		"hardware":          o.Hardware,
+		"runtime-opaque":    o.RuntimeOpaque,
+		"storage-opaque":    o.StorageOpaque,
+		"sourced-data":      o.SourcedData,
+	}
+}
+
+func ToTrustVector(v interface{}) (*TrustVector, error) {
+	var (
+		tv  TrustVector
+		err error
+	)
+
+	switch t := v.(type) {
+	case TrustVector:
+		tv = t
+	case *TrustVector:
+		tv = *t
+	case map[string]interface{}:
+		tv, err = getTrustVectorFromMap(t)
+	case map[string]string:
+		m := make(map[string]interface{}, len(t))
+		for k, v := range t {
+			m[k] = v
+		}
+		tv, err = getTrustVectorFromMap(m)
+	default:
+		err = fmt.Errorf("invalid value for TrustVector: %v", t)
+	}
+
+	return &tv, err
+}
+
+func getTrustVectorFromMap(m map[string]interface{}) (TrustVector, error) {
+	var vector TrustVector
+
+	expected := []string{
+		"instance-identity",
+		"configuration",
+		"executables",
+		"file-system",
+		"hardware",
+		"runtime-opaque",
+		"storage-opaque",
+		"sourced-data",
+	}
+
+	extra := getExtraKeys(m, expected)
+	if len(extra) > 0 {
+		return vector, fmt.Errorf("found unexpected fields: %s", strings.Join(extra, ", "))
+	}
+
+	if err := populateClaimFromMap(m, "instance-identity", &vector.InstanceIdentity); err != nil {
+		return vector, err
+	}
+
+	if err := populateClaimFromMap(m, "configuration", &vector.Configuration); err != nil {
+		return vector, err
+	}
+
+	if err := populateClaimFromMap(m, "executables", &vector.Executables); err != nil {
+		return vector, err
+	}
+
+	if err := populateClaimFromMap(m, "file-system", &vector.FileSystem); err != nil {
+		return vector, err
+	}
+
+	if err := populateClaimFromMap(m, "hardware", &vector.Hardware); err != nil {
+		return vector, err
+	}
+
+	if err := populateClaimFromMap(m, "runtime-opaque", &vector.RuntimeOpaque); err != nil {
+		return vector, err
+	}
+
+	if err := populateClaimFromMap(m, "storage-opaque", &vector.StorageOpaque); err != nil {
+		return vector, err
+	}
+
+	if err := populateClaimFromMap(m, "sourced-data", &vector.SourcedData); err != nil {
+		return vector, err
+	}
+
+	return vector, nil
+}
+
+func populateClaimFromMap(m map[string]interface{}, key string, dest *TrustClaim) error {
+	v, ok := m[key]
+	if !ok {
+		return nil
+	}
+
+	claim, err := ToTrustClaim(v)
+	if err != nil {
+		return fmt.Errorf("bad value for %q: %w", key, err)
+	}
+
+	*dest = *claim
+
+	return err
+}
+
+// SetAll sets all vector elements to the specified claim. This is primarily
+// useful with globally-applicable claims such as -1 (verifier malfunction), 0
+// (no claim, in order to "reset" the vector), or 99 (cryptographic validation
+// failed).
+func (o *TrustVector) SetAll(c TrustClaim) {
+	o.InstanceIdentity = c
+	o.Configuration = c
+	o.Executables = c
+	o.FileSystem = c
+	o.Hardware = c
+	o.RuntimeOpaque = c
+	o.StorageOpaque = c
+	o.SourcedData = c
 }
 
 // Report provides an annotated view of the TrustVector state.

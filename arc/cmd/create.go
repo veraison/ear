@@ -51,7 +51,7 @@ the key in the default key file "skey.json", and save the result to "my-ear.jwt"
 				return fmt.Errorf("loading EAR claims-set from %q: %w", createClaims, err)
 			}
 
-			if err = ar.FromJSON(claimsSet); err != nil {
+			if err = ar.UnmarshalJSON(claimsSet); err != nil {
 				return fmt.Errorf("decoding EAR claims-set from %q: %w", createClaims, err)
 			}
 

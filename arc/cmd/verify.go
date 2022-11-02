@@ -69,7 +69,7 @@ embedded EAR claims-set and present a report of the trustworthiness vector.
 			fmt.Printf(">> %q signature successfully verified using %q\n", verifyInput, verifyPKey)
 
 			fmt.Println("[claims-set]")
-			if claimsSet, err = ar.ToJSONPretty(); err != nil {
+			if claimsSet, err = ar.MarshalJSONIndent("", "    "); err != nil {
 				return fmt.Errorf("unable to re-serialize the EAR claims-set: %w", err)
 			}
 			fmt.Println(string(claimsSet))

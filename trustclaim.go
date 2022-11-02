@@ -3,13 +3,28 @@
 
 package ear
 
-import "fmt"
+import (
+	"encoding/json"
+	"fmt"
+	"math"
+	"strconv"
+	"strings"
+
+	"github.com/huandu/xstrings"
+)
 
 // trustworthiness claim
 type TrustClaim int8
 
+// Description of a particular claim
+// tag: an itentifier-compantible label to be used in serialized values as an
+//
+//	alternative to integers.
+//
+// short: a short description for embedding in error messages, etc
+// long: a longer, more descriptive explanation of the claim.
 type details struct {
-	short, long string
+	tag, short, long string
 }
 
 type detailsMap map[TrustClaim]details
@@ -21,14 +36,12 @@ const (
 	VerifierMalfunctionClaim    = TrustClaim(-1)
 	NoClaim                     = TrustClaim(0)
 	UnexpectedEvidenceClaim     = TrustClaim(1)
-	AffirmingClaim              = TrustClaim(2)
 	CryptoValidationFailedClaim = TrustClaim(99)
 
 	// instance identity
-	TrustworthyInstanceClaim       = TrustClaim(2)
-	InstanceIdentityAffirmingClaim = TrustClaim(2)
-	UntrustworthyInstanceClaim     = TrustClaim(96)
-	UnrecognizedInstanceClaim      = TrustClaim(97)
+	TrustworthyInstanceClaim   = TrustClaim(2)
+	UntrustworthyInstanceClaim = TrustClaim(96)
+	UnrecognizedInstanceClaim  = TrustClaim(97)
 
 	// config
 	ApprovedConfigClaim      = TrustClaim(2)
@@ -36,12 +49,12 @@ const (
 	UnsafeConfigClaim        = TrustClaim(32)
 	UnsupportableConfigClaim = TrustClaim(96)
 
-	// exectuabes & runtime
-	ApprovedRuntimeClaim     = TrustClaim(2)
-	ApprovedBootClaim        = TrustClaim(3)
-	UnsafeRuntime            = TrustClaim(32)
-	UnrecognizedRuntimeClaim = TrustClaim(33)
-	ContraindicatedRuntime   = TrustClaim(96)
+	// executables & runtime
+	ApprovedRuntimeClaim        = TrustClaim(2)
+	ApprovedBootClaim           = TrustClaim(3)
+	UnsafeRuntimeClaim          = TrustClaim(32)
+	UnrecognizedRuntimeClaim    = TrustClaim(33)
+	ContraindicatedRuntimeClaim = TrustClaim(96)
 
 	// file system
 	ApprovedFilesClaim        = TrustClaim(2)
@@ -66,16 +79,21 @@ const (
 
 	// sourced data
 	TrustedSourcesClaim         = TrustClaim(2)
-	UntrustedSourcesClaim       = TrustClaim(3)
+	UntrustedSourcesClaim       = TrustClaim(32)
 	ContraindicatedSourcesClaim = TrustClaim(96)
 )
 
 var (
+	// NOTE: tags are used when converting strings to claims. In order for
+	// this work, there must be an unabigous mapping between them and
+	// claims' integer values. It is OK of mulple claims to have the same
+	// tag, as long as their integer values are also the same.
 	noneDetails = detailsMap{
 		// Value -1: A verifier malfunction occurred during the Verifier's
 		// appraisal processing.
 		// NOTE: similar to HTTP 5xx (server error)
 		VerifierMalfunctionClaim: {
+			tag:   "verifier_malfunction",
 			short: "verifier malfunction",
 			long:  "A verifier malfunction occurred during the Verifier's appraisal processing.",
 		},
@@ -87,6 +105,7 @@ var (
 		// Claim being provided.
 		// NOTE: not sure why this is grouped with -1 and 1.
 		NoClaim: {
+			tag:   "no_claim",
 			short: "no claim being made",
 			long:  "The Evidence received is insufficient to make a conclusion.",
 		},
@@ -95,6 +114,7 @@ var (
 		// of Evidence has been delivered.
 		// NOTE: similar to HTTP 4xx (client error)
 		UnexpectedEvidenceClaim: {
+			tag:   "unexected_evidence",
 			short: "unexpected evidence",
 			long:  "The Evidence received contains unexpected elements which the Verifier is unable to parse.",
 		},
@@ -106,18 +126,22 @@ var (
 	// the unique identity of the Attester.)
 	instanceIdentityDetails = detailsMap{
 		TrustworthyInstanceClaim: {
+			tag:   "recognized_instance",
 			short: "recognized and not compromised",
 			long:  "The Attesting Environment is recognized, and the associated instance of the Attester is not known to be compromised.",
 		},
 		UntrustworthyInstanceClaim: {
+			tag:   "untrustworthy_instance",
 			short: "recognized but not trustworthy",
 			long:  "The Attesting Environment is recognized, but its unique private key indicates a device which is not trustworthy.",
 		},
 		UnrecognizedInstanceClaim: {
+			tag:   "unrecognized_instance",
 			short: "not recognized",
 			long:  "The Attesting Environment is not recognized; however the Verifier believes it should be.",
 		},
 		CryptoValidationFailedClaim: {
+			tag:   "crypto_failed",
 			short: "cryptographic validation failed",
 			long:  "Cryptographic validation of the Evidence has failed.",
 		},
@@ -126,22 +150,27 @@ var (
 	// conclusions regarding the exposure of known vulnerabilities.
 	configurationDetails = detailsMap{
 		ApprovedConfigClaim: {
+			tag:   "approved_config",
 			short: "all recognized and approved",
 			long:  "The configuration is a known and approved config.",
 		},
 		NoConfigVulnsClaim: {
+			tag:   "safe_config",
 			short: "no known vulnerabilities",
 			long:  "The configuration includes or exposes no known vulnerabilities",
 		},
 		UnsafeConfigClaim: {
+			tag:   "unsafe_config",
 			short: "known vulnerabilities",
 			long:  "The configuration includes or exposes known vulnerabilities.",
 		},
 		UnsupportableConfigClaim: {
+			tag:   "unsupportable_config",
 			short: "unacceptable security vulnerabilities",
 			long:  "The configuration is unsupportable as it exposes unacceptable security vulnerabilities",
 		},
 		CryptoValidationFailedClaim: {
+			tag:   "crypto_failed",
 			short: "cryptographic validation failed",
 			long:  "Cryptographic validation of the Evidence has failed.",
 		},
@@ -151,26 +180,32 @@ var (
 	// memory.
 	executablesDetails = detailsMap{
 		ApprovedRuntimeClaim: {
+			tag:   "approved_rt",
 			short: "recognized and approved boot- and run-time",
 			long:  "Only a recognized genuine set of approved executables, scripts, files, and/or objects have been loaded during and after the boot process.",
 		},
 		ApprovedBootClaim: {
+			tag:   "approved_boot",
 			short: "recognized and approved boot-time",
 			long:  "Only a recognized genuine set of approved executables have been loaded during the boot process.",
 		},
-		UnsafeRuntime: {
+		UnsafeRuntimeClaim: {
+			tag:   "unsafe_rt",
 			short: "recognized but known bugs or vulnerabilities",
 			long:  "Only a recognized genuine set of executables, scripts, files, and/or objects have been loaded. However the Verifier cannot vouch for a subset of these due to known bugs or other known vulnerabilities.",
 		},
 		UnrecognizedRuntimeClaim: {
+			tag:   "unrecognized_rt",
 			short: "unrecognized run-time",
 			long:  "Runtime memory includes executables, scripts, files, and/or objects which are not recognized.",
 		},
-		ContraindicatedRuntime: {
+		ContraindicatedRuntimeClaim: {
+			tag:   "contraindicated_rt",
 			short: "contraindicated run-time",
 			long:  "Runtime memory includes executables, scripts, files, and/or object which are contraindicated.",
 		},
 		CryptoValidationFailedClaim: {
+			tag:   "crypto_failed",
 			short: "cryptographic validation failed",
 			long:  "Cryptographic validation of the Evidence has failed.",
 		},
@@ -181,18 +216,22 @@ var (
 	// interface.)
 	fileSystemDetails = detailsMap{
 		ApprovedFilesClaim: {
+			tag:   "approved_fs",
 			short: "all recognized and approved",
 			long:  "Only a recognized set of approved files are found.",
 		},
 		UnrecognizedFilesClaim: {
+			tag:   "unrecognized_fs",
 			short: "unrecognized item(s) found",
 			long:  "The file system includes unrecognized executables, scripts, or files.",
 		},
 		ContraindicatedFilesClaim: {
+			tag:   "contraindicated_fs",
 			short: "contraindicated item(s) found",
 			long:  "The file system includes contraindicated executables, scripts, or files.",
 		},
 		CryptoValidationFailedClaim: {
+			tag:   "crypto_failed",
 			short: "cryptographic validation failed",
 			long:  "Cryptographic validation of the Evidence has failed.",
 		},
@@ -201,22 +240,27 @@ var (
 	// able to expose fingerprints of their identity and running code.
 	hardwareDetails = detailsMap{
 		GenuineHardwareClaim: {
+			tag:   "genuine_hw",
 			short: "genuine",
 			long:  "An Attester has passed its hardware and/or firmware verifications needed to demonstrate that these are genuine/supported.",
 		},
 		UnsafeHardwareClaim: {
+			tag:   "unsafe_hw",
 			short: "genuine but known bugs or vulnerabilities",
 			long:  "An Attester contains only genuine/supported hardware and/or firmware, but there are known security vulnerabilities.",
 		},
 		ContraindicatedHardwareClaim: {
+			tag:   "contraindicated_hw",
 			short: "genuine but contraindicated",
 			long:  "Attester hardware and/or firmware is recognized, but its trustworthiness is contraindicated.",
 		},
 		UnrecognizedHardwareClaim: {
+			tag:   "unrecognized_hw",
 			short: "unrecognized",
 			long:  "A Verifier does not recognize an Attester's hardware or firmware, but it should be recognized.",
 		},
 		CryptoValidationFailedClaim: {
+			tag:   "crypto_failed",
 			short: "cryptographic validation failed",
 			long:  "Cryptographic validation of the Evidence has failed.",
 		},
@@ -225,19 +269,23 @@ var (
 	// from perspectives outside the Attester.
 	runtimeOpaqueDetails = detailsMap{
 		EncryptedMemoryRuntimeClaim: {
+			tag:   "encrypted_rt",
 			short: "memory encryption",
 			long:  "the Attester's executing Target Environment and Attesting Environments are encrypted and within Trusted Execution Environment(s) opaque to the operating system, virtual machine manager, and peer applications.",
 		},
 		IsolatedMemoryRuntimeClaim: {
 			// TODO(tho) not sure about the shorthand
+			tag:   "isolated_rt",
 			short: "memory isolation",
 			long:  "the Attester's executing Target Environment and Attesting Environments are inaccessible from any other parallel application or Guest VM running on the Attester's physical device.",
 		},
 		VisibleMemoryRuntimeClaim: {
+			tag:   "visible_rt",
 			short: "visible",
 			long:  "The Verifier has concluded that in memory objects are unacceptably visible within the physical host that supports the Attester.",
 		},
 		CryptoValidationFailedClaim: {
+			tag:   "crypto_failed",
 			short: "cryptographic validation failed",
 			long:  "Cryptographic validation of the Evidence has failed.",
 		},
@@ -246,18 +294,22 @@ var (
 	// persistent storage.
 	storageOpaqueDetails = detailsMap{
 		HwKeysEncryptedSecretsClaim: {
+			tag:   "hw_encrypted_secrets",
 			short: "encrypted secrets with HW-backed keys",
 			long:  "the Attester encrypts all secrets in persistent storage via using keys which are never visible outside an HSM or the Trusted Execution Environment hardware.",
 		},
 		SwKeysEncryptedSecretsClaim: {
+			tag:   "sw_encrypted_secrets",
 			short: "encrypted secrets with non HW-backed keys",
 			long:  "the Attester encrypts all persistently stored secrets, but without using hardware backed keys.",
 		},
 		UnencryptedSecretsClaim: {
+			tag:   "unencrypted_secrets",
 			short: "unencrypted secrets",
 			long:  "There are persistent secrets which are stored unencrypted in an Attester.",
 		},
 		CryptoValidationFailedClaim: {
+			tag:   "crypto_failed",
 			short: "cryptographic validation failed",
 			long:  "Cryptographic validation of the Evidence has failed.",
 		},
@@ -266,66 +318,142 @@ var (
 	// systems used by the Attester.
 	sourcedDataDetails = detailsMap{
 		TrustedSourcesClaim: {
+			tag:   "trusted_sources",
 			short: "from attesters in the affirming tier",
 			long:  `All essential Attester source data objects have been provided by other Attester(s) whose most recent appraisal(s) had both no Trustworthiness Claims of "0" where the current Trustworthiness Claim is "Affirming", as well as no "Warning" or "Contraindicated" Trustworthiness Claims.`,
 		},
 		UntrustedSourcesClaim: {
+			tag:   "untrusted_sources",
 			short: "from unattested sources or attesters in the warning tier",
 			long:  `Attester source data objects come from unattested sources, or attested sources with "Warning" type Trustworthiness Claims`,
 		},
 		ContraindicatedSourcesClaim: {
+			tag:   "contraindicated_sources",
 			short: "from attesters in the contraindicated tier",
 			long:  "Attester source data objects come from contraindicated sources.",
 		},
 		CryptoValidationFailedClaim: {
+			tag:   "crypto_failed",
 			short: "cryptographic validation failed",
 			long:  "Cryptographic validation of the Evidence has failed.",
 		},
 	}
 )
 
-// TrustTier provides the trust tier bucket of the trustworthiness claim
-func (o TrustClaim) TrustTier(color bool) string {
-	const (
-		rst    = `\033[0m`
-		red    = `\033[41m`
-		yellow = `\033[43m`
-		green  = `\033[42m`
-		white  = `\033[47m`
-	)
+func getTrustClaimFromInt(i int) (TrustClaim, error) {
+	if i > 127 || i < -128 {
+		return NoClaim, fmt.Errorf("out of range for TrustClaim: %d", i)
+	}
+	return TrustClaim(i), nil
+}
 
-	var s string
-
-	switch {
-	case o.IsNone():
-		s = "none"
-		if color {
-			s = white + s + rst
-		}
-	case o.IsAffirming():
-		s = "affirming"
-		if color {
-			s = green + s + rst
-		}
-	case o.IsWarning():
-		s = "warning"
-		if color {
-			s = yellow + s + rst
-		}
-	case o.IsContraindicated():
-		s = "contraindicated"
-		if color {
-			s = red + s + rst
-		}
-	default:
-		panic("unreachable")
+func getTrustClaimFromString(s string) (TrustClaim, error) {
+	i, err := strconv.Atoi(s)
+	if err == nil {
+		return getTrustClaimFromInt(i)
 	}
 
-	return s
+	detailsMaps := []detailsMap{
+		configurationDetails,
+		executablesDetails,
+		fileSystemDetails,
+		hardwareDetails,
+		instanceIdentityDetails,
+		noneDetails,
+		runtimeOpaqueDetails,
+		sourcedDataDetails,
+		storageOpaqueDetails,
+	}
+
+	canon := strings.Trim(xstrings.Translate(xstrings.ToSnakeCase(s), ".- ", "_"), " \t")
+
+	for _, dm := range detailsMaps {
+		for claim, deets := range dm {
+			if deets.tag == canon {
+				return claim, nil
+			}
+		}
+	}
+
+	return NoClaim, fmt.Errorf("not a valid TrustClaim value: %q", s)
+}
+
+func ToTrustClaim(v interface{}) (*TrustClaim, error) {
+	var (
+		claim TrustClaim
+		err   error
+	)
+
+	switch t := v.(type) {
+	case TrustClaim:
+		claim = t
+	case *TrustClaim:
+		claim = *t
+	case json.Number:
+		i, e := t.Int64()
+		if e != nil {
+			err = fmt.Errorf("not a valid TrustClaim value: %v: %w", t, err)
+		} else {
+			claim, err = getTrustClaimFromInt(int(i))
+		}
+	case string:
+		claim, err = getTrustClaimFromString(t)
+	case []byte:
+		claim, err = getTrustClaimFromString(string(t))
+	case int:
+		claim, err = getTrustClaimFromInt(t)
+	case int8:
+		claim, err = getTrustClaimFromInt(int(t))
+	case int16:
+		claim, err = getTrustClaimFromInt(int(t))
+	case int32:
+		claim, err = getTrustClaimFromInt(int(t))
+	case int64:
+		claim, err = getTrustClaimFromInt(int(t))
+	case uint8:
+		claim, err = getTrustClaimFromInt(int(t))
+	case uint16:
+		claim, err = getTrustClaimFromInt(int(t))
+	case uint32:
+		claim, err = getTrustClaimFromInt(int(t))
+	case uint:
+		if t > math.MaxInt64 {
+			err = fmt.Errorf("not a valid TrustClaim value: %d", t)
+
+		} else {
+			claim, err = getTrustClaimFromInt(int(t))
+		}
+	case uint64:
+		if t > math.MaxInt64 {
+			err = fmt.Errorf("not a valid TrustClaim value: %d", t)
+
+		} else {
+			claim, err = getTrustClaimFromInt(int(t))
+		}
+	case float64:
+		claim, err = getTrustClaimFromInt(int(t))
+	}
+
+	return &claim, err
+}
+
+// TrustTier provides the trust tier bucket of the trustworthiness claim
+func (o TrustClaim) GetTier() TrustTier {
+	if o.IsNone() {
+		return TrustTierNone
+	} else if o.IsAffirming() {
+		return TrustTierAffirming
+	} else if o.IsWarning() {
+		return TrustTierWarning
+	} else if o.IsContraindicated() {
+		return TrustTierContraindicated
+	} else {
+		panic(o) // should never get here -- above conditions exhaust int8 range
+	}
 }
 
 func (o TrustClaim) trustTierTag(color bool) string {
-	return "[" + o.TrustTier(color) + "]"
+	return "[" + o.GetTier().Format(color) + "]"
 }
 
 func (o TrustClaim) IsNone() bool {

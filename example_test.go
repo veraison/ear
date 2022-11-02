@@ -16,12 +16,12 @@ func Example_encode_minimalist() {
 		Profile:           &testProfile,
 	}
 
-	j, _ := ar.ToJSON()
+	j, _ := ar.MarshalJSON()
 
 	fmt.Println(string(j))
 
 	// Output:
-	// {"ear.status":"affirming","eat_profile":"tag:github.com,2022:veraison/ear","iat":1666091373,"ear.appraisal-policy-id":"https://veraison.example/policy/1/60a0068d"}
+	// {"ear.appraisal-policy-id":"https://veraison.example/policy/1/60a0068d","ear.status":"affirming","eat_profile":"tag:github.com,2022:veraison/ear","iat":1666091373}
 }
 
 func Example_encode_hefty() {
@@ -45,23 +45,23 @@ func Example_encode_hefty() {
 		Profile:           &testProfile,
 	}
 
-	j, _ := ar.ToJSON()
+	j, _ := ar.MarshalJSON()
 
 	fmt.Println(string(j))
 
 	// Output:
-	// {"ear.status":"affirming","eat_profile":"tag:github.com,2022:veraison/ear","ear.trustworthiness-vector":{"instance-identity":2,"configuration":2,"executables":3,"file-system":2,"hardware":2,"runtime-opaque":2,"storage-opaque":2,"sourced-data":2},"ear.raw-evidence":"3q2+7w==","iat":1666091373,"ear.appraisal-policy-id":"https://veraison.example/policy/1/60a0068d"}
+	// {"ear.appraisal-policy-id":"https://veraison.example/policy/1/60a0068d","ear.raw-evidence":"3q2+7w==","ear.status":"affirming","ear.trustworthiness-vector":{"configuration":2,"executables":3,"file-system":2,"hardware":2,"instance-identity":2,"runtime-opaque":2,"sourced-data":2,"storage-opaque":2},"eat_profile":"tag:github.com,2022:veraison/ear","iat":1666091373}
 }
 
 func Example_encode_veraison_extensions() {
 	ar := testAttestationResultsWithVeraisonExtns
 
-	j, _ := ar.ToJSON()
+	j, _ := ar.MarshalJSON()
 
 	fmt.Println(string(j))
 
 	// Output:
-	// {"ear.status":"affirming","eat_profile":"tag:github.com,2022:veraison/ear","iat":1666091373,"ear.appraisal-policy-id":"https://veraison.example/policy/1/60a0068d","ear.veraison.processed-evidence":{"k1":"v1","k2":"v2"},"ear.veraison.verifier-added-claims":{"bar":"baz","foo":"bar"}}
+	// {"ear.appraisal-policy-id":"https://veraison.example/policy/1/60a0068d","ear.status":"affirming","ear.veraison.processed-evidence":{"k1":"v1","k2":"v2"},"ear.veraison.verifier-added-claims":{"bar":"baz","foo":"bar"},"eat_profile":"tag:github.com,2022:veraison/ear","iat":1666091373}
 }
 
 func Example_decode_veraison_extensions() {
@@ -80,9 +80,9 @@ func Example_decode_veraison_extensions() {
 		"eat_profile": "tag:github.com,2022:veraison/ear"
 	}`
 	var ar AttestationResult
-	_ = ar.FromJSON([]byte(j))
+	_ = ar.UnmarshalJSON([]byte(j))
 
-	fmt.Println(StatusTierToString[*ar.Status])
+	fmt.Println(TrustTierToString[*ar.Status])
 	fmt.Println((*ar.VeraisonProcessedEvidence)["k1"])
 	fmt.Println((*ar.VeraisonVerifierAddedClaims)["bar"])
 
@@ -107,7 +107,7 @@ func Example_colors() {
 	}`
 
 	var ar AttestationResult
-	_ = ar.FromJSON([]byte(j))
+	_ = ar.UnmarshalJSON([]byte(j))
 
 	short, color := true, true
 

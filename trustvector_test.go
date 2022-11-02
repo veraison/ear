@@ -70,3 +70,68 @@ Sourced Data [affirming]: unknown code-point -2
 	short = false
 	assert.Equal(t, expectedLong, tv.Report(short, color))
 }
+
+func TestToTrustVector(t *testing.T) {
+	tv, err := ToTrustVector(map[string]interface{}{
+		"instance-identity": TrustworthyInstanceClaim,
+		"configuration":     2,
+		"executables":       2,
+		"file-system":       "approved_fs",
+		"hardware":          32,
+		"runtime-opaque":    -7,
+		"storage-opaque":    32,
+		"sourced-data":      NoClaim,
+	})
+	assert.NoError(t, err)
+	assert.Equal(t, TrustworthyInstanceClaim, tv.InstanceIdentity)
+	assert.Equal(t, UnsafeHardwareClaim, tv.Hardware)
+	assert.Equal(t, ApprovedFilesClaim, tv.FileSystem)
+	assert.Equal(t, TrustClaim(-7), tv.RuntimeOpaque)
+	assert.Equal(t, NoClaim, tv.SourcedData)
+
+	tv, err = ToTrustVector(map[string]string{
+		"runtime-opaque": "encrypted_rt",
+		"hardware":       "unsafe_hw",
+		"file-system":    "approved_fs",
+	})
+	assert.NoError(t, err)
+	assert.Equal(t, EncryptedMemoryRuntimeClaim, tv.RuntimeOpaque)
+	assert.Equal(t, UnsafeHardwareClaim, tv.Hardware)
+	assert.Equal(t, ApprovedFilesClaim, tv.FileSystem)
+	assert.Equal(t, NoClaim, tv.Configuration)
+
+	tv2 := TrustVector{
+		InstanceIdentity: 2,
+		Configuration:    2,
+		Executables:      2,
+	}
+
+	tv, err = ToTrustVector(tv2)
+	assert.NoError(t, err)
+	assert.Equal(t, TrustworthyInstanceClaim, tv.InstanceIdentity)
+	assert.Equal(t, ApprovedConfigClaim, tv.Configuration)
+	assert.Equal(t, ApprovedRuntimeClaim, tv.Executables)
+
+	tv, err = ToTrustVector(&tv2)
+	assert.NoError(t, err)
+	assert.Equal(t, TrustworthyInstanceClaim, tv.InstanceIdentity)
+	assert.Equal(t, ApprovedConfigClaim, tv.Configuration)
+	assert.Equal(t, ApprovedRuntimeClaim, tv.Executables)
+
+	_, err = ToTrustVector(42)
+	assert.ErrorContains(t, err, "invalid value for TrustVector: 42")
+
+	_, err = ToTrustVector(map[string]interface{}{
+		"instance-identity": TrustworthyInstanceClaim,
+		"hardware":          "bad claim",
+		"file-system":       "approved_fs",
+	})
+	assert.ErrorContains(t, err, `bad value for "hardware": not a valid TrustClaim value: "bad claim"`)
+}
+
+func TestTrustVector_SetAll(t *testing.T) {
+	var tv TrustVector
+
+	tv.SetAll(VerifierMalfunctionClaim)
+	assert.Equal(t, VerifierMalfunctionClaim, tv.Configuration)
+}

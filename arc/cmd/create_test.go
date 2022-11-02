@@ -89,10 +89,10 @@ func Test_CreateCmd_skey_not_ok_for_signing(t *testing.T) {
 	}
 	cmd.SetArgs(args)
 
-	expectedErr := `signing EAR: failed to generate signature for signer #0 (alg=ES256): failed to sign payload: failed to retrieve ecdsa.PrivateKey out of *jwk.ecdsaPublicKey: failed to produce ecdsa.PrivateKey from *jwk.ecdsaPublicKey: argument to AssignIfCompatible() must be compatible with *ecdsa.PublicKey (was *ecdsa.PrivateKey)`
+	expectedErr := `failed to generate signature for signer #0 (alg=ES256): failed to sign payload: failed to retrieve ecdsa.PrivateKey out of *jwk.ecdsaPublicKey: failed to produce ecdsa.PrivateKey from *jwk.ecdsaPublicKey: argument to AssignIfCompatible() must be compatible with *ecdsa.PublicKey (was *ecdsa.PrivateKey)`
 
 	err := cmd.Execute()
-	assert.EqualError(t, err, expectedErr)
+	assert.ErrorContains(t, err, expectedErr)
 }
 
 func Test_CreateCmd_input_file_not_found(t *testing.T) {
@@ -131,7 +131,7 @@ func Test_CreateCmd_input_file_bad_format(t *testing.T) {
 	}
 	cmd.SetArgs(args)
 
-	expectedErr := `decoding EAR claims-set from "ear-claims.json": missing mandatory 'eat_profile', 'status', 'iat'`
+	expectedErr := `decoding EAR claims-set from "ear-claims.json": missing mandatory 'ear.status', 'eat_profile', 'iat'`
 
 	err := cmd.Execute()
 	assert.EqualError(t, err, expectedErr)
@@ -154,10 +154,10 @@ func Test_CreateCmd_unknown_signing_alg(t *testing.T) {
 	}
 	cmd.SetArgs(args)
 
-	expectedErr := `signing EAR: jws.Sign: expected algorithm to be of type jwa.SignatureAlgorithm but got ("XYZ", jwa.InvalidKeyAlgorithm)`
+	expectedErr := `expected algorithm to be of type jwa.SignatureAlgorithm but got ("XYZ", jwa.InvalidKeyAlgorithm)`
 
 	err := cmd.Execute()
-	assert.EqualError(t, err, expectedErr)
+	assert.ErrorContains(t, err, expectedErr)
 }
 
 func Test_CreateCmd_ok(t *testing.T) {

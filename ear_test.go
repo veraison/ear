@@ -5,6 +5,7 @@ package ear
 
 import (
 	"fmt"
+	"math"
 	"testing"
 
 	"github.com/lestrrat-go/jwx/v2/jwa"
@@ -163,6 +164,52 @@ func TestTrustTier_UnmarshalJSON_fail(t *testing.T) {
 	}
 }
 
+func TestTrustTier_ToTrustTier(t *testing.T) {
+	var tt *TrustTier
+	var err error
+
+	tt, err = ToTrustTier(2)
+	require.NoError(t, err)
+	assert.Equal(t, TrustTierAffirming, *tt)
+
+	tt, err = ToTrustTier(2.5)
+	require.NoError(t, err)
+	assert.Equal(t, TrustTierAffirming, *tt)
+
+	_, err = ToTrustTier(3.1)
+	assert.ErrorContains(t, err, "not a valid TrustTier value: 3.100000 (3)")
+
+	_, err = ToTrustTier(math.MaxFloat32)
+	assert.ErrorContains(t, err, "not a valid TrustTier value: 34028234")
+
+	tt, err = ToTrustTier(int8(32))
+	require.NoError(t, err)
+	assert.Equal(t, TrustTierWarning, *tt)
+
+	_, err = ToTrustTier(uint64(math.MaxUint64))
+	assert.ErrorContains(t, err,
+		fmt.Sprintf("not a valid TrustTier value: %d", uint64(math.MaxUint64)))
+
+	tt, err = ToTrustTier("affirming")
+	require.NoError(t, err)
+	assert.Equal(t, TrustTierAffirming, *tt)
+
+	tt, err = ToTrustTier("96")
+	require.NoError(t, err)
+	assert.Equal(t, TrustTierContraindicated, *tt)
+
+	tt, err = ToTrustTier([]byte{0x33, 0x32}) // "32"
+	require.NoError(t, err)
+	assert.Equal(t, TrustTierWarning, *tt)
+
+	_, err = ToTrustTier("totally safe")
+	assert.ErrorContains(t, err, `not a valid TrustTier name: "totally safe"`)
+
+	tt, err = ToTrustTier(UnrecognizedHardwareClaim)
+	require.NoError(t, err)
+	assert.Equal(t, TrustTierContraindicated, *tt)
+}
+
 func TestToJSON_fail(t *testing.T) {
 	tvs := []struct {
 		ar       AttestationResult
@@ -199,12 +246,12 @@ func TestToJSON_fail(t *testing.T) {
 		}}
 
 	for i, tv := range tvs {
-		_, err := tv.ar.ToJSON()
+		_, err := tv.ar.MarshalJSON()
 		assert.EqualError(t, err, tv.expected, "failed test vector at index %d", i)
 	}
 }
 
-func TestFromJSON_fail(t *testing.T) {
+func TestUnmarshalJSON_fail(t *testing.T) {
 	tvs := []struct {
 		ar       string
 		expected string
@@ -215,18 +262,18 @@ func TestFromJSON_fail(t *testing.T) {
 		},
 		{
 			ar:       `[]`,
-			expected: `json: cannot unmarshal array into Go value of type ear.AttestationResult`,
+			expected: `json: cannot unmarshal array into Go value of type map[string]interface {}`,
 		},
 		{
 			ar:       `{}`,
-			expected: `missing mandatory 'eat_profile', 'status', 'iat'`,
+			expected: `missing mandatory 'ear.status', 'eat_profile', 'iat'`,
 		},
 	}
 
 	for i, tv := range tvs {
 		var ar AttestationResult
 
-		err := ar.FromJSON([]byte(tv.ar))
+		err := ar.UnmarshalJSON([]byte(tv.ar))
 		assert.EqualError(t, err, tv.expected, "failed test vector at index %d", i)
 	}
 }
@@ -235,20 +282,22 @@ func TestVerify_pass(t *testing.T) {
 	tvs := []string{
 		// ok
 		`eyJhbGciOiJFUzI1NiJ9.eyJlYXIuc3RhdHVzIjoiYWZmaXJtaW5nIiwiZWF0X3Byb2ZpbGUiOiJ0YWc6Z2l0aHViLmNvbSwyMDIyOnZlcmFpc29uL2VhciIsImlhdCI6MTY2NjA5MTM3MywiZWFyLmFwcHJhaXNhbC1wb2xpY3ktaWQiOiJodHRwczovL3ZlcmFpc29uLmV4YW1wbGUvcG9saWN5LzEvNjBhMDA2OGQiLCJlYXIudmVyYWlzb24ucHJvY2Vzc2VkLWV2aWRlbmNlIjp7ImsxIjoidjEiLCJrMiI6InYyIn0sImVhci52ZXJhaXNvbi52ZXJpZmllci1hZGRlZC1jbGFpbXMiOnsiYmFyIjoiYmF6IiwiZm9vIjoiYmFyIn19.P0yB2s_DmCQ7DSX2pOnyKbNMVCfTrqkxohWrDxwBdKqOMrrXoCYJmWlpgwtHV-AA56NXMRObeZk9zT_0TlPgpQ`,
-		// ok with trailing stuff (ignored)
-		`eyJhbGciOiJFUzI1NiJ9.eyJlYXIuc3RhdHVzIjoiYWZmaXJtaW5nIiwiZWF0X3Byb2ZpbGUiOiJ0YWc6Z2l0aHViLmNvbSwyMDIyOnZlcmFpc29uL2VhciIsImlhdCI6MTY2NjA5MTM3MywiZWFyLmFwcHJhaXNhbC1wb2xpY3ktaWQiOiJodHRwczovL3ZlcmFpc29uLmV4YW1wbGUvcG9saWN5LzEvNjBhMDA2OGQiLCJlYXIudmVyYWlzb24ucHJvY2Vzc2VkLWV2aWRlbmNlIjp7ImsxIjoidjEiLCJrMiI6InYyIn0sImVhci52ZXJhaXNvbi52ZXJpZmllci1hZGRlZC1jbGFpbXMiOnsiYmFyIjoiYmF6IiwiZm9vIjoiYmFyIn19.P0yB2s_DmCQ7DSX2pOnyKbNMVCfTrqkxohWrDxwBdKqOMrrXoCYJmWlpgwtHV-AA56NXMRObeZk9zT_0TlPgpQ.trailing-rubbish-is-ignored`,
+		// trailing stuff means the format is no longer valid.
+		`eyJhbGciOiJFUzI1NiJ9.eyJlYXIuc3RhdHVzIjoiYWZmaXJtaW5nIiwiZWF0X3Byb2ZpbGUiOiJ0YWc6Z2l0aHViLmNvbSwyMDIyOnZlcmFpc29uL2VhciIsImlhdCI6MTY2NjA5MTM3MywiZWFyLmFwcHJhaXNhbC1wb2xpY3ktaWQiOiJodHRwczovL3ZlcmFpc29uLmV4YW1wbGUvcG9saWN5LzEvNjBhMDA2OGQiLCJlYXIudmVyYWlzb24ucHJvY2Vzc2VkLWV2aWRlbmNlIjp7ImsxIjoidjEiLCJrMiI6InYyIn0sImVhci52ZXJhaXNvbi52ZXJpZmllci1hZGRlZC1jbGFpbXMiOnsiYmFyIjoiYmF6IiwiZm9vIjoiYmFyIn19.P0yB2s_DmCQ7DSX2pOnyKbNMVCfTrqkxohWrDxwBdKqOMrrXoCYJmWlpgwtHV-AA56NXMRObeZk9zT_0TlPgpQ.trailing-rubbish`,
 	}
 
 	k, err := jwk.ParseKey([]byte(testECDSAPublicKey))
 	require.NoError(t, err)
 
-	for _, tv := range tvs {
-		var ar AttestationResult
+	var ar AttestationResult
 
-		err := ar.Verify([]byte(tv), jwa.ES256, k)
-		assert.NoError(t, err)
-		assert.Equal(t, testAttestationResultsWithVeraisonExtns, ar)
-	}
+	err = ar.Verify([]byte(tvs[0]), jwa.ES256, k)
+	assert.NoError(t, err)
+	assert.Equal(t, testAttestationResultsWithVeraisonExtns, ar)
+
+	var ar2 AttestationResult
+	err = ar2.Verify([]byte(tvs[1]), jwa.ES256, k)
+	assert.ErrorContains(t, err, "failed to parse token: invalid character 'e' looking for beginning of value")
 }
 
 func TestVerify_fail(t *testing.T) {
@@ -274,7 +323,7 @@ func TestVerify_fail(t *testing.T) {
 		{
 			// empty attestation results
 			token:    `eyJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCJ9.e30.9Tvx3hVBNfkmVXTndrVfv9ZeNJgX59w0JpR2vyjUn8lGxL8VT7OggUeYSYFnxrouSi2TusNh61z8rLdOqxGA-A`,
-			expected: `failed parsing JWT payload: missing mandatory 'eat_profile', 'status', 'iat'`,
+			expected: `missing mandatory 'ear.status', 'eat_profile'`,
 		},
 	}
 
@@ -285,7 +334,7 @@ func TestVerify_fail(t *testing.T) {
 		var ar AttestationResult
 
 		err := ar.Verify([]byte(tv.token), jwa.ES256, k)
-		assert.EqualError(t, err, tv.expected, "failed test vector at index %d", i)
+		assert.ErrorContains(t, err, tv.expected, "failed test vector at index %d", i)
 	}
 }
 
@@ -340,4 +389,92 @@ func TestRoundTrip_tampering(t *testing.T) {
 
 	err = actual.Verify(token, jwa.ES256, vfyK)
 	assert.ErrorContains(t, err, "failed verifying JWT message")
+}
+
+func TestUpdateStatusFromTrustVector(t *testing.T) {
+	ar := NewAttestationResult()
+
+	ar.UpdateStatusFromTrustVector()
+	assert.Equal(t, TrustTierNone, *ar.Status)
+
+	ar.TrustVector.Configuration = ApprovedConfigClaim
+	ar.UpdateStatusFromTrustVector()
+	assert.Equal(t, TrustTierAffirming, *ar.Status)
+
+	*ar.Status = TrustTierWarning
+	ar.UpdateStatusFromTrustVector()
+	assert.Equal(t, TrustTierWarning, *ar.Status)
+
+	ar.TrustVector.Configuration = UnsupportableConfigClaim
+	ar.UpdateStatusFromTrustVector()
+	assert.Equal(t, TrustTierContraindicated, *ar.Status)
+}
+
+func TestAsMap(t *testing.T) {
+	policyID := "foo"
+
+	ar := NewAttestationResult()
+	status := NewTrustTier(TrustTierAffirming)
+	ar.Status = status
+	ar.TrustVector.Executables = ApprovedRuntimeClaim
+	ar.AppraisalPolicyID = &policyID
+
+	expected := map[string]interface{}{
+		"ear.status": *status,
+		"ear.trustworthiness-vector": map[string]TrustClaim{
+			"instance-identity": NoClaim,
+			"configuration":     NoClaim,
+			"executables":       ApprovedRuntimeClaim,
+			"file-system":       NoClaim,
+			"hardware":          NoClaim,
+			"runtime-opaque":    NoClaim,
+			"storage-opaque":    NoClaim,
+			"sourced-data":      NoClaim,
+		},
+		"ear.appraisal-policy-id": "foo",
+		"eat_profile":             EatProfile,
+	}
+
+	m := ar.AsMap()
+	for _, field := range []string{
+		"ear.status",
+		"ear.trustworthiness-vector",
+		"eat_profile",
+		"ear.appraisal-policy-id",
+	} {
+		assert.Equal(t, expected[field], m[field])
+	}
+}
+
+func Test_populateFromMap(t *testing.T) {
+	var ar AttestationResult
+	m := map[string]interface{}{
+		"ear.status": 2,
+		"ear.trustworthiness-vector": map[string]interface{}{
+			"instance-identity": 0,
+			"configuration":     0,
+			"executables":       2,
+			"file-system":       0,
+			"hardware":          0,
+			"runtime-opaque":    0,
+			"storage-opaque":    0,
+			"sourced-data":      0,
+		},
+		"ear.raw-evidence":        "SSBkaWRuJ3QgZG8gaXQ=",
+		"ear.appraisal-policy-id": "foo",
+		"iat":                     1234,
+		"eat_profile":             EatProfile,
+	}
+
+	err := ar.populateFromMap(m)
+	assert.NoError(t, err)
+	assert.Equal(t, TrustTierAffirming, *ar.Status)
+	assert.Equal(t, EatProfile, *ar.Profile)
+}
+
+func TestTrustTier_ColorString(t *testing.T) {
+	assert.Equal(t, "\\033[47mnone\\033[0m", TrustTierNone.ColorString())
+	assert.Equal(t, "\\033[42maffirming\\033[0m", TrustTierAffirming.ColorString())
+	assert.Equal(t, "\\033[43mwarning\\033[0m", TrustTierWarning.ColorString())
+	assert.Equal(t, "\\033[41mcontraindicated\\033[0m", TrustTierContraindicated.ColorString())
 }
