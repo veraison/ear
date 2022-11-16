@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 package main
 
-import "github.com/veraison/ar4si/arc/cmd"
+import "github.com/veraison/ear/arc/cmd"
 
 func main() {
 	cmd.Execute()

@@ -1,7 +1,7 @@
 // Copyright 2022 Contributors to the Veraison project.
 // SPDX-License-Identifier: Apache-2.0
 
-package ar4si
+package ear
 
 import (
 	"encoding/json"
@@ -14,7 +14,7 @@ import (
 )
 
 // EatProfile is the EAT profile implemented by this package
-const EatProfile = "tag:github.com/veraison/ar4si,2022-10-17"
+const EatProfile = "tag:github.com,2022:veraison/ear"
 
 // TrustTier represents the overall state of an evidence appraisal.
 //

@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 /*
-Package ar4si implements an EAT attestation result format based on the
+Package ear implements an EAT attestation result format based on the
 information model defined in
 https://datatracker.ietf.org/doc/draft-ietf-rats-ar4si/
 
@@ -101,4 +101,4 @@ printout, as well as using colors when displaying the claims' values.
 
 	fmt.Print(ar.TrustVector.Report(short, color))
 */
-package ar4si
+package ear

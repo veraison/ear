@@ -3,8 +3,8 @@
 export GO111MODULE := on
 export SHELL := /bin/bash
 
-GOPKG := github.com/veraison/ar4si
-GOPKG += github.com/veraison/ar4si/arc/cmd
+GOPKG := github.com/veraison/ear
+GOPKG += github.com/veraison/ear/arc/cmd
 
 GOLINT ?= golangci-lint
 

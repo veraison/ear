@@ -1,7 +1,7 @@
 // Copyright 2022 Contributors to the Veraison project.
 // SPDX-License-Identifier: Apache-2.0
 
-package ar4si
+package ear
 
 // TrustVector is an implementation of the Trustworthiness Vector (and Claims)
 // described in §2.3 of draft-ietf-rats-ar4si-03, using a JSON serialization.
