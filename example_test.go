@@ -1,7 +1,7 @@
 // Copyright 2022 Contributors to the Veraison project.
 // SPDX-License-Identifier: Apache-2.0
 
-package ar4si
+package ear
 
 import (
 	"fmt"
@@ -21,7 +21,7 @@ func Example_encode_minimalist() {
 	fmt.Println(string(j))
 
 	// Output:
-	// {"ear.status":"affirming","eat_profile":"tag:github.com/veraison/ar4si,2022-10-17","iat":1666091373,"ear.appraisal-policy-id":"https://veraison.example/policy/1/60a0068d"}
+	// {"ear.status":"affirming","eat_profile":"tag:github.com,2022:veraison/ear","iat":1666091373,"ear.appraisal-policy-id":"https://veraison.example/policy/1/60a0068d"}
 }
 
 func Example_encode_hefty() {
@@ -50,7 +50,7 @@ func Example_encode_hefty() {
 	fmt.Println(string(j))
 
 	// Output:
-	// {"ear.status":"affirming","eat_profile":"tag:github.com/veraison/ar4si,2022-10-17","ear.trustworthiness-vector":{"instance-identity":2,"configuration":2,"executables":3,"file-system":2,"hardware":2,"runtime-opaque":2,"storage-opaque":2,"sourced-data":2},"ear.raw-evidence":"3q2+7w==","iat":1666091373,"ear.appraisal-policy-id":"https://veraison.example/policy/1/60a0068d"}
+	// {"ear.status":"affirming","eat_profile":"tag:github.com,2022:veraison/ear","ear.trustworthiness-vector":{"instance-identity":2,"configuration":2,"executables":3,"file-system":2,"hardware":2,"runtime-opaque":2,"storage-opaque":2,"sourced-data":2},"ear.raw-evidence":"3q2+7w==","iat":1666091373,"ear.appraisal-policy-id":"https://veraison.example/policy/1/60a0068d"}
 }
 
 func Example_encode_veraison_extensions() {
@@ -61,7 +61,7 @@ func Example_encode_veraison_extensions() {
 	fmt.Println(string(j))
 
 	// Output:
-	// {"ear.status":"affirming","eat_profile":"tag:github.com/veraison/ar4si,2022-10-17","iat":1666091373,"ear.appraisal-policy-id":"https://veraison.example/policy/1/60a0068d","ear.veraison.processed-evidence":{"k1":"v1","k2":"v2"},"ear.veraison.verifier-added-claims":{"bar":"baz","foo":"bar"}}
+	// {"ear.status":"affirming","eat_profile":"tag:github.com,2022:veraison/ear","iat":1666091373,"ear.appraisal-policy-id":"https://veraison.example/policy/1/60a0068d","ear.veraison.processed-evidence":{"k1":"v1","k2":"v2"},"ear.veraison.verifier-added-claims":{"bar":"baz","foo":"bar"}}
 }
 
 func Example_decode_veraison_extensions() {
@@ -77,7 +77,7 @@ func Example_decode_veraison_extensions() {
 			"bar": "baz",
 			"foo": "bar"
 		},
-		"eat_profile": "tag:github.com/veraison/ar4si,2022-10-17"
+		"eat_profile": "tag:github.com,2022:veraison/ear"
 	}`
 	var ar AttestationResult
 	_ = ar.FromJSON([]byte(j))
@@ -103,7 +103,7 @@ func Example_colors() {
 			"executables": 32,
 			"hardware": 2
 		},
-		"eat_profile": "tag:github.com/veraison/ar4si,2022-10-17"
+		"eat_profile": "tag:github.com,2022:veraison/ear"
 	}`
 
 	var ar AttestationResult

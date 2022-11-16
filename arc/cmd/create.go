@@ -10,7 +10,7 @@ import (
 	"github.com/lestrrat-go/jwx/v2/jwk"
 	"github.com/spf13/afero"
 	"github.com/spf13/cobra"
-	"github.com/veraison/ar4si"
+	"github.com/veraison/ear"
 )
 
 var (
@@ -35,10 +35,10 @@ the key in the default key file "skey.json", and save the result to "my-ear.jwt"
 	`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			var (
-				claimsSet, sKey, ear []byte
-				sigK                 jwk.Key
-				ar                   ar4si.AttestationResult
-				err                  error
+				claimsSet, sKey, arBytes []byte
+				sigK                     jwk.Key
+				ar                       ear.AttestationResult
+				err                      error
 			)
 
 			if err = checkCreateArgs(args); err != nil {
@@ -64,12 +64,12 @@ the key in the default key file "skey.json", and save the result to "my-ear.jwt"
 				return fmt.Errorf("parsing signing key from %q: %w", createSKey, err)
 			}
 
-			if ear, err = ar.Sign(jwa.KeyAlgorithmFrom(createAlg), sigK); err != nil {
+			if arBytes, err = ar.Sign(jwa.KeyAlgorithmFrom(createAlg), sigK); err != nil {
 				return fmt.Errorf("signing EAR: %w", err)
 			}
 
 			// save to createOutput
-			if err = afero.WriteFile(fs, createOutput, ear, 0644); err != nil {
+			if err = afero.WriteFile(fs, createOutput, arBytes, 0644); err != nil {
 				return fmt.Errorf("saving signer EAR to file %q: %w", createOutput, err)
 			}
 

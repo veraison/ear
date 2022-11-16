@@ -1,6 +1,6 @@
 {
     "ear.status": "affirming",
-    "eat_profile": "tag:github.com/veraison/ar4si,2022-10-17",
+    "eat_profile": "tag:github.com,2022:veraison/ear",
     "ear.trustworthiness-vector": {
         "instance-identity": 2,
         "configuration": 2,

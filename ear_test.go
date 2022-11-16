@@ -1,7 +1,7 @@
 // Copyright 2022 Contributors to the Veraison project.
 // SPDX-License-Identifier: Apache-2.0
 
-package ar4si
+package ear
 
 import (
 	"fmt"
@@ -215,7 +215,7 @@ func TestFromJSON_fail(t *testing.T) {
 		},
 		{
 			ar:       `[]`,
-			expected: `json: cannot unmarshal array into Go value of type ar4si.AttestationResult`,
+			expected: `json: cannot unmarshal array into Go value of type ear.AttestationResult`,
 		},
 		{
 			ar:       `{}`,
@@ -234,9 +234,9 @@ func TestFromJSON_fail(t *testing.T) {
 func TestVerify_pass(t *testing.T) {
 	tvs := []string{
 		// ok
-		`eyJhbGciOiJFUzI1NiJ9.eyJlYXIuc3RhdHVzIjoiYWZmaXJtaW5nIiwiZWF0X3Byb2ZpbGUiOiJ0YWc6Z2l0aHViLmNvbS92ZXJhaXNvbi9hcjRzaSwyMDIyLTEwLTE3IiwiaWF0IjoxNjY2MDkxMzczLCJlYXIuYXBwcmFpc2FsLXBvbGljeS1pZCI6Imh0dHBzOi8vdmVyYWlzb24uZXhhbXBsZS9wb2xpY3kvMS82MGEwMDY4ZCIsImVhci52ZXJhaXNvbi5wcm9jZXNzZWQtZXZpZGVuY2UiOnsiazEiOiJ2MSIsImsyIjoidjIifSwiZWFyLnZlcmFpc29uLnZlcmlmaWVyLWFkZGVkLWNsYWltcyI6eyJiYXIiOiJiYXoiLCJmb28iOiJiYXIifX0.horFZfZW49Sm9-tNU1A-W_qp9275B55idoDIe8zhHXqKizjodtXQh8FRU9B-TplM37lk38MomNvt1z3d8QaDjg`,
+		`eyJhbGciOiJFUzI1NiJ9.eyJlYXIuc3RhdHVzIjoiYWZmaXJtaW5nIiwiZWF0X3Byb2ZpbGUiOiJ0YWc6Z2l0aHViLmNvbSwyMDIyOnZlcmFpc29uL2VhciIsImlhdCI6MTY2NjA5MTM3MywiZWFyLmFwcHJhaXNhbC1wb2xpY3ktaWQiOiJodHRwczovL3ZlcmFpc29uLmV4YW1wbGUvcG9saWN5LzEvNjBhMDA2OGQiLCJlYXIudmVyYWlzb24ucHJvY2Vzc2VkLWV2aWRlbmNlIjp7ImsxIjoidjEiLCJrMiI6InYyIn0sImVhci52ZXJhaXNvbi52ZXJpZmllci1hZGRlZC1jbGFpbXMiOnsiYmFyIjoiYmF6IiwiZm9vIjoiYmFyIn19.P0yB2s_DmCQ7DSX2pOnyKbNMVCfTrqkxohWrDxwBdKqOMrrXoCYJmWlpgwtHV-AA56NXMRObeZk9zT_0TlPgpQ`,
 		// ok with trailing stuff (ignored)
-		`eyJhbGciOiJFUzI1NiJ9.eyJlYXIuc3RhdHVzIjoiYWZmaXJtaW5nIiwiZWF0X3Byb2ZpbGUiOiJ0YWc6Z2l0aHViLmNvbS92ZXJhaXNvbi9hcjRzaSwyMDIyLTEwLTE3IiwiaWF0IjoxNjY2MDkxMzczLCJlYXIuYXBwcmFpc2FsLXBvbGljeS1pZCI6Imh0dHBzOi8vdmVyYWlzb24uZXhhbXBsZS9wb2xpY3kvMS82MGEwMDY4ZCIsImVhci52ZXJhaXNvbi5wcm9jZXNzZWQtZXZpZGVuY2UiOnsiazEiOiJ2MSIsImsyIjoidjIifSwiZWFyLnZlcmFpc29uLnZlcmlmaWVyLWFkZGVkLWNsYWltcyI6eyJiYXIiOiJiYXoiLCJmb28iOiJiYXIifX0.horFZfZW49Sm9-tNU1A-W_qp9275B55idoDIe8zhHXqKizjodtXQh8FRU9B-TplM37lk38MomNvt1z3d8QaDjg.trailing-rubbish-is-ignored`,
+		`eyJhbGciOiJFUzI1NiJ9.eyJlYXIuc3RhdHVzIjoiYWZmaXJtaW5nIiwiZWF0X3Byb2ZpbGUiOiJ0YWc6Z2l0aHViLmNvbSwyMDIyOnZlcmFpc29uL2VhciIsImlhdCI6MTY2NjA5MTM3MywiZWFyLmFwcHJhaXNhbC1wb2xpY3ktaWQiOiJodHRwczovL3ZlcmFpc29uLmV4YW1wbGUvcG9saWN5LzEvNjBhMDA2OGQiLCJlYXIudmVyYWlzb24ucHJvY2Vzc2VkLWV2aWRlbmNlIjp7ImsxIjoidjEiLCJrMiI6InYyIn0sImVhci52ZXJhaXNvbi52ZXJpZmllci1hZGRlZC1jbGFpbXMiOnsiYmFyIjoiYmF6IiwiZm9vIjoiYmFyIn19.P0yB2s_DmCQ7DSX2pOnyKbNMVCfTrqkxohWrDxwBdKqOMrrXoCYJmWlpgwtHV-AA56NXMRObeZk9zT_0TlPgpQ.trailing-rubbish-is-ignored`,
 	}
 
 	k, err := jwk.ParseKey([]byte(testECDSAPublicKey))

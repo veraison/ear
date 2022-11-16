@@ -10,7 +10,7 @@ import (
 	"github.com/lestrrat-go/jwx/v2/jwk"
 	"github.com/spf13/afero"
 	"github.com/spf13/cobra"
-	"github.com/veraison/ar4si"
+	"github.com/veraison/ear"
 )
 
 var (
@@ -37,10 +37,10 @@ embedded EAR claims-set and present a report of the trustworthiness vector.
 	`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			var (
-				claimsSet, pKey, ear []byte
-				vfyK                 jwk.Key
-				ar                   ar4si.AttestationResult
-				err                  error
+				claimsSet, pKey, arBytes []byte
+				vfyK                     jwk.Key
+				ar                       ear.AttestationResult
+				err                      error
 			)
 
 			if err = checkVerifyArgs(args); err != nil {
@@ -49,7 +49,7 @@ embedded EAR claims-set and present a report of the trustworthiness vector.
 
 			verifyInput = args[0]
 
-			if ear, err = afero.ReadFile(fs, verifyInput); err != nil {
+			if arBytes, err = afero.ReadFile(fs, verifyInput); err != nil {
 				return fmt.Errorf("loading signed EAR from %q: %w", verifyInput, err)
 			}
 
@@ -62,7 +62,7 @@ embedded EAR claims-set and present a report of the trustworthiness vector.
 				return fmt.Errorf("parsing verification key from %q: %w", verifyPKey, err)
 			}
 
-			if err = ar.Verify(ear, jwa.KeyAlgorithmFrom(verifyAlg), vfyK); err != nil {
+			if err = ar.Verify(arBytes, jwa.KeyAlgorithmFrom(verifyAlg), vfyK); err != nil {
 				return fmt.Errorf("verifying signed EAR from %s: %w", verifyInput, err)
 			}
 
