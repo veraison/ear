@@ -1,4 +1,4 @@
-module github.com/veraison/ar4si
+module github.com/veraison/ear
 
 go 1.18
 
