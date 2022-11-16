@@ -181,7 +181,7 @@ func (o *AttestationResult) Verify(data []byte, alg jwa.KeyAlgorithm, key interf
 	}
 
 	// TODO(tho) add any JWT specific checks on top of the base JWS verification
-	// See https://github.com/veraison/ar4si/issues/6
+	// See https://github.com/veraison/ear/issues/6
 
 	var ar AttestationResult
 
