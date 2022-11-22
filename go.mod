@@ -3,6 +3,7 @@ module github.com/veraison/ear
 go 1.18
 
 require (
+	github.com/huandu/xstrings v1.3.3
 	github.com/lestrrat-go/jwx/v2 v2.0.6
 	github.com/spf13/afero v1.9.2
 	github.com/spf13/cobra v1.6.1

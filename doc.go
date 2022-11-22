@@ -6,7 +6,7 @@ Package ear implements an EAT attestation result format based on the
 information model defined in
 https://datatracker.ietf.org/doc/draft-ietf-rats-ar4si/
 
-Construction
+# Construction
 
 An AttestationResult object is constructed by populating the relevant fields.
 The mandatory attributes are: status, timestamp and profile.
@@ -40,7 +40,7 @@ and their meaning.)
 
 	ar.TrustVector := &tv
 
-Signing and Serializing
+# Signing and Serializing
 
 Once the AttestationResult is populated, it can be signed (i.e., wrapped in a
 JWT) by invoking the Sign method:
@@ -61,7 +61,7 @@ In this case, the returned buf contains a signed ES256 JWT with the JSON
 serialization of the AttestationResult object as its payload.  This is the usual
 JWT format that can be used as-is for interchange with other applications.
 
-Parsing and Verifying
+# Parsing and Verifying
 
 On the consumer end of the protocol, when the EAT containing the attestation
 result is received from a veraison verifier, the relying party needs to first
@@ -91,7 +91,7 @@ entity.
 		// handle troubles with appraisal
 	}
 
-Pretty printing
+# Pretty printing
 
 The package provides a Report method that allows pretty printing of the
 Trustworthiness Vector.  The caller can request a short summary or a detailed
