@@ -25,7 +25,7 @@ func Example_encode_minimalist() {
 }
 
 func Example_encode_hefty() {
-	rawEvidence := []byte{0xde, 0xad, 0xbe, 0xef}
+	rawEvidence := B64Url{0xde, 0xad, 0xbe, 0xef}
 
 	ar := AttestationResult{
 		Status: &testStatus,
@@ -50,7 +50,7 @@ func Example_encode_hefty() {
 	fmt.Println(string(j))
 
 	// Output:
-	// {"ear.appraisal-policy-id":"https://veraison.example/policy/1/60a0068d","ear.raw-evidence":"3q2+7w==","ear.status":"affirming","ear.trustworthiness-vector":{"configuration":2,"executables":3,"file-system":2,"hardware":2,"instance-identity":2,"runtime-opaque":2,"sourced-data":2,"storage-opaque":2},"eat_profile":"tag:github.com,2022:veraison/ear","iat":1666091373}
+	// {"ear.appraisal-policy-id":"https://veraison.example/policy/1/60a0068d","ear.raw-evidence":"3q2-7w","ear.status":"affirming","ear.trustworthiness-vector":{"configuration":2,"executables":3,"file-system":2,"hardware":2,"instance-identity":2,"runtime-opaque":2,"sourced-data":2,"storage-opaque":2},"eat_profile":"tag:github.com,2022:veraison/ear","iat":1666091373}
 }
 
 func Example_encode_veraison_extensions() {

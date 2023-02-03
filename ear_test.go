@@ -460,7 +460,7 @@ func Test_populateFromMap(t *testing.T) {
 			"storage-opaque":    0,
 			"sourced-data":      0,
 		},
-		"ear.raw-evidence":        "SSBkaWRuJ3QgZG8gaXQ=",
+		"ear.raw-evidence":        "SSBkaWRuJ3QgZG8gaXQ",
 		"ear.appraisal-policy-id": "foo",
 		"iat":                     1234,
 		"eat_profile":             EatProfile,

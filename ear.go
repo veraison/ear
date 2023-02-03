@@ -250,10 +250,20 @@ type AttestationResult struct {
 	Status            *TrustTier   `json:"ear.status"`
 	Profile           *string      `json:"eat_profile"`
 	TrustVector       *TrustVector `json:"ear.trustworthiness-vector,omitempty"`
-	RawEvidence       *[]byte      `json:"ear.raw-evidence,omitempty"`
+	RawEvidence       *B64Url      `json:"ear.raw-evidence,omitempty"`
 	IssuedAt          *int64       `json:"iat"`
 	AppraisalPolicyID *string      `json:"ear.appraisal-policy-id,omitempty"`
 	Extensions
+}
+
+// B64Url is base64url (§5 of RFC4648) without padding.
+// bstr MUST be base64url encoded as per EAT §7.2.2 "JSON Interoperability".
+type B64Url []byte
+
+func (o B64Url) MarshalJSON() ([]byte, error) {
+	return json.Marshal(
+		base64.RawURLEncoding.EncodeToString(o),
+	)
 }
 
 // NewAttestationResult returns a pointer to a new fully-initialized
@@ -502,8 +512,6 @@ func (o *AttestationResult) populateFromMap(m map[string]interface{}) error {
 		}
 	}
 
-	var stringVal string
-
 	v, ok = m["ear.raw-evidence"]
 	if ok {
 		rawEvString, okay := v.(string)
@@ -511,18 +519,18 @@ func (o *AttestationResult) populateFromMap(m map[string]interface{}) error {
 			invalid = append(invalid, "'ear.raw-evidence'")
 		}
 
-		decodedRawEv, err := base64.StdEncoding.DecodeString(rawEvString)
+		decodedRawEv, err := base64.RawURLEncoding.DecodeString(rawEvString)
 		if err != nil {
 			invalid = append(invalid, "'ear.raw-evidence'")
 		}
 
-		o.RawEvidence = &decodedRawEv
+		o.RawEvidence = (*B64Url)(&decodedRawEv)
 	}
 
 	v, ok = m["ear.appraisal-policy-id"]
 	if ok {
-		stringVal, ok = v.(string)
-		if !ok {
+		stringVal, okay := v.(string)
+		if !okay {
 			invalid = append(invalid, "'ear.appraisal-policy-id'")
 		}
 		o.AppraisalPolicyID = &stringVal
@@ -555,7 +563,7 @@ func (o *AttestationResult) populateFromMap(m map[string]interface{}) error {
 	}
 
 	if len(invalid) > 0 {
-		msg := fmt.Sprintf("invalid values(s) for  %s", strings.Join(invalid, ", "))
+		msg := fmt.Sprintf("invalid values(s) for %s", strings.Join(invalid, ", "))
 		problems = append(problems, msg)
 	}
 
