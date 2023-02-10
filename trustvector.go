@@ -3,22 +3,17 @@
 
 package ear
 
-import (
-	"fmt"
-	"strings"
-)
-
 // TrustVector is an implementation of the Trustworthiness Vector (and Claims)
 // described in §2.3 of draft-ietf-rats-ar4si-03, using a JSON serialization.
 type TrustVector struct {
-	InstanceIdentity TrustClaim `json:"instance-identity"`
-	Configuration    TrustClaim `json:"configuration"`
-	Executables      TrustClaim `json:"executables"`
-	FileSystem       TrustClaim `json:"file-system"`
-	Hardware         TrustClaim `json:"hardware"`
-	RuntimeOpaque    TrustClaim `json:"runtime-opaque"`
-	StorageOpaque    TrustClaim `json:"storage-opaque"`
-	SourcedData      TrustClaim `json:"sourced-data"`
+	InstanceIdentity TrustClaim `json:"instance-identity,omitempty"`
+	Configuration    TrustClaim `json:"configuration,omitempty"`
+	Executables      TrustClaim `json:"executables,omitempty"`
+	FileSystem       TrustClaim `json:"file-system,omitempty"`
+	Hardware         TrustClaim `json:"hardware,omitempty"`
+	RuntimeOpaque    TrustClaim `json:"runtime-opaque,omitempty"`
+	StorageOpaque    TrustClaim `json:"storage-opaque,omitempty"`
+	SourcedData      TrustClaim `json:"sourced-data,omitempty"`
 }
 
 // AsMap() returns a map[string]TrustClaim with claims names mapped onto
@@ -37,99 +32,17 @@ func (o TrustVector) AsMap() map[string]TrustClaim {
 }
 
 func ToTrustVector(v interface{}) (*TrustVector, error) {
-	var (
-		tv  TrustVector
-		err error
-	)
+	var tv TrustVector
 
-	switch t := v.(type) {
-	case TrustVector:
-		tv = t
-	case *TrustVector:
-		tv = *t
-	case map[string]interface{}:
-		tv, err = getTrustVectorFromMap(t)
-	case map[string]string:
-		m := make(map[string]interface{}, len(t))
-		for k, v := range t {
-			m[k] = v
-		}
-		tv, err = getTrustVectorFromMap(m)
-	default:
-		err = fmt.Errorf("invalid value for TrustVector: %v", t)
-	}
+	err := populateStructFromInterface(
+		&tv, v, "json",
+		map[string]parser{}, // use defaultParser below for everything
+		func(iface interface{}) (interface{}, error) {
+			claim, err := ToTrustClaim(iface)
+			return *claim, err
+		})
 
 	return &tv, err
-}
-
-func getTrustVectorFromMap(m map[string]interface{}) (TrustVector, error) {
-	var vector TrustVector
-
-	expected := []string{
-		"instance-identity",
-		"configuration",
-		"executables",
-		"file-system",
-		"hardware",
-		"runtime-opaque",
-		"storage-opaque",
-		"sourced-data",
-	}
-
-	extra := getExtraKeys(m, expected)
-	if len(extra) > 0 {
-		return vector, fmt.Errorf("found unexpected fields: %s", strings.Join(extra, ", "))
-	}
-
-	if err := populateClaimFromMap(m, "instance-identity", &vector.InstanceIdentity); err != nil {
-		return vector, err
-	}
-
-	if err := populateClaimFromMap(m, "configuration", &vector.Configuration); err != nil {
-		return vector, err
-	}
-
-	if err := populateClaimFromMap(m, "executables", &vector.Executables); err != nil {
-		return vector, err
-	}
-
-	if err := populateClaimFromMap(m, "file-system", &vector.FileSystem); err != nil {
-		return vector, err
-	}
-
-	if err := populateClaimFromMap(m, "hardware", &vector.Hardware); err != nil {
-		return vector, err
-	}
-
-	if err := populateClaimFromMap(m, "runtime-opaque", &vector.RuntimeOpaque); err != nil {
-		return vector, err
-	}
-
-	if err := populateClaimFromMap(m, "storage-opaque", &vector.StorageOpaque); err != nil {
-		return vector, err
-	}
-
-	if err := populateClaimFromMap(m, "sourced-data", &vector.SourcedData); err != nil {
-		return vector, err
-	}
-
-	return vector, nil
-}
-
-func populateClaimFromMap(m map[string]interface{}, key string, dest *TrustClaim) error {
-	v, ok := m[key]
-	if !ok {
-		return nil
-	}
-
-	claim, err := ToTrustClaim(v)
-	if err != nil {
-		return fmt.Errorf("bad value for %q: %w", key, err)
-	}
-
-	*dest = *claim
-
-	return err
 }
 
 // SetAll sets all vector elements to the specified claim. This is primarily

@@ -226,133 +226,19 @@ func (o AttestationResult) Sign(alg jwa.KeyAlgorithm, key interface{}) ([]byte, 
 }
 
 func (o *AttestationResult) populateFromMap(m map[string]interface{}) error {
-	var err error
-
-	var missing, invalid []string
-
-	expected := []string{
-		"ear.status",
-		"eat_profile",
-		"iat",
-		"ear.trustworthiness-vector",
-		"ear.raw-evidence",
-		"ear.appraisal-policy-id",
-		"ear.veraison.processed-evidence",
-		"ear.veraison.verifier-added-claims",
-	}
-	extra := getExtraKeys(m, expected)
-
-	v, ok := m["ear.status"]
-	if ok {
-		o.Status, err = ToTrustTier(v)
-		if err != nil {
-			invalid = append(invalid, "'ear.status'")
-		}
-	} else {
-		missing = append(missing, "'ear.status'")
+	// entries not explicitly listed will use the stringPtrParser
+	parsers := map[string]parser{
+		"ear.status": func(iface interface{}) (interface{}, error) {
+			return ToTrustTier(iface)
+		},
+		"iat": int64PtrParser,
+		"ear.trustworthiness-vector": func(iface interface{}) (interface{}, error) {
+			return ToTrustVector(iface)
+		},
+		"ear.raw-evidence":                   b64urlBytesPtrParser,
+		"ear.veraison.processed-evidence":    stringMapPtrParser,
+		"ear.veraison.verifier-added-claims": stringMapPtrParser,
 	}
 
-	v, ok = m["eat_profile"]
-	if ok {
-		profile, okay := v.(string)
-		if !okay {
-			invalid = append(invalid, "'eat_profiles'")
-		}
-		o.Profile = &profile
-
-	} else {
-		missing = append(missing, "'eat_profile'")
-	}
-
-	v, ok = m["iat"]
-	if ok {
-		var iat int64
-		switch t := v.(type) {
-		case float64:
-			iat = int64(t)
-		case int:
-			iat = int64(t)
-		case int64:
-			iat = t
-		default:
-			invalid = append(invalid, "'iat'")
-		}
-		o.IssuedAt = &iat
-	} else {
-		missing = append(missing, "'iat'")
-	}
-
-	v, ok = m["ear.trustworthiness-vector"]
-	if ok {
-		o.TrustVector, err = ToTrustVector(v)
-		if err != nil {
-			invalid = append(invalid, fmt.Sprintf("'ear.trustworthiness-vector' (%s)", err))
-		}
-	}
-
-	v, ok = m["ear.raw-evidence"]
-	if ok {
-		rawEvString, okay := v.(string)
-		if !okay {
-			invalid = append(invalid, "'ear.raw-evidence'")
-		}
-
-		decodedRawEv, err := base64.RawURLEncoding.DecodeString(rawEvString)
-		if err != nil {
-			invalid = append(invalid, "'ear.raw-evidence'")
-		}
-
-		o.RawEvidence = (*B64Url)(&decodedRawEv)
-	}
-
-	v, ok = m["ear.appraisal-policy-id"]
-	if ok {
-		stringVal, okay := v.(string)
-		if !okay {
-			invalid = append(invalid, "'ear.appraisal-policy-id'")
-		}
-		o.AppraisalPolicyID = &stringVal
-	}
-
-	v, ok = m["ear.veraison.processed-evidence"]
-	if ok {
-		processedEvidence, okay := v.(map[string]interface{})
-		if !okay {
-			invalid = append(invalid, "'ear.veraison.processed-evidence'")
-		}
-		o.VeraisonProcessedEvidence = &processedEvidence
-	}
-
-	v, ok = m["ear.veraison.verifier-added-claims"]
-	if ok {
-		addedClaims, okay := v.(map[string]interface{})
-		if !okay {
-			invalid = append(invalid, "'ear.veraison.verifier-added-claims'")
-		}
-		o.VeraisonVerifierAddedClaims = &addedClaims
-
-	}
-
-	var problems []string
-
-	if len(missing) > 0 {
-		msg := fmt.Sprintf("missing mandatory %s", strings.Join(missing, ", "))
-		problems = append(problems, msg)
-	}
-
-	if len(invalid) > 0 {
-		msg := fmt.Sprintf("invalid values(s) for %s", strings.Join(invalid, ", "))
-		problems = append(problems, msg)
-	}
-
-	if len(extra) > 0 {
-		msg := fmt.Sprintf("unexpected %s", strings.Join(extra, ", "))
-		problems = append(problems, msg)
-	}
-
-	if len(problems) > 0 {
-		return errors.New(strings.Join(problems, "; "))
-	}
-
-	return nil
+	return populateStructFromMap(o, m, "json", parsers, stringPtrParser)
 }
