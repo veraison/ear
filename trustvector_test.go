@@ -119,14 +119,14 @@ func TestToTrustVector(t *testing.T) {
 	assert.Equal(t, ApprovedRuntimeClaim, tv.Executables)
 
 	_, err = ToTrustVector(42)
-	assert.ErrorContains(t, err, "invalid value for TrustVector: 42")
+	assert.ErrorContains(t, err, "invalid value '42': expected a TrustVector, but found int")
 
 	_, err = ToTrustVector(map[string]interface{}{
 		"instance-identity": TrustworthyInstanceClaim,
 		"hardware":          "bad claim",
 		"file-system":       "approved_fs",
 	})
-	assert.ErrorContains(t, err, `bad value for "hardware": not a valid TrustClaim value: "bad claim"`)
+	assert.ErrorContains(t, err, `invalid value(s) for 'hardware' (not a valid TrustClaim value: "bad claim")`)
 }
 
 func TestTrustVector_SetAll(t *testing.T) {

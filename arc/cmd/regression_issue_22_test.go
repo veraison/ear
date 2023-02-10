@@ -45,7 +45,7 @@ func Test_Regression_issue_22(t *testing.T) {
 	}
 	cmd.SetArgs(args)
 
-	expectedErr := `decoding EAR claims-set from "ear-claims.json": invalid values(s) for 'ear.raw-evidence'`
+	expectedErr := `decoding EAR claims-set from "ear-claims.json": invalid value(s) for 'ear.raw-evidence' (illegal base64 data at input byte 3)`
 
 	err := cmd.Execute()
 	assert.EqualError(t, err, expectedErr)
