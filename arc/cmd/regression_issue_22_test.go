@@ -21,6 +21,10 @@ var testClaimsSetIssue22 = []byte(`{
 		"storage-opaque": 2,
 		"sourced-data": 2
 	},
+        "ear.verifier-id": {
+                "build": "rrtrap-v1.0.0",
+                "developer": "Acme Inc."
+        },
 	"ear.raw-evidence": "3q2+7w==",
 	"iat": 1666091373,
 	"ear.appraisal-policy-id": "https://veraison.example/policy/1/60a0068d"

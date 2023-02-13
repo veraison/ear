@@ -25,12 +25,13 @@ const EatProfile = "tag:github.com,2022:veraison/ear"
 // The AttestationResult is serialized to JSON and signed by the verifier using
 // JWT.
 type AttestationResult struct {
-	Status            *TrustTier   `json:"ear.status"`
-	Profile           *string      `json:"eat_profile"`
-	TrustVector       *TrustVector `json:"ear.trustworthiness-vector,omitempty"`
-	RawEvidence       *B64Url      `json:"ear.raw-evidence,omitempty"`
-	IssuedAt          *int64       `json:"iat"`
-	AppraisalPolicyID *string      `json:"ear.appraisal-policy-id,omitempty"`
+	Status            *TrustTier        `json:"ear.status"`
+	Profile           *string           `json:"eat_profile"`
+	TrustVector       *TrustVector      `json:"ear.trustworthiness-vector,omitempty"`
+	VerifierID        *VerifierIdentity `json:"ear.verifier-id"`
+	RawEvidence       *B64Url           `json:"ear.raw-evidence,omitempty"`
+	IssuedAt          *int64            `json:"iat"`
+	AppraisalPolicyID *string           `json:"ear.appraisal-policy-id,omitempty"`
 	Extensions
 }
 
@@ -98,41 +99,14 @@ func (o *AttestationResult) UnmarshalJSON(data []byte) error {
 // AsMap returns a map[string]interface{} with EAR claim names mapped onto
 // corresponding values.
 func (o AttestationResult) AsMap() map[string]interface{} {
-	oMap := make(map[string]interface{})
-
-	if o.Status != nil {
-		oMap["ear.status"] = *o.Status
+	m, err := structAsMap(o, "json")
+	if err != nil {
+		// An error can only be returned if there is issue in implmentation of
+		// AttestationResult; specificically, if any of its
+		// constituents incorrectly implment AsMap() themselves.
+		panic(err)
 	}
-
-	if o.Profile != nil {
-		oMap["eat_profile"] = *o.Profile
-	}
-
-	if o.IssuedAt != nil {
-		oMap["iat"] = *o.IssuedAt
-	}
-
-	if o.TrustVector != nil {
-		oMap["ear.trustworthiness-vector"] = o.TrustVector.AsMap()
-	}
-
-	if o.RawEvidence != nil {
-		oMap["ear.raw-evidence"] = *o.RawEvidence
-	}
-
-	if o.AppraisalPolicyID != nil {
-		oMap["ear.appraisal-policy-id"] = *o.AppraisalPolicyID
-	}
-
-	if o.VeraisonProcessedEvidence != nil {
-		oMap["ear.veraison.processed-evidence"] = *o.VeraisonProcessedEvidence
-	}
-
-	if o.VeraisonVerifierAddedClaims != nil {
-		oMap["ear.veraison.verifier-added-claims"] = *o.VeraisonVerifierAddedClaims
-	}
-
-	return oMap
+	return m
 }
 
 // UpdateStatusFromTrustVector  ensure that Status trustworthiness is not
@@ -166,6 +140,10 @@ func (o AttestationResult) validate() error {
 
 	if o.IssuedAt == nil {
 		missing = append(missing, "'iat'")
+	}
+
+	if o.VerifierID == nil {
+		missing = append(missing, "'verifier-id'")
 	}
 
 	if len(missing) == 0 && len(invalid) == 0 {
@@ -228,12 +206,15 @@ func (o AttestationResult) Sign(alg jwa.KeyAlgorithm, key interface{}) ([]byte, 
 func (o *AttestationResult) populateFromMap(m map[string]interface{}) error {
 	// entries not explicitly listed will use the stringPtrParser
 	parsers := map[string]parser{
-		"ear.status": func(iface interface{}) (interface{}, error) {
-			return ToTrustTier(iface)
+		"ear.status": func(v interface{}) (interface{}, error) {
+			return ToTrustTier(v)
 		},
 		"iat": int64PtrParser,
-		"ear.trustworthiness-vector": func(iface interface{}) (interface{}, error) {
-			return ToTrustVector(iface)
+		"ear.trustworthiness-vector": func(v interface{}) (interface{}, error) {
+			return ToTrustVector(v)
+		},
+		"ear.verifier-id": func(v interface{}) (interface{}, error) {
+			return ToVerifierIdentity(v)
 		},
 		"ear.raw-evidence":                   b64urlBytesPtrParser,
 		"ear.veraison.processed-evidence":    stringMapPtrParser,

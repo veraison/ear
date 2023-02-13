@@ -22,7 +22,11 @@ var (
     "ear.status": "affirming",
     "eat_profile": "tag:github.com,2022:veraison/ear",
     "iat": 1666091373,
-    "ear.appraisal-policy-id": "https://veraison.example/policy/1/60a0068d"
+    "ear.appraisal-policy-id": "https://veraison.example/policy/1/60a0068d",
+    "ear.verifier-id": {
+	    "build": "rrtrap-v1.0.0",
+	    "developer": "Acme Inc."
+    }
 }`)
-	testJWT = []byte(`eyJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCJ9.eyJlYXIuYXBwcmFpc2FsLXBvbGljeS1pZCI6Imh0dHBzOi8vdmVyYWlzb24uZXhhbXBsZS9wb2xpY3kvMS82MGEwMDY4ZCIsImVhci5yYXctZXZpZGVuY2UiOiIzcTItN3ciLCJlYXIuc3RhdHVzIjoiYWZmaXJtaW5nIiwiZWFyLnRydXN0d29ydGhpbmVzcy12ZWN0b3IiOnsiY29uZmlndXJhdGlvbiI6MiwiZXhlY3V0YWJsZXMiOjMsImZpbGUtc3lzdGVtIjoyLCJoYXJkd2FyZSI6MiwiaW5zdGFuY2UtaWRlbnRpdHkiOjIsInJ1bnRpbWUtb3BhcXVlIjoyLCJzb3VyY2VkLWRhdGEiOjIsInN0b3JhZ2Utb3BhcXVlIjoyfSwiZWF0X3Byb2ZpbGUiOiJ0YWc6Z2l0aHViLmNvbSwyMDIyOnZlcmFpc29uL2VhciIsImlhdCI6MTY2NjA5MTM3M30.o7svjuK-8DxfePggisE_8H24hO6mpeIspYRDEnaTh0yGC6HG_IS9nXDmn3PllJEg0-Nara4YGhs7I5Tfi9gOsA`)
+	testJWT = []byte(`eyJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCJ9.eyJlYXIuc3RhdHVzIjoiYWZmaXJtaW5nIiwiZWF0X3Byb2ZpbGUiOiJ0YWc6Z2l0aHViLmNvbSwyMDIyOnZlcmFpc29uL2VhciIsImVhci50cnVzdHdvcnRoaW5lc3MtdmVjdG9yIjp7Imluc3RhbmNlLWlkZW50aXR5IjoyLCJjb25maWd1cmF0aW9uIjoyLCJleGVjdXRhYmxlcyI6MywiZmlsZS1zeXN0ZW0iOjIsImhhcmR3YXJlIjoyLCJydW50aW1lLW9wYXF1ZSI6Miwic3RvcmFnZS1vcGFxdWUiOjIsInNvdXJjZWQtZGF0YSI6Mn0sImVhci5yYXctZXZpZGVuY2UiOiIzcTItN3ciLCJpYXQiOjE2NjYwOTEzNzMsImVhci52ZXJpZmllci1pZCI6eyJidWlsZCI6InJydHJhcC12MS4wLjAiLCJkZXZlbG9wZXIiOiJBY21lIEluYy4ifSwiZWFyLmFwcHJhaXNhbC1wb2xpY3ktaWQiOiJodHRwczovL3ZlcmFpc29uLmV4YW1wbGUvcG9saWN5LzEvNjBhMDA2OGQifQ.76tnHC95AeP3iQWXqcb4yI5BUeQ17UiOhyKKn3Xvv4F32ZByY3nCFvXv8nyP_6J2twf1ul4BRWNSmTnd3wnrEQ`)
 )

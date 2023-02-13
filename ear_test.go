@@ -29,9 +29,16 @@ var (
 		"d": "V8kgd2ZBRuh2dgyVINBUqpPDr7BOMGcF22CQMIUHtNM"
 	}`
 
-	testStatus             = TrustTierAffirming
-	testIAT                = int64(1666091373)
-	testPolicyID           = "https://veraison.example/policy/1/60a0068d"
+	testVidBuild     = "rrtrap-v1.0.0"
+	testVidDeveloper = "Acme Inc."
+
+	testStatus     = TrustTierAffirming
+	testIAT        = int64(1666091373)
+	testPolicyID   = "https://veraison.example/policy/1/60a0068d"
+	testVerifierID = VerifierIdentity{
+		Build:     &testVidBuild,
+		Developer: &testVidDeveloper,
+	}
 	testProfile            = EatProfile
 	testUnsupportedProfile = "1.2.3.4.5"
 
@@ -39,6 +46,7 @@ var (
 		Status:            &testStatus,
 		IssuedAt:          &testIAT,
 		AppraisalPolicyID: &testPolicyID,
+		VerifierID:        &testVerifierID,
 		Profile:           &testProfile,
 		Extensions: Extensions{
 			VeraisonVerifierAddedClaims: &map[string]interface{}{
@@ -60,32 +68,32 @@ func TestToJSON_fail(t *testing.T) {
 	}{
 		{
 			ar:       AttestationResult{},
-			expected: `missing mandatory 'eat_profile', 'status', 'iat'`,
+			expected: `missing mandatory 'eat_profile', 'status', 'iat', 'verifier-id'`,
 		},
 		{
 			ar: AttestationResult{
 				Status: &testStatus,
 			},
-			expected: `missing mandatory 'eat_profile', 'iat'`,
+			expected: `missing mandatory 'eat_profile', 'iat', 'verifier-id'`,
 		},
 		{
 			ar: AttestationResult{
 				IssuedAt: &testIAT,
 			},
-			expected: `missing mandatory 'eat_profile', 'status'`,
+			expected: `missing mandatory 'eat_profile', 'status', 'verifier-id'`,
 		},
 		{
 			ar: AttestationResult{
 				Profile: &testProfile,
 			},
-			expected: `missing mandatory 'status', 'iat'`,
+			expected: `missing mandatory 'status', 'iat', 'verifier-id'`,
 		},
 		{
 			ar: AttestationResult{
 				Status:  &testStatus,
 				Profile: &testUnsupportedProfile,
 			},
-			expected: `missing mandatory 'iat'; invalid value(s) for eat_profile (1.2.3.4.5)`,
+			expected: `missing mandatory 'iat', 'verifier-id'; invalid value(s) for eat_profile (1.2.3.4.5)`,
 		}}
 
 	for i, tv := range tvs {
@@ -109,7 +117,7 @@ func TestUnmarshalJSON_fail(t *testing.T) {
 		},
 		{
 			ar:       `{}`,
-			expected: `missing mandatory 'ear.status', 'eat_profile', 'iat'`,
+			expected: `missing mandatory 'ear.status', 'eat_profile', 'ear.verifier-id', 'iat'`,
 		},
 	}
 
@@ -124,9 +132,9 @@ func TestUnmarshalJSON_fail(t *testing.T) {
 func TestVerify_pass(t *testing.T) {
 	tvs := []string{
 		// ok
-		`eyJhbGciOiJFUzI1NiJ9.eyJlYXIuc3RhdHVzIjoiYWZmaXJtaW5nIiwiZWF0X3Byb2ZpbGUiOiJ0YWc6Z2l0aHViLmNvbSwyMDIyOnZlcmFpc29uL2VhciIsImlhdCI6MTY2NjA5MTM3MywiZWFyLmFwcHJhaXNhbC1wb2xpY3ktaWQiOiJodHRwczovL3ZlcmFpc29uLmV4YW1wbGUvcG9saWN5LzEvNjBhMDA2OGQiLCJlYXIudmVyYWlzb24ucHJvY2Vzc2VkLWV2aWRlbmNlIjp7ImsxIjoidjEiLCJrMiI6InYyIn0sImVhci52ZXJhaXNvbi52ZXJpZmllci1hZGRlZC1jbGFpbXMiOnsiYmFyIjoiYmF6IiwiZm9vIjoiYmFyIn19.P0yB2s_DmCQ7DSX2pOnyKbNMVCfTrqkxohWrDxwBdKqOMrrXoCYJmWlpgwtHV-AA56NXMRObeZk9zT_0TlPgpQ`,
+		`eyJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCJ9.eyJlYXIuc3RhdHVzIjoiYWZmaXJtaW5nIiwiZWF0X3Byb2ZpbGUiOiJ0YWc6Z2l0aHViLmNvbSwyMDIyOnZlcmFpc29uL2VhciIsImlhdCI6MTY2NjA5MTM3MywiZWFyLnZlcmlmaWVyLWlkIjp7ImJ1aWxkIjoicnJ0cmFwLXYxLjAuMCIsImRldmVsb3BlciI6IkFjbWUgSW5jLiJ9LCJlYXIuYXBwcmFpc2FsLXBvbGljeS1pZCI6Imh0dHBzOi8vdmVyYWlzb24uZXhhbXBsZS9wb2xpY3kvMS82MGEwMDY4ZCIsImVhci52ZXJhaXNvbi5wcm9jZXNzZWQtZXZpZGVuY2UiOnsiazEiOiJ2MSIsImsyIjoidjIifSwiZWFyLnZlcmFpc29uLnZlcmlmaWVyLWFkZGVkLWNsYWltcyI6eyJmb28iOiJiYXIiLCJiYXIiOiJiYXoifX0.qomo5WIXHeiZwhj9PwtouLKUIiXOeYsla-wiQCKDGGOib12dQPNkTcSjj_58SodYYMOYY6FoZSps2KAKNZV76A`,
 		// trailing stuff means the format is no longer valid.
-		`eyJhbGciOiJFUzI1NiJ9.eyJlYXIuc3RhdHVzIjoiYWZmaXJtaW5nIiwiZWF0X3Byb2ZpbGUiOiJ0YWc6Z2l0aHViLmNvbSwyMDIyOnZlcmFpc29uL2VhciIsImlhdCI6MTY2NjA5MTM3MywiZWFyLmFwcHJhaXNhbC1wb2xpY3ktaWQiOiJodHRwczovL3ZlcmFpc29uLmV4YW1wbGUvcG9saWN5LzEvNjBhMDA2OGQiLCJlYXIudmVyYWlzb24ucHJvY2Vzc2VkLWV2aWRlbmNlIjp7ImsxIjoidjEiLCJrMiI6InYyIn0sImVhci52ZXJhaXNvbi52ZXJpZmllci1hZGRlZC1jbGFpbXMiOnsiYmFyIjoiYmF6IiwiZm9vIjoiYmFyIn19.P0yB2s_DmCQ7DSX2pOnyKbNMVCfTrqkxohWrDxwBdKqOMrrXoCYJmWlpgwtHV-AA56NXMRObeZk9zT_0TlPgpQ.trailing-rubbish`,
+		`eyJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCJ9.eyJlYXIuc3RhdHVzIjoiYWZmaXJtaW5nIiwiZWF0X3Byb2ZpbGUiOiJ0YWc6Z2l0aHViLmNvbSwyMDIyOnZlcmFpc29uL2VhciIsImlhdCI6MTY2NjA5MTM3MywiZWFyLnZlcmlmaWVyLWlkIjp7ImJ1aWxkIjoicnJ0cmFwLXYxLjAuMCIsImRldmVsb3BlciI6IkFjbWUgSW5jLiJ9LCJlYXIuYXBwcmFpc2FsLXBvbGljeS1pZCI6Imh0dHBzOi8vdmVyYWlzb24uZXhhbXBsZS9wb2xpY3kvMS82MGEwMDY4ZCIsImVhci52ZXJhaXNvbi5wcm9jZXNzZWQtZXZpZGVuY2UiOnsiazEiOiJ2MSIsImsyIjoidjIifSwiZWFyLnZlcmFpc29uLnZlcmlmaWVyLWFkZGVkLWNsYWltcyI6eyJmb28iOiJiYXIiLCJiYXIiOiJiYXoifX0.qomo5WIXHeiZwhj9PwtouLKUIiXOeYsla-wiQCKDGGOib12dQPNkTcSjj_58SodYYMOYY6FoZSps2KAKNZV76A.trailing-rubbish`,
 	}
 
 	k, err := jwk.ParseKey([]byte(testECDSAPublicKey))
@@ -189,7 +197,7 @@ func TestSign_fail(t *testing.T) {
 	var ar AttestationResult
 
 	_, err = ar.Sign(jwa.ES256, sigK)
-	assert.EqualError(t, err, `missing mandatory 'eat_profile', 'status', 'iat'`)
+	assert.EqualError(t, err, `missing mandatory 'eat_profile', 'status', 'iat', 'verifier-id'`)
 }
 
 func TestRoundTrip_pass(t *testing.T) {
@@ -264,7 +272,7 @@ func TestAsMap(t *testing.T) {
 
 	expected := map[string]interface{}{
 		"ear.status": *status,
-		"ear.trustworthiness-vector": map[string]TrustClaim{
+		"ear.trustworthiness-vector": map[string]interface{}{
 			"instance-identity": NoClaim,
 			"configuration":     NoClaim,
 			"executables":       ApprovedRuntimeClaim,
@@ -307,6 +315,10 @@ func Test_populateFromMap(t *testing.T) {
 		"ear.appraisal-policy-id": "foo",
 		"iat":                     1234,
 		"eat_profile":             EatProfile,
+		"ear.verifier-id": map[string]interface{}{
+			"build":     "rrtrap-v1.0.0",
+			"developer": "Acme Inc.",
+		},
 	}
 
 	err := ar.populateFromMap(m)

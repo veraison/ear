@@ -1,0 +1,18 @@
+{
+	"ear.status": "affirming",
+	"eat_profile": "tag:github.com,2022:veraison/ear",
+	"iat": 1666091373,
+	"ear.verifier-id": {
+		"build": "rrtrap-v1.0.0",
+		"developer": "Acme Inc."
+	},
+	"ear.appraisal-policy-id": "https://veraison.example/policy/1/60a0068d",
+	"ear.veraison.processed-evidence": {
+		"k1": "v1",
+		"k2": "v2"
+	},
+	"ear.veraison.verifier-added-claims": {
+		"foo": "bar",
+		"bar": "baz"
+	}
+}
