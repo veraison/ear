@@ -32,6 +32,10 @@ func (o TrustVector) AsMap() map[string]TrustClaim {
 }
 
 func ToTrustVector(v interface{}) (*TrustVector, error) {
+	if v == nil {
+		return nil, nil
+	}
+
 	var tv TrustVector
 
 	err := populateStructFromInterface(
