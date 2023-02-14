@@ -41,6 +41,8 @@ var (
 	}
 	testProfile            = EatProfile
 	testUnsupportedProfile = "1.2.3.4.5"
+	testNonce              = "0123456789abcdef"
+	testBadNonce           = "1337"
 
 	testAttestationResultsWithVeraisonExtns = AttestationResult{
 		Status:            &testStatus,
@@ -94,7 +96,18 @@ func TestToJSON_fail(t *testing.T) {
 				Profile: &testUnsupportedProfile,
 			},
 			expected: `missing mandatory 'iat', 'verifier-id'; invalid value(s) for eat_profile (1.2.3.4.5)`,
-		}}
+		},
+		{
+			ar: AttestationResult{
+				Status:     &testStatus,
+				IssuedAt:   &testIAT,
+				Profile:    &testProfile,
+				VerifierID: &testVerifierID,
+				Nonce:      &testBadNonce,
+			},
+			expected: `invalid value(s) for eat_nonce (4 bytes)`,
+		},
+	}
 
 	for i, tv := range tvs {
 		_, err := tv.ar.MarshalJSON()
@@ -269,6 +282,7 @@ func TestAsMap(t *testing.T) {
 	ar.Status = status
 	ar.TrustVector.Executables = ApprovedRuntimeClaim
 	ar.AppraisalPolicyID = &policyID
+	ar.Nonce = &testNonce
 
 	expected := map[string]interface{}{
 		"ear.status": *status,
@@ -284,6 +298,7 @@ func TestAsMap(t *testing.T) {
 		},
 		"ear.appraisal-policy-id": "foo",
 		"eat_profile":             EatProfile,
+		"eat_nonce":               testNonce,
 	}
 
 	m := ar.AsMap()

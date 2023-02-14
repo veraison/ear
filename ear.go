@@ -31,6 +31,7 @@ type AttestationResult struct {
 	VerifierID        *VerifierIdentity `json:"ear.verifier-id"`
 	RawEvidence       *B64Url           `json:"ear.raw-evidence,omitempty"`
 	IssuedAt          *int64            `json:"iat"`
+	Nonce             *string           `json:"eat_nonce,omitempty"`
 	AppraisalPolicyID *string           `json:"ear.appraisal-policy-id,omitempty"`
 	Extensions
 }
@@ -144,6 +145,13 @@ func (o AttestationResult) validate() error {
 
 	if o.VerifierID == nil {
 		missing = append(missing, "'verifier-id'")
+	}
+
+	if o.Nonce != nil {
+		nLen := len(*o.Nonce)
+		if nLen > 74 || nLen < 10 {
+			invalid = append(invalid, fmt.Sprintf("eat_nonce (%d bytes)", nLen))
+		}
 	}
 
 	if len(missing) == 0 && len(invalid) == 0 {
