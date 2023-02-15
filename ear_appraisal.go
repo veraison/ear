@@ -21,8 +21,8 @@ type Appraisal struct {
 // attached to the Appraisal.  For now only veraison-specific extensions are
 // supported.
 type AppraisalExtensions struct {
-	VeraisonProcessedEvidence   *map[string]interface{} `json:"ear.veraison.processed-evidence,omitempty"`
-	VeraisonVerifierAddedClaims *map[string]interface{} `json:"ear.veraison.verifier-added-claims,omitempty"`
+	VeraisonAnnotatedEvidence *map[string]interface{} `json:"ear.veraison.annotated-evidence,omitempty"`
+	VeraisonPolicyClaims      *map[string]interface{} `json:"ear.veraison.policy-claims,omitempty"`
 }
 
 // UpdateStatusFromTrustVector ensure that Status trustworthiness is not
@@ -77,8 +77,8 @@ func ToAppraisal(v interface{}) (*Appraisal, error) {
 		"ear.trustworthiness-vector": func(v interface{}) (interface{}, error) {
 			return ToTrustVector(v)
 		},
-		"ear.veraison.processed-evidence":    stringMapPtrParser,
-		"ear.veraison.verifier-added-claims": stringMapPtrParser,
+		"ear.veraison.annotated-evidence": stringMapPtrParser,
+		"ear.veraison.policy-claims":      stringMapPtrParser,
 	}
 
 	err := populateStructFromMap(&appraisal, m, "json", parsers, stringPtrParser, true)
