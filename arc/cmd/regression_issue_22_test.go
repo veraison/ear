@@ -25,7 +25,7 @@ var testClaimsSetIssue22 = []byte(`{
 			}
 		}
 	},
-	"eat_profile": "tag:github.com,2022:veraison/ear",
+	"eat_profile": "tag:github.com,2023:veraison/ear",
         "ear.verifier-id": {
                 "build": "rrtrap-v1.0.0",
                 "developer": "Acme Inc."
