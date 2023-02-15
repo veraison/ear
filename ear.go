@@ -1,4 +1,4 @@
-// Copyright 2022 Contributors to the Veraison project.
+// Copyright 2022-2023 Contributors to the Veraison project.
 // SPDX-License-Identifier: Apache-2.0
 
 package ear
@@ -18,22 +18,16 @@ import (
 // EatProfile is the EAT profile implemented by this package
 const EatProfile = "tag:github.com,2022:veraison/ear"
 
-// AttestationResult represents the result of an evidence appraisal by the
-// verifier.  It wraps the AR4SI trustworthiness vector together with other
-// metadata that are relevant to establish the appraisal context - the evidence
-// itself, the appraisal policy used, the time of appraisal.
-// The AttestationResult is serialized to JSON and signed by the verifier using
+// AttestationResult represents the result of one or more evidence Appraisals
+// by the verifier.  It is serialized to JSON and signed by the verifier using
 // JWT.
 type AttestationResult struct {
-	Status            *TrustTier        `json:"ear.status"`
-	Profile           *string           `json:"eat_profile"`
-	TrustVector       *TrustVector      `json:"ear.trustworthiness-vector,omitempty"`
-	VerifierID        *VerifierIdentity `json:"ear.verifier-id"`
-	RawEvidence       *B64Url           `json:"ear.raw-evidence,omitempty"`
-	IssuedAt          *int64            `json:"iat"`
-	Nonce             *string           `json:"eat_nonce,omitempty"`
-	AppraisalPolicyID *string           `json:"ear.appraisal-policy-id,omitempty"`
-	Extensions
+	Profile     *string               `json:"eat_profile"`
+	VerifierID  *VerifierIdentity     `json:"ear.verifier-id"`
+	RawEvidence *B64Url               `json:"ear.raw-evidence,omitempty"`
+	IssuedAt    *int64                `json:"iat"`
+	Nonce       *string               `json:"eat_nonce,omitempty"`
+	Submods     map[string]*Appraisal `json:"submods"`
 }
 
 // B64Url is base64url (§5 of RFC4648) without padding.
@@ -48,16 +42,20 @@ func (o B64Url) MarshalJSON() ([]byte, error) {
 
 // NewAttestationResult returns a pointer to a new fully-initialized
 // AttestationResult.
-func NewAttestationResult() *AttestationResult {
+func NewAttestationResult(submodName string) *AttestationResult {
 	status := TrustTierNone
 	iat := time.Now().Unix()
 	profile := EatProfile
 
 	return &AttestationResult{
-		Status:      &status,
-		Profile:     &profile,
-		TrustVector: &TrustVector{},
-		IssuedAt:    &iat,
+		Profile:  &profile,
+		IssuedAt: &iat,
+		Submods: map[string]*Appraisal{
+			submodName: {
+				TrustVector: &TrustVector{},
+				Status:      &status,
+			},
+		},
 	}
 }
 
@@ -110,19 +108,16 @@ func (o AttestationResult) AsMap() map[string]interface{} {
 	return m
 }
 
-// UpdateStatusFromTrustVector  ensure that Status trustworthiness is not
-// higher than is warranted by trust vector claims. For every claim that has
-// been made (i.e. is not in TrustTierNone), if the claim's trust tier is lower
-// than that of the Status, adjust the status to the claim's tier. This means
-// that the overall result will not assert to be more trustworthy than
-// individual vector claims (though it could be less trustworthy if had been
-// manually set that way).
+// UpdateStatusFromTrustVector ensure that Status trustworthiness of each
+// Appraisal is not higher than is warranted by its trust vector claims. For every
+// claim that has been made (i.e. is not in TrustTierNone), if the claim's
+// trust tier is lower than that of the Status, adjust the status to the
+// claim's tier. This means that the overall result will not assert to be more
+// trustworthy than individual vector claims (though it could be less
+// trustworthy if had been manually set that way).
 func (o *AttestationResult) UpdateStatusFromTrustVector() {
-	for _, claimValue := range o.TrustVector.AsMap() {
-		claimTier := claimValue.GetTier()
-		if *o.Status < claimTier {
-			*o.Status = claimTier
-		}
+	for _, appraisal := range o.Submods {
+		appraisal.UpdateStatusFromTrustVector()
 	}
 }
 
@@ -133,10 +128,6 @@ func (o AttestationResult) validate() error {
 		missing = append(missing, "'eat_profile'")
 	} else if *o.Profile != EatProfile {
 		invalid = append(invalid, fmt.Sprintf("eat_profile (%s)", *o.Profile))
-	}
-
-	if o.Status == nil {
-		missing = append(missing, "'status'")
 	}
 
 	if o.IssuedAt == nil {
@@ -154,6 +145,17 @@ func (o AttestationResult) validate() error {
 		}
 	}
 
+	if len(o.Submods) == 0 {
+		missing = append(missing, "'submods' (at least one appraisal must be present)")
+	} else {
+		for submodName, appraisal := range o.Submods {
+			if err := appraisal.validate(); err != nil {
+				msg := fmt.Sprintf("submods[%s]: %s", submodName, err.Error())
+				invalid = append(invalid, msg)
+			}
+		}
+	}
+
 	if len(missing) == 0 && len(invalid) == 0 {
 		return nil
 	}
@@ -167,13 +169,6 @@ func (o AttestationResult) validate() error {
 	}
 
 	return errors.New(strings.Join(summary, "; "))
-}
-
-// Extensions contains any proprietary claims that can be optionally attached to the
-// AttestationResult.  For now only veraison-specific extensions are supported.
-type Extensions struct {
-	VeraisonProcessedEvidence   *map[string]interface{} `json:"ear.veraison.processed-evidence,omitempty"`
-	VeraisonVerifierAddedClaims *map[string]interface{} `json:"ear.veraison.verifier-added-claims,omitempty"`
 }
 
 // Verify cryptographically verifies the JWT data using the supplied key and
@@ -214,9 +209,6 @@ func (o AttestationResult) Sign(alg jwa.KeyAlgorithm, key interface{}) ([]byte, 
 func (o *AttestationResult) populateFromMap(m map[string]interface{}) error {
 	// entries not explicitly listed will use the stringPtrParser
 	parsers := map[string]parser{
-		"ear.status": func(v interface{}) (interface{}, error) {
-			return ToTrustTier(v)
-		},
 		"iat": int64PtrParser,
 		"ear.trustworthiness-vector": func(v interface{}) (interface{}, error) {
 			return ToTrustVector(v)
@@ -224,9 +216,33 @@ func (o *AttestationResult) populateFromMap(m map[string]interface{}) error {
 		"ear.verifier-id": func(v interface{}) (interface{}, error) {
 			return ToVerifierIdentity(v)
 		},
-		"ear.raw-evidence":                   b64urlBytesPtrParser,
-		"ear.veraison.processed-evidence":    stringMapPtrParser,
-		"ear.veraison.verifier-added-claims": stringMapPtrParser,
+		"ear.raw-evidence": b64urlBytesPtrParser,
+		"submods": func(v interface{}) (interface{}, error) {
+			vMap, ok := v.(map[string]interface{})
+			if !ok {
+				return nil, errors.New("not a map object")
+			}
+
+			ret := map[string]*Appraisal{}
+			var problems []string
+
+			for key, val := range vMap {
+				appraisal, err := ToAppraisal(val)
+				if err != nil {
+					problems = append(problems,
+						fmt.Sprintf("%s: %s", key, err.Error()))
+					continue
+				}
+
+				ret[key] = appraisal
+			}
+
+			if len(problems) > 0 {
+				return nil, errors.New(strings.Join(problems, "; "))
+			}
+
+			return ret, nil
+		},
 	}
 
 	return populateStructFromMap(o, m, "json", parsers, stringPtrParser)
