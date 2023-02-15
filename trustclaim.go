@@ -182,7 +182,7 @@ var (
 		ApprovedRuntimeClaim: {
 			tag:   "approved_rt",
 			short: "recognized and approved boot- and run-time",
-			long:  "Only a recognized genuine set of approved executables, scripts, files, and/or objects have been loaded during and after the boot process.",
+			long:  "Only a recognized genuine set of approved executables, scripts, files, and/or objects have been loaded during and after the boot process.", // nolint: lll
 		},
 		ApprovedBootClaim: {
 			tag:   "approved_boot",
@@ -192,7 +192,7 @@ var (
 		UnsafeRuntimeClaim: {
 			tag:   "unsafe_rt",
 			short: "recognized but known bugs or vulnerabilities",
-			long:  "Only a recognized genuine set of executables, scripts, files, and/or objects have been loaded. However the Verifier cannot vouch for a subset of these due to known bugs or other known vulnerabilities.",
+			long:  "Only a recognized genuine set of executables, scripts, files, and/or objects have been loaded. However the Verifier cannot vouch for a subset of these due to known bugs or other known vulnerabilities.", // nolint: lll
 		},
 		UnrecognizedRuntimeClaim: {
 			tag:   "unrecognized_rt",
@@ -271,13 +271,13 @@ var (
 		EncryptedMemoryRuntimeClaim: {
 			tag:   "encrypted_rt",
 			short: "memory encryption",
-			long:  "the Attester's executing Target Environment and Attesting Environments are encrypted and within Trusted Execution Environment(s) opaque to the operating system, virtual machine manager, and peer applications.",
+			long:  "the Attester's executing Target Environment and Attesting Environments are encrypted and within Trusted Execution Environment(s) opaque to the operating system, virtual machine manager, and peer applications.", // nolint: lll
 		},
 		IsolatedMemoryRuntimeClaim: {
 			// TODO(tho) not sure about the shorthand
 			tag:   "isolated_rt",
 			short: "memory isolation",
-			long:  "the Attester's executing Target Environment and Attesting Environments are inaccessible from any other parallel application or Guest VM running on the Attester's physical device.",
+			long:  "the Attester's executing Target Environment and Attesting Environments are inaccessible from any other parallel application or Guest VM running on the Attester's physical device.", // nolint: lll
 		},
 		VisibleMemoryRuntimeClaim: {
 			tag:   "visible_rt",
@@ -296,7 +296,7 @@ var (
 		HwKeysEncryptedSecretsClaim: {
 			tag:   "hw_encrypted_secrets",
 			short: "encrypted secrets with HW-backed keys",
-			long:  "the Attester encrypts all secrets in persistent storage via using keys which are never visible outside an HSM or the Trusted Execution Environment hardware.",
+			long:  "the Attester encrypts all secrets in persistent storage via using keys which are never visible outside an HSM or the Trusted Execution Environment hardware.", // nolint: lll
 		},
 		SwKeysEncryptedSecretsClaim: {
 			tag:   "sw_encrypted_secrets",
@@ -320,7 +320,7 @@ var (
 		TrustedSourcesClaim: {
 			tag:   "trusted_sources",
 			short: "from attesters in the affirming tier",
-			long:  `All essential Attester source data objects have been provided by other Attester(s) whose most recent appraisal(s) had both no Trustworthiness Claims of "0" where the current Trustworthiness Claim is "Affirming", as well as no "Warning" or "Contraindicated" Trustworthiness Claims.`,
+			long:  `All essential Attester source data objects have been provided by other Attester(s) whose most recent appraisal(s) had both no Trustworthiness Claims of "0" where the current Trustworthiness Claim is "Affirming", as well as no "Warning" or "Contraindicated" Trustworthiness Claims.`, // nolint: lll
 		},
 		UntrustedSourcesClaim: {
 			tag:   "untrusted_sources",

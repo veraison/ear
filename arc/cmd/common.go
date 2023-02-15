@@ -9,7 +9,7 @@ import (
 )
 
 func algList() string {
-	var l []string
+	var l []string // nolint: prealloc
 
 	for _, a := range jwa.SignatureAlgorithms() {
 		l = append(l, string(a))
