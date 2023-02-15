@@ -71,7 +71,7 @@ func Example_encode_veraison_extensions() {
 	fmt.Println(string(j))
 
 	// Output:
-	// {"ear.verifier-id":{"build":"rrtrap-v1.0.0","developer":"Acme Inc."},"eat_profile":"tag:github.com,2023:veraison/ear","iat":1666091373,"submods":{"test":{"ear.appraisal-policy-id":"policy://test/01234","ear.status":"affirming","ear.veraison.processed-evidence":{"k1":"v1","k2":"v2"},"ear.veraison.verifier-added-claims":{"bar":"baz","foo":"bar"}}}}
+	// {"ear.verifier-id":{"build":"rrtrap-v1.0.0","developer":"Acme Inc."},"eat_profile":"tag:github.com,2023:veraison/ear","iat":1666091373,"submods":{"test":{"ear.appraisal-policy-id":"policy://test/01234","ear.status":"affirming","ear.veraison.annotated-evidence":{"k1":"v1","k2":"v2"},"ear.veraison.policy-claims":{"bar":"baz","foo":"bar"}}}}
 }
 
 func Example_decode_veraison_extensions() {
@@ -82,11 +82,11 @@ func Example_decode_veraison_extensions() {
 			"test": {
 				"ear.status": "affirming",
 				"ear.appraisal-policy-id": "policy://test/01234",
-				"ear.veraison.processed-evidence": {
+				"ear.veraison.annotated-evidence": {
 					"k1": "v1",
 					"k2": "v2"
 				},
-				"ear.veraison.verifier-added-claims": {
+				"ear.veraison.policy-claims": {
 					"bar": "baz",
 					"foo": "bar"
 				}
@@ -97,8 +97,8 @@ func Example_decode_veraison_extensions() {
 	_ = ar.UnmarshalJSON([]byte(j))
 
 	fmt.Println(TrustTierToString[*ar.Submods["test"].Status])
-	fmt.Println((*ar.Submods["test"].VeraisonProcessedEvidence)["k1"])
-	fmt.Println((*ar.Submods["test"].VeraisonVerifierAddedClaims)["bar"])
+	fmt.Println((*ar.Submods["test"].VeraisonAnnotatedEvidence)["k1"])
+	fmt.Println((*ar.Submods["test"].VeraisonPolicyClaims)["bar"])
 
 	// Output:
 	// affirming

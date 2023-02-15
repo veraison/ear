@@ -11,11 +11,11 @@
 		"build": "rrtrap-v1.0.0",
 		"developer": "Acme Inc."
 	},
-	"ear.veraison.processed-evidence": {
+	"ear.veraison.annotated-evidence": {
 		"k1": "v1",
 		"k2": "v2"
 	},
-	"ear.veraison.verifier-added-claims": {
+	"ear.veraison.policy-claims": {
 		"foo": "bar",
 		"bar": "baz"
 	}
