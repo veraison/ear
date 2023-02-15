@@ -44,7 +44,7 @@ func ToTrustVector(v interface{}) (*TrustVector, error) {
 		func(iface interface{}) (interface{}, error) {
 			claim, err := ToTrustClaim(iface)
 			return *claim, err
-		})
+		}, false)
 
 	return &tv, err
 }
