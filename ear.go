@@ -16,7 +16,7 @@ import (
 )
 
 // EatProfile is the EAT profile implemented by this package
-const EatProfile = "tag:github.com,2022:veraison/ear"
+const EatProfile = "tag:github.com,2023:veraison/ear"
 
 // AttestationResult represents the result of one or more evidence Appraisals
 // by the verifier.  It is serialized to JSON and signed by the verifier using
