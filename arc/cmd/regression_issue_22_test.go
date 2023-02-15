@@ -9,25 +9,29 @@ import (
 )
 
 var testClaimsSetIssue22 = []byte(`{
-	"ear.status": "affirming",
-	"eat_profile": "tag:github.com,2022:veraison/ear",
-	"ear.trustworthiness-vector": {
-		"instance-identity": 2,
-		"configuration": 2,
-		"executables": 3,
-		"file-system": 2,
-		"hardware": 2,
-		"runtime-opaque": 2,
-		"storage-opaque": 2,
-		"sourced-data": 2
+	"submods": {
+		"test": {
+			"ear.status": "affirming",
+			"ear.appraisal-policy-id": "https://veraison.example/policy/1/60a0068d",
+			"ear.trustworthiness-vector": {
+				"instance-identity": 2,
+				"configuration": 2,
+				"executables": 3,
+				"file-system": 2,
+				"hardware": 2,
+				"runtime-opaque": 2,
+				"storage-opaque": 2,
+				"sourced-data": 2
+			}
+		}
 	},
+	"eat_profile": "tag:github.com,2022:veraison/ear",
         "ear.verifier-id": {
                 "build": "rrtrap-v1.0.0",
                 "developer": "Acme Inc."
         },
 	"ear.raw-evidence": "3q2+7w==",
-	"iat": 1666091373,
-	"ear.appraisal-policy-id": "https://veraison.example/policy/1/60a0068d"
+	"iat": 1666091373
 }`)
 
 // Regression test for https://github.com/veraison/ear/issues/22

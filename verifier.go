@@ -23,7 +23,7 @@ func ToVerifierIdentity(v interface{}) (*VerifierIdentity, error) {
 
 	m, ok := v.(map[string]interface{})
 	if !ok {
-		return &verifierID, errors.New("not a JSON object")
+		return nil, errors.New("not a JSON object")
 	}
 
 	err := populateStructFromMap(&verifierID, m, "json",

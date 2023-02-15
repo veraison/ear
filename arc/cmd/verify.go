@@ -74,11 +74,14 @@ embedded EAR claims-set and present a report of the trustworthiness vector.
 			}
 			fmt.Println(string(claimsSet))
 
-			fmt.Println("[trustworthiness vector]")
-			if ar.TrustVector != nil {
-				fmt.Println(ar.TrustVector.Report(!verifyVerbose, verifyColor))
-			} else {
-				fmt.Println("not present")
+			fmt.Println("[trustworthiness vectors]")
+			for submodName, appraisal := range ar.Submods {
+				fmt.Printf("submod(%s):\n", submodName)
+				if appraisal.TrustVector != nil {
+					fmt.Println(appraisal.TrustVector.Report(!verifyVerbose, verifyColor))
+				} else {
+					fmt.Println("not present")
+				}
 			}
 
 			return nil
