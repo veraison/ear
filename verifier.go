@@ -27,7 +27,7 @@ func ToVerifierIdentity(v interface{}) (*VerifierIdentity, error) {
 	}
 
 	err := populateStructFromMap(&verifierID, m, "json",
-		map[string]parser{}, stringPtrParser)
+		map[string]parser{}, stringPtrParser, false)
 
 	return &verifierID, err
 }

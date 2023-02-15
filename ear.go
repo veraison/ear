@@ -245,5 +245,5 @@ func (o *AttestationResult) populateFromMap(m map[string]interface{}) error {
 		},
 	}
 
-	return populateStructFromMap(o, m, "json", parsers, stringPtrParser)
+	return populateStructFromMap(o, m, "json", parsers, stringPtrParser, true)
 }

@@ -244,6 +244,7 @@ func populateStructFromInterface(
 	tagKey string,
 	parsers map[string]parser,
 	defaultParser parser,
+	ignoreUnexpected bool,
 ) error {
 	destType := reflect.TypeOf(dest)
 	if destType.Kind() != reflect.Pointer || destType.Elem().Kind() != reflect.Struct {
@@ -252,13 +253,15 @@ func populateStructFromInterface(
 
 	switch t := v.(type) {
 	case map[string]interface{}:
-		return populateStructFromMap(dest, t, tagKey, parsers, defaultParser)
+		return populateStructFromMap(dest, t, tagKey, parsers,
+			defaultParser, ignoreUnexpected)
 	case map[string]string:
 		m := make(map[string]interface{}, len(t))
 		for k, v := range t {
 			m[k] = v
 		}
-		return populateStructFromMap(dest, m, tagKey, parsers, defaultParser)
+		return populateStructFromMap(dest, m, tagKey, parsers,
+			defaultParser, ignoreUnexpected)
 	default:
 		vType := reflect.TypeOf(v)
 		destName := destType.Elem().Name()
@@ -290,6 +293,7 @@ func populateStructFromMap(
 	tagKey string,
 	parsers map[string]parser,
 	defaultParser parser,
+	ignoreUnexpected bool,
 ) error {
 	var missing, invalid []string
 	var problems []string
@@ -317,7 +321,7 @@ func populateStructFromMap(
 		problems = append(problems, msg)
 	}
 
-	if len(extra) > 0 {
+	if len(extra) > 0 && !ignoreUnexpected {
 		msg := fmt.Sprintf("unexpected: %s", strings.Join(extra, ", "))
 		problems = append(problems, msg)
 	}

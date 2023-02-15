@@ -68,13 +68,13 @@ func Test_populateStructFromMap(t *testing.T) {
 		"mandatory-field": 42,
 	}
 
-	err := populateStructFromMap(&i, m, "json", parsers, stringParser)
+	err := populateStructFromMap(&i, m, "json", parsers, stringParser, true)
 	assert.EqualError(t, err, "wrong type: must be a Struct pointer")
 
-	err = populateStructFromMap(s, m, "json", parsers, stringParser)
+	err = populateStructFromMap(s, m, "json", parsers, stringParser, true)
 	assert.EqualError(t, err, "wrong type: must be a Struct pointer")
 
-	err = populateStructFromMap(&s, m, "json", parsers, stringParser)
+	err = populateStructFromMap(&s, m, "json", parsers, stringParser, true)
 	require.NoError(t, err)
 	assert.Equal(t, "foo", s.FieldOne)
 	assert.Equal(t, int64(42), *s.FieldTwo)
@@ -82,34 +82,34 @@ func Test_populateStructFromMap(t *testing.T) {
 	m = map[string]interface{}{
 		"mandatory-field": 42.0,
 	}
-	err = populateStructFromMap(&s, m, "json", parsers, stringParser)
+	err = populateStructFromMap(&s, m, "json", parsers, stringParser, true)
 	require.NoError(t, err)
 	assert.Equal(t, int64(42), *s.FieldTwo)
 
 	m = map[string]interface{}{
 		"optional-field": "foo",
 	}
-	err = populateStructFromMap(&s, m, "json", parsers, stringParser)
+	err = populateStructFromMap(&s, m, "json", parsers, stringParser, true)
 	assert.EqualError(t, err, "missing mandatory 'mandatory-field'")
 
 	m = map[string]interface{}{
 		"optional-field":  7,
 		"mandatory-field": 42,
 	}
-	err = populateStructFromMap(&s, m, "json", parsers, stringParser)
+	err = populateStructFromMap(&s, m, "json", parsers, stringParser, true)
 	assert.EqualError(t, err, "invalid value(s) for 'optional-field' (not a string)")
 
 	m = map[string]interface{}{
 		"mandatory-field": "foo",
 	}
-	err = populateStructFromMap(&s, m, "json", parsers, stringParser)
+	err = populateStructFromMap(&s, m, "json", parsers, stringParser, true)
 	assert.EqualError(t, err, "invalid value(s) for 'mandatory-field' (not an int64)")
 
 	m = map[string]interface{}{
 		"embedded-field":  "bar",
 		"mandatory-field": 42,
 	}
-	err = populateStructFromMap(&s, m, "json", parsers, stringParser)
+	err = populateStructFromMap(&s, m, "json", parsers, stringParser, true)
 	require.NoError(t, err)
 	assert.Equal(t, "bar", s.TestEmbedded.FieldOne)
 
@@ -117,14 +117,28 @@ func Test_populateStructFromMap(t *testing.T) {
 		"embedded-field":  false,
 		"mandatory-field": 42,
 	}
-	err = populateStructFromMap(&s, m, "json", parsers, stringParser)
+	err = populateStructFromMap(&s, m, "json", parsers, stringParser, true)
 	assert.EqualError(t, err, "invalid value(s) for 'embedded-field' (not a string)")
 
 	m = map[string]interface{}{
 		"mandatory-field": 42,
 	}
-	err = populateStructFromMap(&s, m, "json", parsers, stringParser)
+	err = populateStructFromMap(&s, m, "json", parsers, stringParser, true)
 	require.NoError(t, err)
+
+	m = map[string]interface{}{
+		"mandatory-field":  42,
+		"unexpected-field": "nothing to see here",
+	}
+	err = populateStructFromMap(&s, m, "json", parsers, stringParser, true)
+	assert.NoError(t, err)
+
+	m = map[string]interface{}{
+		"mandatory-field":  42,
+		"unexpected-field": "nothing to see here",
+	}
+	err = populateStructFromMap(&s, m, "json", parsers, stringParser, false)
+	assert.EqualError(t, err, "unexpected: unexpected-field")
 }
 
 func Test_populateStructFromInterface(t *testing.T) {
@@ -140,7 +154,7 @@ func Test_populateStructFromInterface(t *testing.T) {
 		"mandatory-field": 42,
 	}
 
-	err := populateStructFromInterface(&s, m, "json", parsers, stringParser)
+	err := populateStructFromInterface(&s, m, "json", parsers, stringParser, true)
 	require.NoError(t, err)
 	assert.Equal(t, "foo", s.FieldOne)
 	assert.Equal(t, int64(42), *s.FieldTwo)
@@ -157,33 +171,33 @@ func Test_populateStructFromInterface(t *testing.T) {
 	}
 
 	s = testStruct{}
-	err = populateStructFromInterface(&s, other, "json", parsers, stringParser)
+	err = populateStructFromInterface(&s, other, "json", parsers, stringParser, true)
 	require.NoError(t, err)
 	assert.Equal(t, "test", s.FieldOne)
 	assert.Equal(t, int64(7), *s.FieldTwo)
 	assert.Equal(t, "embedded-test", s.TestEmbedded.FieldOne)
 
 	s = testStruct{}
-	err = populateStructFromInterface(&s, &other, "json", parsers, stringParser)
+	err = populateStructFromInterface(&s, &other, "json", parsers, stringParser, true)
 	require.NoError(t, err)
 	assert.Equal(t, "test", s.FieldOne)
 	assert.Equal(t, int64(7), *s.FieldTwo)
 	assert.Equal(t, "embedded-test", s.TestEmbedded.FieldOne)
 
 	i := 7
-	err = populateStructFromInterface(&s, i, "json", parsers, stringParser)
+	err = populateStructFromInterface(&s, i, "json", parsers, stringParser, true)
 	assert.EqualError(t, err, "invalid value '7': expected a testStruct, but found int")
 
-	err = populateStructFromInterface(&s, &i, "json", parsers, stringParser)
+	err = populateStructFromInterface(&s, &i, "json", parsers, stringParser, true)
 	assert.EqualError(t, err, "invalid value: expected a *testStruct, but found *int")
 
 	type test2 struct{}
 	t2 := test2{}
 
-	err = populateStructFromInterface(&s, t2, "json", parsers, stringParser)
+	err = populateStructFromInterface(&s, t2, "json", parsers, stringParser, true)
 	assert.EqualError(t, err, "invalid value '{}': expected a testStruct, but found ear.test2")
 
-	err = populateStructFromInterface(&s, &t2, "json", parsers, stringParser)
+	err = populateStructFromInterface(&s, &t2, "json", parsers, stringParser, true)
 	assert.EqualError(t, err, "invalid value: expected a *testStruct, but found *ear.test2")
 }
 
