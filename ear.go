@@ -42,7 +42,11 @@ func (o B64Url) MarshalJSON() ([]byte, error) {
 
 // NewAttestationResult returns a pointer to a new fully-initialized
 // AttestationResult.
-func NewAttestationResult(submodName string) *AttestationResult {
+func NewAttestationResult(
+	submodName string,
+	verifierBuild string,
+	verifierDeveloper string,
+) *AttestationResult {
 	status := TrustTierNone
 	iat := time.Now().Unix()
 	profile := EatProfile
@@ -55,6 +59,10 @@ func NewAttestationResult(submodName string) *AttestationResult {
 				TrustVector: &TrustVector{},
 				Status:      &status,
 			},
+		},
+		VerifierID: &VerifierIdentity{
+			Build:     &verifierBuild,
+			Developer: &verifierDeveloper,
 		},
 	}
 }
