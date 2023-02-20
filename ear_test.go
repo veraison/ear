@@ -272,7 +272,7 @@ func TestRoundTrip_tampering(t *testing.T) {
 }
 
 func TestUpdateStatusFromTrustVector(t *testing.T) {
-	ar := NewAttestationResult("test")
+	ar := NewAttestationResult("test", "test", "test")
 
 	ar.UpdateStatusFromTrustVector()
 	assert.Equal(t, TrustTierNone, *ar.Submods["test"].Status)
@@ -293,7 +293,7 @@ func TestUpdateStatusFromTrustVector(t *testing.T) {
 func TestAsMap(t *testing.T) {
 	policyID := "foo"
 
-	ar := NewAttestationResult("someScheme")
+	ar := NewAttestationResult("someScheme", "test", "test")
 	status := NewTrustTier(TrustTierAffirming)
 	ar.Submods["someScheme"].Status = status
 	ar.Submods["someScheme"].TrustVector.Executables = ApprovedRuntimeClaim
@@ -370,4 +370,14 @@ func TestTrustTier_ColorString(t *testing.T) {
 	assert.Equal(t, "\\033[42maffirming\\033[0m", TrustTierAffirming.ColorString())
 	assert.Equal(t, "\\033[43mwarning\\033[0m", TrustTierWarning.ColorString())
 	assert.Equal(t, "\\033[41mcontraindicated\\033[0m", TrustTierContraindicated.ColorString())
+}
+
+func TestNewAttestationResult(t *testing.T) {
+	ar := NewAttestationResult("test", "testBuild", "testDev")
+
+	_, err := ar.MarshalJSON()
+	assert.NoError(t, err)
+
+	assert.Equal(t, "testBuild", *ar.VerifierID.Build)
+	assert.Equal(t, "testDev", *ar.VerifierID.Developer)
 }
