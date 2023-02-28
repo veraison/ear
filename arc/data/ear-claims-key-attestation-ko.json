@@ -15,7 +15,7 @@
         "hardware": 2
       },
       "ear.appraisal-policy-id":
-        "https://veraison.example/policy/1/60a0068d",
+        "policy://parsec/60a0068d",
       "ear.veraison.key-attestation": {}
     }
   }
