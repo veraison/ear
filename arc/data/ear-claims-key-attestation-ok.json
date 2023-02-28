@@ -1,0 +1,25 @@
+{
+  "eat_profile": "tag:github.com,2023:veraison/ear",
+  "iat": 1666529184,
+  "ear.verifier-id": {
+    "developer": "https://veraison-project.org",
+    "build": "vts 0.0.1"
+  },
+  "ear.raw-evidence": "NzQ3MjY5NzM2NTYzNzQK",
+  "submods": {
+    "PARSEC_TPM": {
+      "ear.status": "affirming",
+      "ear.trustworthiness-vector": {
+        "instance-identity": 2,
+        "executables": 2,
+        "hardware": 2
+      },
+      "ear.appraisal-policy-id":
+        "policy://parsec/60a0068d",
+      "ear.veraison.key-attestation": {
+        "akpub":
+          "MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEcjSp8_MWM3gy8TugWO1TpQSj_vIksLpC-g8l5S3lpGb7PWWGoCAjEP8_A59VZwLXgwoZzN0WxuBPjpaWiWsfCQ"
+      }
+    }
+  }
+}
