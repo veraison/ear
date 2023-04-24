@@ -71,7 +71,7 @@ func Example_encode_veraison_extensions() {
 	fmt.Println(string(j))
 
 	// Output:
-	// {"ear.verifier-id":{"build":"rrtrap-v1.0.0","developer":"Acme Inc."},"eat_profile":"tag:github.com,2023:veraison/ear","iat":1666091373,"submods":{"test":{"ear.appraisal-policy-id":"policy://test/01234","ear.status":"affirming","ear.veraison.annotated-evidence":{"k1":"v1","k2":"v2"},"ear.veraison.policy-claims":{"bar":"baz","foo":"bar"}}}}
+	// {"ear.verifier-id":{"build":"rrtrap-v1.0.0","developer":"Acme Inc."},"eat_profile":"tag:github.com,2023:veraison/ear","iat":1666091373,"submods":{"test":{"ear.appraisal-policy-id":"policy://test/01234","ear.status":"affirming","ear.veraison.annotated-evidence":{"k1":"v1","k2":"v2"},"ear.veraison.key-attestation":{"key1":"testkey"},"ear.veraison.policy-claims":{"bar":"baz","foo":"bar"}}}}
 }
 
 func Example_decode_veraison_extensions() {
@@ -85,6 +85,9 @@ func Example_decode_veraison_extensions() {
 				"ear.veraison.annotated-evidence": {
 					"k1": "v1",
 					"k2": "v2"
+				},
+				"ear.veraison.key-attestation":{
+					"key1":"testkey"
 				},
 				"ear.veraison.policy-claims": {
 					"bar": "baz",
