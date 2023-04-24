@@ -23,6 +23,7 @@ type Appraisal struct {
 type AppraisalExtensions struct {
 	VeraisonAnnotatedEvidence *map[string]interface{} `json:"ear.veraison.annotated-evidence,omitempty"`
 	VeraisonPolicyClaims      *map[string]interface{} `json:"ear.veraison.policy-claims,omitempty"`
+	VeraisonKeyAttestation    *map[string]interface{} `json:"ear.veraison.key-attestation,omitempty"`
 }
 
 // UpdateStatusFromTrustVector ensure that Status trustworthiness is not
@@ -79,6 +80,7 @@ func ToAppraisal(v interface{}) (*Appraisal, error) {
 		},
 		"ear.veraison.annotated-evidence": stringMapPtrParser,
 		"ear.veraison.policy-claims":      stringMapPtrParser,
+		"ear.veraison.key-attestation":    stringMapPtrParser,
 	}
 
 	err := populateStructFromMap(&appraisal, m, "json", parsers, stringPtrParser, true)
