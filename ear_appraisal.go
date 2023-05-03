@@ -47,9 +47,9 @@ func (o *Appraisal) UpdateStatusFromTrustVector() {
 func (o Appraisal) AsMap() map[string]interface{} {
 	m, err := structAsMap(o, "json")
 	if err != nil {
-		// An error can only be returned if there is issue in implmentation of
-		// AttestationResult; specificically, if any of its
-		// constituents incorrectly implment AsMap() themselves.
+		// An error can only be returned if there is issue in implementation of
+		// AttestationResult; specifically, if any of its
+		// constituents incorrectly implement AsMap() themselves.
 		panic(err)
 	}
 	return m

@@ -28,6 +28,12 @@ type AttestationResult struct {
 	IssuedAt    *int64                `json:"iat"`
 	Nonce       *string               `json:"eat_nonce,omitempty"`
 	Submods     map[string]*Appraisal `json:"submods"`
+
+	AttestationResultExtensions
+}
+
+type AttestationResultExtensions struct {
+	VeraisonTeeInfo *VeraisonTeeInfo `json:"ear.veraison.tee-info,omitempty"`
 }
 
 // B64Url is base64url (§5 of RFC4648) without padding.
@@ -108,9 +114,9 @@ func (o *AttestationResult) UnmarshalJSON(data []byte) error {
 func (o AttestationResult) AsMap() map[string]interface{} {
 	m, err := structAsMap(o, "json")
 	if err != nil {
-		// An error can only be returned if there is issue in implmentation of
-		// AttestationResult; specificically, if any of its
-		// constituents incorrectly implment AsMap() themselves.
+		// An error can only be returned if there is issue in implementation of
+		// AttestationResult; specifically, if any of its
+		// constituents incorrectly implement AsMap() themselves.
 		panic(err)
 	}
 	return m
@@ -250,6 +256,9 @@ func (o *AttestationResult) populateFromMap(m map[string]interface{}) error {
 			}
 
 			return ret, nil
+		},
+		"ear.veraison.tee-info": func(v interface{}) (interface{}, error) {
+			return ToVeraisonTeeInfo(v)
 		},
 	}
 
