@@ -53,6 +53,13 @@ func Example_encode_hefty() {
 		IssuedAt:    &testIAT,
 		VerifierID:  &testVerifierID,
 		Profile:     &testProfile,
+		AttestationResultExtensions: AttestationResultExtensions{
+			VeraisonTeeInfo: &VeraisonTeeInfo{
+				TeeName:    &testTeeName,
+				EvidenceID: &testEvidenceID,
+				Evidence:   &testEvidence,
+			},
+		},
 	}
 
 	j, _ := ar.MarshalJSON()
@@ -60,7 +67,7 @@ func Example_encode_hefty() {
 	fmt.Println(string(j))
 
 	// Output:
-	// {"ear.raw-evidence":"3q2-7w","ear.verifier-id":{"build":"rrtrap-v1.0.0","developer":"Acme Inc."},"eat_profile":"tag:github.com,2023:veraison/ear","iat":1666091373,"submods":{"test":{"ear.appraisal-policy-id":"policy://test/01234","ear.status":"affirming","ear.trustworthiness-vector":{"configuration":2,"executables":3,"file-system":2,"hardware":2,"instance-identity":2,"runtime-opaque":2,"sourced-data":2,"storage-opaque":2}}}}
+	// {"ear.raw-evidence":"3q2-7w","ear.veraison.tee-info":{"tee-name":"aws-nitro","evidence-id":"405e0c3127e455ebc22361210b43ca9499ca80d3f6b1dc79b89fa35290cee3d9","evidence":"ZXZpZGVuY2U="},"ear.verifier-id":{"build":"rrtrap-v1.0.0","developer":"Acme Inc."},"eat_profile":"tag:github.com,2023:veraison/ear","iat":1666091373,"submods":{"test":{"ear.appraisal-policy-id":"policy://test/01234","ear.status":"affirming","ear.trustworthiness-vector":{"configuration":2,"executables":3,"file-system":2,"hardware":2,"instance-identity":2,"runtime-opaque":2,"sourced-data":2,"storage-opaque":2}}}}
 }
 
 func Example_encode_veraison_extensions() {
@@ -71,7 +78,7 @@ func Example_encode_veraison_extensions() {
 	fmt.Println(string(j))
 
 	// Output:
-	// {"ear.verifier-id":{"build":"rrtrap-v1.0.0","developer":"Acme Inc."},"eat_profile":"tag:github.com,2023:veraison/ear","iat":1666091373,"submods":{"test":{"ear.appraisal-policy-id":"policy://test/01234","ear.status":"affirming","ear.veraison.annotated-evidence":{"k1":"v1","k2":"v2"},"ear.veraison.key-attestation":{"key1":"testkey"},"ear.veraison.policy-claims":{"bar":"baz","foo":"bar"}}}}
+	// {"ear.verifier-id":{"build":"rrtrap-v1.0.0","developer":"Acme Inc."},"eat_profile":"tag:github.com,2023:veraison/ear","iat":1666091373,"submods":{"test":{"ear.appraisal-policy-id":"policy://test/01234","ear.status":"affirming","ear.veraison.annotated-evidence":{"k1":"v1","k2":"v2"},"ear.veraison.key-attestation":{"akpub":"YWtwdWIK"},"ear.veraison.policy-claims":{"bar":"baz","foo":"bar"}}}}
 }
 
 func Example_decode_veraison_extensions() {
@@ -86,14 +93,23 @@ func Example_decode_veraison_extensions() {
 					"k1": "v1",
 					"k2": "v2"
 				},
-				"ear.veraison.key-attestation":{
-					"key1":"testkey"
+				"ear.veraison.key-attestation": {
+					"akpub": "YWtwdWIK"
 				},
 				"ear.veraison.policy-claims": {
 					"bar": "baz",
 					"foo": "bar"
 				}
 			}
+		},
+		"ear.verifier-id": {
+			"developer": "Contributors to the Veraison project",
+			"build": "v1.1.23"
+		},
+		"ear.veraison.tee-info": {
+			"tee-name": "aws-nitro",
+			"evidence-id": "405e0c3127e455ebc22361210b43ca9499ca80d3f6b1dc79b89fa35290cee3d9",
+			"evidence": "ZXZpZGVuY2U="
 		}
 	}`
 	var ar AttestationResult
@@ -102,11 +118,19 @@ func Example_decode_veraison_extensions() {
 	fmt.Println(TrustTierToString[*ar.Submods["test"].Status])
 	fmt.Println((*ar.Submods["test"].VeraisonAnnotatedEvidence)["k1"])
 	fmt.Println((*ar.Submods["test"].VeraisonPolicyClaims)["bar"])
+	fmt.Println((*ar.Submods["test"].VeraisonKeyAttestation)["akpub"])
+	fmt.Println(*ar.VeraisonTeeInfo.TeeName)
+	fmt.Println(*ar.VeraisonTeeInfo.EvidenceID)
+	fmt.Println(*ar.VeraisonTeeInfo.Evidence)
 
 	// Output:
 	// affirming
 	// v1
 	// baz
+	// YWtwdWIK
+	// aws-nitro
+	// 405e0c3127e455ebc22361210b43ca9499ca80d3f6b1dc79b89fa35290cee3d9
+	// [101 118 105 100 101 110 99 101]
 }
 
 func Example_colors() {

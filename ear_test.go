@@ -43,6 +43,9 @@ var (
 	testUnsupportedProfile = "1.2.3.4.5"
 	testNonce              = "0123456789abcdef"
 	testBadNonce           = "1337"
+	testEvidenceID         = "405e0c3127e455ebc22361210b43ca9499ca80d3f6b1dc79b89fa35290cee3d9"
+	testEvidence           = []byte("evidence")
+	testTeeName            = "aws-nitro"
 
 	testAttestationResultsWithVeraisonExtns = AttestationResult{
 		IssuedAt:   &testIAT,
@@ -62,7 +65,7 @@ var (
 						"k2": "v2",
 					},
 					VeraisonKeyAttestation: &map[string]interface{}{
-						"key1": "testkey",
+						"akpub": "YWtwdWIK",
 					},
 				},
 			},
@@ -162,25 +165,26 @@ func TestUnmarshalJSON_fail(t *testing.T) {
 }
 
 func TestVerify_pass(t *testing.T) {
-	tvs := []string{
-		// ok
-		`eyJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCJ9.eyJlYXIudmVyaWZpZXItaWQiOnsiYnVpbGQiOiJycnRyYXAtdjEuMC4wIiwiZGV2ZWxvcGVyIjoiQWNtZSBJbmMuIn0sImVhdF9wcm9maWxlIjoidGFnOmdpdGh1Yi5jb20sMjAyMzp2ZXJhaXNvbi9lYXIiLCJpYXQiOjEuNjY2MDkxMzczZSswOSwianRpIjoiN2VkNTk5MWE4OGZiMjRhZDM3MDZjOGNmNzA4ZmYwODhjNjE3OGEwOWU5MDBkNTJlYmEzMjQyZDNhZDk0YTI5NCIsIm5iZiI6MTY4MjM0NjE5NSwic3VibW9kcyI6eyJ0ZXN0Ijp7ImVhci5hcHByYWlzYWwtcG9saWN5LWlkIjoicG9saWN5Oi8vdGVzdC8wMTIzNCIsImVhci5zdGF0dXMiOiJhZmZpcm1pbmciLCJlYXIudmVyYWlzb24uYW5ub3RhdGVkLWV2aWRlbmNlIjp7ImsxIjoidjEiLCJrMiI6InYyIn0sImVhci52ZXJhaXNvbi5rZXktYXR0ZXN0YXRpb24iOnsia2V5MSI6InRlc3RrZXkifSwiZWFyLnZlcmFpc29uLnBvbGljeS1jbGFpbXMiOnsiYmFyIjoiYmF6IiwiZm9vIjoiYmFyIn19fX0.fNT4g8daE0OEadiWknMExxjLmegZlffJqO62oEBkRD0qEe8F44aCVHHNfDQJo8dLBF7hc4-t-dLJP_R11dHAAA`,
-		// trailing stuff means the format is no longer valid.
-		`eyJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCJ9.eyJlYXIudmVyaWZpZXItaWQiOnsiYnVpbGQiOiJycnRyYXAtdjEuMC4wIiwiZGV2ZWxvcGVyIjoiQWNtZSBJbmMuIn0sImVhdF9wcm9maWxlIjoidGFnOmdpdGh1Yi5jb20sMjAyMzp2ZXJhaXNvbi9lYXIiLCJpYXQiOjEuNjY2MDkxMzczZSswOSwianRpIjoiMTY1Zjg0YzY3YzE0ZTEwZDFlNGI0MzM0MDgzY2IyYTIxZDI2YmYxN2FhNjBkNWU5ZGE5ZDhmNzE3NmFjNWI2MyIsIm5iZiI6MTY3NjQ3MjcwOSwic3VibW9kcyI6eyJ0ZXN0Ijp7ImVhci5hcHByYWlzYWwtcG9saWN5LWlkIjoicG9saWN5Oi8vdGVzdC8wMTIzNCIsImVhci5zdGF0dXMiOiJhZmZpcm1pbmciLCJlYXIudmVyYWlzb24uYW5ub3RhdGVkLWV2aWRlbmNlIjp7ImsxIjoidjEiLCJrMiI6InYyIn0sImVhci52ZXJhaXNvbi5wb2xpY3ktY2xhaW1zIjp7ImJhciI6ImJheiIsImZvbyI6ImJhciJ9fX19.LunlKAnUiVHZxIUr7jNnrwFlRtd7t6f6W1rzIFgcWFLdtJELKIVGkPVV5PriHh8T0uLLIEJafwvi6hmIr27aDw.trailing-rubbish`,
+	tvs := []struct {
+		token    string
+		expected AttestationResult
+	}{
+		{
+			token:    `eyJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCJ9.eyJlYXIudmVyaWZpZXItaWQiOnsiYnVpbGQiOiJycnRyYXAtdjEuMC4wIiwiZGV2ZWxvcGVyIjoiQWNtZSBJbmMuIn0sImVhdF9wcm9maWxlIjoidGFnOmdpdGh1Yi5jb20sMjAyMzp2ZXJhaXNvbi9lYXIiLCJpYXQiOjE2NjYwOTEzNzMsInN1Ym1vZHMiOnsidGVzdCI6eyJlYXIuYXBwcmFpc2FsLXBvbGljeS1pZCI6InBvbGljeTovL3Rlc3QvMDEyMzQiLCJlYXIuc3RhdHVzIjoiYWZmaXJtaW5nIiwiZWFyLnZlcmFpc29uLmFubm90YXRlZC1ldmlkZW5jZSI6eyJrMSI6InYxIiwiazIiOiJ2MiJ9LCJlYXIudmVyYWlzb24ua2V5LWF0dGVzdGF0aW9uIjp7ImFrcHViIjoiWVd0d2RXSUsifSwiZWFyLnZlcmFpc29uLnBvbGljeS1jbGFpbXMiOnsiYmFyIjoiYmF6IiwiZm9vIjoiYmFyIn19fX0.gTuJrH5Ctf6sAXlaFu1NvHAtI4H0iSqsp2ZtxPPhSfZJBkyeWmZi62lTBw644JDRI0DY9X7Wk7CBWWE6dmBVAA`,
+			expected: testAttestationResultsWithVeraisonExtns,
+		},
 	}
 
 	k, err := jwk.ParseKey([]byte(testECDSAPublicKey))
 	require.NoError(t, err)
 
-	var ar AttestationResult
+	for i, tv := range tvs {
+		var ar AttestationResult
 
-	err = ar.Verify([]byte(tvs[0]), jwa.ES256, k)
-	assert.NoError(t, err)
-	assert.Equal(t, testAttestationResultsWithVeraisonExtns, ar)
-
-	var ar2 AttestationResult
-	err = ar2.Verify([]byte(tvs[1]), jwa.ES256, k)
-	assert.ErrorContains(t, err, "failed to parse token: invalid character 'e' looking for beginning of value")
+		err := ar.Verify([]byte(tv.token), jwa.ES256, k)
+		assert.NoError(t, err, "failed test vector at index %d", i)
+		assert.Equal(t, tv.expected, ar)
+	}
 }
 
 func TestVerify_fail(t *testing.T) {
@@ -207,6 +211,11 @@ func TestVerify_fail(t *testing.T) {
 			// empty attestation results
 			token:    `eyJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCJ9.e30.9Tvx3hVBNfkmVXTndrVfv9ZeNJgX59w0JpR2vyjUn8lGxL8VT7OggUeYSYFnxrouSi2TusNh61z8rLdOqxGA-A`,
 			expected: `missing mandatory 'eat_profile', 'ear.verifier-id', 'submods'`,
+		},
+		{
+			// empty attestation results
+			token:    `eyJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCJ9.eyJlYXIudmVyaWZpZXItaWQiOnsiYnVpbGQiOiJycnRyYXAtdjEuMC4wIiwiZGV2ZWxvcGVyIjoiQWNtZSBJbmMuIn0sImVhdF9wcm9maWxlIjoidGFnOmdpdGh1Yi5jb20sMjAyMzp2ZXJhaXNvbi9lYXIiLCJpYXQiOjEuNjY2MDkxMzczZSswOSwianRpIjoiMTY1Zjg0YzY3YzE0ZTEwZDFlNGI0MzM0MDgzY2IyYTIxZDI2YmYxN2FhNjBkNWU5ZGE5ZDhmNzE3NmFjNWI2MyIsIm5iZiI6MTY3NjQ3MjcwOSwic3VibW9kcyI6eyJ0ZXN0Ijp7ImVhci5hcHByYWlzYWwtcG9saWN5LWlkIjoicG9saWN5Oi8vdGVzdC8wMTIzNCIsImVhci5zdGF0dXMiOiJhZmZpcm1pbmciLCJlYXIudmVyYWlzb24uYW5ub3RhdGVkLWV2aWRlbmNlIjp7ImsxIjoidjEiLCJrMiI6InYyIn0sImVhci52ZXJhaXNvbi5wb2xpY3ktY2xhaW1zIjp7ImJhciI6ImJheiIsImZvbyI6ImJhciJ9fX19.LunlKAnUiVHZxIUr7jNnrwFlRtd7t6f6W1rzIFgcWFLdtJELKIVGkPVV5PriHh8T0uLLIEJafwvi6hmIr27aDw.trailing-rubbish`,
+			expected: `failed to parse token: invalid character 'e' looking for beginning of value`,
 		},
 	}
 

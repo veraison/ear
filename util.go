@@ -23,6 +23,9 @@ func stringParser(iface interface{}) (interface{}, error) {
 
 func stringPtrParser(iface interface{}) (interface{}, error) {
 	ret, err := stringParser(iface)
+	if err != nil {
+		return nil, err
+	}
 	v := ret.(string)
 	return &v, err
 }
@@ -37,6 +40,9 @@ func stringMapParser(iface interface{}) (interface{}, error) {
 
 func stringMapPtrParser(iface interface{}) (interface{}, error) {
 	ret, err := stringMapParser(iface)
+	if err != nil {
+		return nil, err
+	}
 	v := ret.(map[string]interface{})
 	return &v, err
 }
@@ -56,6 +62,9 @@ func int64Parser(iface interface{}) (interface{}, error) {
 
 func int64PtrParser(iface interface{}) (interface{}, error) {
 	ret, err := int64Parser(iface)
+	if err != nil {
+		return nil, err
+	}
 	v := ret.(int64)
 	return &v, err
 }
@@ -76,6 +85,9 @@ func b64urlBytesParser(iface interface{}) (interface{}, error) {
 
 func b64urlBytesPtrParser(iface interface{}) (interface{}, error) {
 	ret, err := b64urlBytesParser(iface)
+	if err != nil {
+		return nil, err
+	}
 	v := ret.(B64Url)
 	return &v, err
 }
@@ -131,7 +143,7 @@ func doStructAsMap(
 		if fieldVal.Kind() == reflect.Pointer {
 			if fieldVal.IsNil() {
 				if tagSpec.IsMandatory {
-					// the feild is mandatory (i.e. does
+					// the field is mandatory (i.e. does
 					// not have "omitempty", so we should
 					// include the nil value
 					m[tagSpec.Name] = nil
@@ -143,7 +155,7 @@ func doStructAsMap(
 			fieldVal = fieldVal.Elem()
 		}
 
-		// For maps, keys are assumed to be (convertable to) strings.
+		// For maps, keys are assumed to be (convertible to) strings.
 		// If the values are structs, we need to make sure they're
 		// converted, recursively. Otherwise, the map can be handled
 		// "normally".
@@ -229,7 +241,7 @@ func doStructAsMap(
 			continue
 		}
 
-		// Finally, for all other types, assuem the value is a
+		// Finally, for all other types, assume the value is a
 		// serializable type and assign it directly.
 		m[tagSpec.Name] = fieldVal.Interface()
 
