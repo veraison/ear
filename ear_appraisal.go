@@ -62,6 +62,7 @@ func (o *AppraisalExtensions) SetKeyAttestation(pub any) error {
 
 // GetKeyAttestation returns the decoded public key carried in the
 // "ear.veraison.key-attestation" claim.
+// The returned key type is one supported by x509.ParsePKIXPublicKey.
 func (o AppraisalExtensions) GetKeyAttestation() (any, error) {
 	if o.VeraisonKeyAttestation == nil {
 		return nil, errors.New(`"ear.veraison.key-attestation" claim not found`)
