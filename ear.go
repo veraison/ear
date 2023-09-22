@@ -154,7 +154,7 @@ func (o AttestationResult) validate() error {
 
 	if o.Nonce != nil {
 		nLen := len(*o.Nonce)
-		if nLen > 74 || nLen < 10 {
+		if nLen > 88 || nLen < 8 {
 			invalid = append(invalid, fmt.Sprintf("eat_nonce (%d bytes)", nLen))
 		}
 	}
