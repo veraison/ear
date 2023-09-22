@@ -163,4 +163,13 @@ func TestTrustTier_ToTrustTier(t *testing.T) {
 	tt, err = ToTrustTier(UnrecognizedHardwareClaim)
 	require.NoError(t, err)
 	assert.Equal(t, TrustTierContraindicated, *tt)
+
+	tt, err = ToTrustTier(TrustTierContraindicated)
+	require.NoError(t, err)
+	assert.Equal(t, TrustTierContraindicated, *tt)
+
+	taff := TrustTierAffirming
+	tt, err = ToTrustTier(&taff)
+	require.NoError(t, err)
+	assert.Equal(t, TrustTierAffirming, *tt)
 }
