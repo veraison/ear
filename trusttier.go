@@ -152,6 +152,10 @@ func ToTrustTier(v interface{}) (*TrustTier, error) {
 				err = fmt.Errorf("not a valid TrustTier value: %v (%d)", t, int(i))
 			}
 		}
+	case TrustTier:
+		tier = t
+	case *TrustTier:
+		tier = *t
 	default:
 		err = fmt.Errorf("cannot convert %v (type %T) to TrustTier", t, t)
 	}
