@@ -30,3 +30,18 @@ func (o *UnprocessedEvidence) SetEvidence(data *[]byte) error {
 	o.Data = data
 	return nil
 }
+
+func (o UnprocessedEvidence) GetMediaType() string {
+	if o.MediaType == nil {
+		return ""
+	}
+
+	return *o.MediaType
+}
+
+func (o UnprocessedEvidence) GetEvidence() []byte {
+	if o.Data == nil {
+		return nil
+	}
+	return *o.Data
+}

@@ -60,6 +60,7 @@ func Example_encode_hefty() {
 				Evidence:   &testEvidence,
 			},
 		},
+		UPEvidence: &UnprocessedEvidence{MediaType: &testUpEvMt, Data: &testUpEvData},
 	}
 
 	j, _ := ar.MarshalJSON()
@@ -67,7 +68,7 @@ func Example_encode_hefty() {
 	fmt.Println(string(j))
 
 	// Output:
-	// {"ear.raw-evidence":"3q2-7w","ear.veraison.tee-info":{"tee-name":"aws-nitro","evidence-id":"405e0c3127e455ebc22361210b43ca9499ca80d3f6b1dc79b89fa35290cee3d9","evidence":"ZXZpZGVuY2U="},"ear.verifier-id":{"build":"rrtrap-v1.0.0","developer":"Acme Inc."},"eat_profile":"tag:github.com,2023:veraison/ear","iat":1666091373,"submods":{"test":{"ear.appraisal-policy-id":"policy://test/01234","ear.status":"affirming","ear.trustworthiness-vector":{"configuration":2,"executables":3,"file-system":2,"hardware":2,"instance-identity":2,"runtime-opaque":2,"sourced-data":2,"storage-opaque":2}}}}
+	// {"ear.raw-evidence":"3q2-7w","ear.up-evidence":{"media_type":"application/eat-cwt","data":"dXBldmlkZW5jZQ=="},"ear.veraison.tee-info":{"tee-name":"aws-nitro","evidence-id":"405e0c3127e455ebc22361210b43ca9499ca80d3f6b1dc79b89fa35290cee3d9","evidence":"ZXZpZGVuY2U="},"ear.verifier-id":{"build":"rrtrap-v1.0.0","developer":"Acme Inc."},"eat_profile":"tag:github.com,2023:veraison/ear","iat":1666091373,"submods":{"test":{"ear.appraisal-policy-id":"policy://test/01234","ear.status":"affirming","ear.trustworthiness-vector":{"configuration":2,"executables":3,"file-system":2,"hardware":2,"instance-identity":2,"runtime-opaque":2,"sourced-data":2,"storage-opaque":2}}}}
 }
 
 func Example_encode_veraison_extensions() {
