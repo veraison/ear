@@ -171,9 +171,6 @@ func (o AttestationResult) validate() error {
 		}
 	}
 
-	if o.UPEvidence == nil {
-		missing = append(missing, "'up-evidence'")
-	}
 	if len(missing) == 0 && len(invalid) == 0 {
 		return nil
 	}
