@@ -28,7 +28,7 @@ type AttestationResult struct {
 	IssuedAt    *int64                `json:"iat"`
 	Nonce       *string               `json:"eat_nonce,omitempty"`
 	Submods     map[string]*Appraisal `json:"submods"`
-	UPEvidence  *UnprocessedEvidence  `json:"ear.up-evidence"`
+	UPEvidence  *UnprocessedEvidence  `json:"ear.up-evidence,omitempty"`
 
 	AttestationResultExtensions
 }
