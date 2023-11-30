@@ -28,6 +28,7 @@ type AttestationResult struct {
 	IssuedAt    *int64                `json:"iat"`
 	Nonce       *string               `json:"eat_nonce,omitempty"`
 	Submods     map[string]*Appraisal `json:"submods"`
+	UPEvidence  *UnprocessedEvidence  `json:"ear.up-evidence"`
 
 	AttestationResultExtensions
 }
@@ -170,6 +171,9 @@ func (o AttestationResult) validate() error {
 		}
 	}
 
+	if o.UPEvidence == nil {
+		missing = append(missing, "'up-evidence'")
+	}
 	if len(missing) == 0 && len(invalid) == 0 {
 		return nil
 	}

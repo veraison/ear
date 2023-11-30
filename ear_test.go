@@ -39,14 +39,15 @@ var (
 		Build:     &testVidBuild,
 		Developer: &testVidDeveloper,
 	}
-	testProfile            = EatProfile
-	testUnsupportedProfile = "1.2.3.4.5"
-	testNonce              = "0123456789abcdef"
-	testBadNonce           = "1337"
-	testEvidenceID         = "405e0c3127e455ebc22361210b43ca9499ca80d3f6b1dc79b89fa35290cee3d9"
-	testEvidence           = []byte("evidence")
-	testTeeName            = "aws-nitro"
-
+	testProfile                             = EatProfile
+	testUnsupportedProfile                  = "1.2.3.4.5"
+	testNonce                               = "0123456789abcdef"
+	testBadNonce                            = "1337"
+	testEvidenceID                          = "405e0c3127e455ebc22361210b43ca9499ca80d3f6b1dc79b89fa35290cee3d9"
+	testEvidence                            = []byte("evidence")
+	testTeeName                             = "aws-nitro"
+	testUpEvMt                              = "application/eat-cwt"
+	testUpEvData                            = []byte("upevidence")
 	testAttestationResultsWithVeraisonExtns = AttestationResult{
 		IssuedAt:   &testIAT,
 		VerifierID: &testVerifierID,
@@ -82,13 +83,13 @@ func TestToJSON_fail(t *testing.T) {
 	}{
 		{
 			ar:       AttestationResult{},
-			expected: `missing mandatory 'eat_profile', 'iat', 'verifier-id', 'submods' (at least one appraisal must be present)`,
+			expected: `missing mandatory 'eat_profile', 'iat', 'verifier-id', 'submods' (at least one appraisal must be present), 'up-evidence'`,
 		},
 		{
 			ar: AttestationResult{
 				Submods: map[string]*Appraisal{},
 			},
-			expected: `missing mandatory 'eat_profile', 'iat', 'verifier-id', 'submods' (at least one appraisal must be present)`,
+			expected: `missing mandatory 'eat_profile', 'iat', 'verifier-id', 'submods' (at least one appraisal must be present), 'up-evidence'`,
 		},
 		{
 			ar: AttestationResult{
@@ -97,7 +98,7 @@ func TestToJSON_fail(t *testing.T) {
 					"test": {},
 				},
 			},
-			expected: `missing mandatory 'eat_profile', 'verifier-id'; invalid value(s) for submods[test]: missing mandatory 'ear.status'`,
+			expected: `missing mandatory 'eat_profile', 'verifier-id', 'up-evidence'; invalid value(s) for submods[test]: missing mandatory 'ear.status'`,
 		},
 		{
 			ar: AttestationResult{
@@ -106,7 +107,7 @@ func TestToJSON_fail(t *testing.T) {
 					"test": {Status: &testTrustTier},
 				},
 			},
-			expected: `missing mandatory 'iat', 'verifier-id'`,
+			expected: `missing mandatory 'iat', 'verifier-id', 'up-evidence'`,
 		},
 		{
 			ar: AttestationResult{
@@ -115,7 +116,7 @@ func TestToJSON_fail(t *testing.T) {
 					"test": {Status: &testTrustTier},
 				},
 			},
-			expected: `missing mandatory 'iat', 'verifier-id'; invalid value(s) for eat_profile (1.2.3.4.5)`,
+			expected: `missing mandatory 'iat', 'verifier-id', 'up-evidence'; invalid value(s) for eat_profile (1.2.3.4.5)`,
 		},
 		{
 			ar: AttestationResult{
@@ -126,6 +127,7 @@ func TestToJSON_fail(t *testing.T) {
 				Submods: map[string]*Appraisal{
 					"test": {Status: &testTrustTier},
 				},
+				UPEvidence: &UnprocessedEvidence{MediaType: &testUpEvMt, Data: &testUpEvData},
 			},
 			expected: `invalid value(s) for eat_nonce (4 bytes)`,
 		},
