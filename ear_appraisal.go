@@ -11,6 +11,8 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
+
+	"github.com/google/uuid"
 )
 
 // Appraisal represents the result of an evidence appraisal
@@ -32,6 +34,7 @@ type AppraisalExtensions struct {
 	VeraisonAnnotatedEvidence *map[string]interface{} `json:"ear.veraison.annotated-evidence,omitempty"`
 	VeraisonPolicyClaims      *map[string]interface{} `json:"ear.veraison.policy-claims,omitempty"`
 	VeraisonKeyAttestation    *map[string]interface{} `json:"ear.veraison.key-attestation,omitempty"`
+	VeraisonRealmIdentity     *map[string]interface{} `json:"ear.veraison.realm-identity,omitempty"`
 }
 
 // SetKeyAttestation sets the value of `akpub` in the
@@ -89,6 +92,43 @@ func (o AppraisalExtensions) GetKeyAttestation() (any, error) {
 	}
 
 	return pub, nil
+}
+
+// SetRealmIdentity sets supplied realm id in the
+// "ear.veraison.realm-identity" claim. Currently only a valid UUID in string format
+// is supported
+func (o *AppraisalExtensions) SetRealmIdentity(id string) error {
+	if id == "" {
+		return errors.New(`"ear.veraison.realm-identity" empty string`)
+	}
+	_, err := uuid.Parse(id)
+	if err != nil {
+		return fmt.Errorf(`"ear.veraison.realm-identity" invalid uuid: %w`, err)
+	}
+	o.VeraisonRealmIdentity = &map[string]interface{}{
+		"realmID": id,
+	}
+	return nil
+}
+
+func (o AppraisalExtensions) GetRealmIdentity() (string, error) {
+	if o.VeraisonRealmIdentity == nil {
+		return "", errors.New(`"ear.veraison.realm-identity" claim not found`)
+	}
+
+	v, ok := (*o.VeraisonRealmIdentity)["realmID"]
+	if !ok {
+		return "", errors.New(`"realmID" not found in "veraison.realm-identity"`)
+	}
+	realmID, ok := v.(string)
+	if !ok {
+		return "", errors.New(`"ear.veraison.realm-identity" malformed: "realmID" must be string`)
+	}
+	_, err := uuid.Parse(realmID)
+	if err != nil {
+		return "", fmt.Errorf(`"ear.veraison.realm-identity" invalid uuid: %w`, err)
+	}
+	return realmID, nil
 }
 
 // UpdateStatusFromTrustVector ensure that Status trustworthiness is not

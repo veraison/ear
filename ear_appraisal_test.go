@@ -89,3 +89,45 @@ func TestAppraisalExtensions_GetKeyAttestation_fail_akpub_no_b64url(t *testing.T
 	_, err := tv.GetKeyAttestation()
 	assert.EqualError(t, err, `"ear.veraison.key-attestation" malformed: decoding "akpub": illegal base64 data at input byte 84`)
 }
+
+func TestAppraisalExtensions_SetGetRealmIdentity_ok(t *testing.T) {
+	tv := "cd1f0e55-26f9-460d-b9d8-f7fde171787c"
+
+	expected := AppraisalExtensions{
+		VeraisonRealmIdentity: &map[string]interface{}{
+			"realmID": tv,
+		},
+	}
+
+	actual := AppraisalExtensions{}
+
+	err := actual.SetRealmIdentity(tv)
+	assert.NoError(t, err)
+	assert.Equal(t, expected, actual)
+
+	pub, err := actual.GetRealmIdentity()
+	assert.NoError(t, err)
+	assert.Equal(t, tv, pub)
+}
+
+func TestAppraisalExtensions_SetRealmIdentity_nok(t *testing.T) {
+	tv := "plaintext"
+	actual := AppraisalExtensions{}
+
+	err := actual.SetRealmIdentity(tv)
+	assert.EqualError(t, err, `"ear.veraison.realm-identity" invalid uuid: invalid UUID length: 9`)
+}
+
+func TestAppraisalExtensions_GetRealmIdentity_realmID_missing(t *testing.T) {
+
+	tv := AppraisalExtensions{}
+	_, err := tv.GetRealmIdentity()
+	assert.EqualError(t, err, `"ear.veraison.realm-identity" claim not found`)
+
+	tv = AppraisalExtensions{
+		VeraisonRealmIdentity: &map[string]interface{}{},
+	}
+
+	_, err = tv.GetRealmIdentity()
+	assert.EqualError(t, err, `"realmID" not found in "veraison.realm-identity"`)
+}
