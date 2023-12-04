@@ -186,6 +186,7 @@ func ToAppraisal(v interface{}) (*Appraisal, error) {
 		"ear.veraison.annotated-evidence": stringMapPtrParser,
 		"ear.veraison.policy-claims":      stringMapPtrParser,
 		"ear.veraison.key-attestation":    stringMapPtrParser,
+		"ear.veraison.realm-identity":     stringMapPtrParser,
 	}
 
 	err := populateStructFromMap(&appraisal, m, "json", parsers, stringPtrParser, true)
