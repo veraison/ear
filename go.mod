@@ -1,6 +1,6 @@
 module github.com/veraison/ear
 
-go 1.18
+go 1.20
 
 require (
 	filippo.io/keygen v0.0.0-20240718133620-7f162efbbd87
