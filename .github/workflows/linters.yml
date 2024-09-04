@@ -16,7 +16,7 @@ jobs:
     - name: Install golangci-lint 
       run: |
         go version
-        curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin v1.47.0
+        curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin v1.51.2
     - name: Run required linters in .golangci.yml plus hard-coded ones here
       run: make -w GOLINT=$(go env GOPATH)/bin/golangci-lint lint
     - name: Run optional linters (not required to pass)
