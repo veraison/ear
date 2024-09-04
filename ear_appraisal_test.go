@@ -4,9 +4,10 @@
 package ear
 
 import (
-	"crypto/ecdsa"
 	"crypto/elliptic"
 	"testing"
+
+	"filippo.io/keygen"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -19,7 +20,7 @@ func TestAppraisalExtensions_SetGetKeyAttestation_ok(t *testing.T) {
 		},
 	}
 
-	kp, err := ecdsa.GenerateKey(elliptic.P256(), new(zeroSource))
+	kp, err := keygen.ECDSALegacy(elliptic.P256(), new(zeroSource))
 	require.NoError(t, err)
 	tv := kp.Public()
 

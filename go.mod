@@ -3,6 +3,7 @@ module github.com/veraison/ear
 go 1.18
 
 require (
+	filippo.io/keygen v0.0.0-20240718133620-7f162efbbd87
 	github.com/huandu/xstrings v1.3.3
 	github.com/lestrrat-go/jwx/v2 v2.0.6
 	github.com/spf13/afero v1.9.2
@@ -12,6 +13,7 @@ require (
 )
 
 require (
+	filippo.io/bigmod v0.0.3 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/decred/dcrd/dcrec/secp256k1/v4 v4.1.0 // indirect
 	github.com/fsnotify/fsnotify v1.5.4 // indirect
@@ -32,9 +34,9 @@ require (
 	github.com/spf13/jwalterweatherman v1.1.0 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/subosito/gotenv v1.4.1 // indirect
-	golang.org/x/crypto v0.0.0-20220427172511-eb4f295cb31f // indirect
-	golang.org/x/sys v0.0.0-20220520151302-bc2c85ada10a // indirect
-	golang.org/x/text v0.3.7 // indirect
+	golang.org/x/crypto v0.7.0 // indirect
+	golang.org/x/sys v0.22.0 // indirect
+	golang.org/x/text v0.8.0 // indirect
 	gopkg.in/ini.v1 v1.67.0 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
