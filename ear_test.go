@@ -205,7 +205,7 @@ func TestVerify_fail(t *testing.T) {
 		{
 			// bad JWT formatting
 			token:    `.eyJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdGF0dXMiOiJhZmZpcm1pbmciLCJ0aW1lc3RhbXAiOiIyMDIyLTA5LTI2VDE3OjI5OjAwWiIsImFwcHJhaXNhbC1wb2xpY3ktaWQiOiJodHRwczovL3ZlcmFpc29uLmV4YW1wbGUvcG9saWN5LzEvNjBhMDA2OGQiLCJ2ZXJhaXNvbi5wcm9jZXNzZWQtZXZpZGVuY2UiOnsiazEiOiJ2MSIsImsyIjoidjIifSwidmVyYWlzb24udmVyaWZpZXItYWRkZWQtY2xhaW1zIjp7ImJhciI6ImJheiIsImZvbyI6ImJhciJ9fQ.Dv3PqGA2W8anXne0YZs8cvIhQhNF1Su1RS83RPzDVg4OhJFNN1oSF-loDpjfIwPdzCWt0eA6JYxSMqpGiemq-Q`,
-			expected: `failed verifying JWT message: failed to parse jws: failed to parse JOSE headers: EOF`,
+			expected: `failed verifying JWT message: invalid JWT`,
 		},
 		{
 			// empty attestation results
@@ -215,7 +215,7 @@ func TestVerify_fail(t *testing.T) {
 		{
 			// empty attestation results
 			token:    `eyJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCJ9.eyJlYXIudmVyaWZpZXItaWQiOnsiYnVpbGQiOiJycnRyYXAtdjEuMC4wIiwiZGV2ZWxvcGVyIjoiQWNtZSBJbmMuIn0sImVhdF9wcm9maWxlIjoidGFnOmdpdGh1Yi5jb20sMjAyMzp2ZXJhaXNvbi9lYXIiLCJpYXQiOjEuNjY2MDkxMzczZSswOSwianRpIjoiMTY1Zjg0YzY3YzE0ZTEwZDFlNGI0MzM0MDgzY2IyYTIxZDI2YmYxN2FhNjBkNWU5ZGE5ZDhmNzE3NmFjNWI2MyIsIm5iZiI6MTY3NjQ3MjcwOSwic3VibW9kcyI6eyJ0ZXN0Ijp7ImVhci5hcHByYWlzYWwtcG9saWN5LWlkIjoicG9saWN5Oi8vdGVzdC8wMTIzNCIsImVhci5zdGF0dXMiOiJhZmZpcm1pbmciLCJlYXIudmVyYWlzb24uYW5ub3RhdGVkLWV2aWRlbmNlIjp7ImsxIjoidjEiLCJrMiI6InYyIn0sImVhci52ZXJhaXNvbi5wb2xpY3ktY2xhaW1zIjp7ImJhciI6ImJheiIsImZvbyI6ImJhciJ9fX19.LunlKAnUiVHZxIUr7jNnrwFlRtd7t6f6W1rzIFgcWFLdtJELKIVGkPVV5PriHh8T0uLLIEJafwvi6hmIr27aDw.trailing-rubbish`,
-			expected: `failed to parse token: invalid character 'e' looking for beginning of value`,
+			expected: `failed verifying JWT message: invalid JWT`,
 		},
 	}
 
