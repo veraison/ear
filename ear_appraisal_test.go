@@ -6,26 +6,28 @@ package ear
 import (
 	"crypto/ecdsa"
 	"crypto/elliptic"
+	"math/big"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 )
 
 func TestAppraisalExtensions_SetGetKeyAttestation_ok(t *testing.T) {
 	expected := AppraisalExtensions{
 		VeraisonKeyAttestation: &map[string]interface{}{
-			"akpub": "MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEaxfR8uEsQkf4vOblY6RA8ncDfYEt6zOg9KE5RdiYwpZP40Li_hp_m47n60p8D54WK84zV2sxXs7LtkBoN79R9Q",
+			"akpub": "MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEb_A7lJJBzh2t1DUZ5pYOCoW0GmmgXDKBA6orzhWUyhY8T3U6Vb8B3FP2wLDH7ueLQMb_fSWpbiKCuYnO9xwUSg",
 		},
 	}
 
-	kp, err := ecdsa.GenerateKey(elliptic.P256(), new(zeroSource))
-	require.NoError(t, err)
-	tv := kp.Public()
+	x, y := new(big.Int), new(big.Int)
+	x.SetString("50631180696798613978298281067436158137915100161810154046459014669202204445206", 10)
+	y.SetString("27279160910143077479535430864293552757342796444793851632003786495367057249354", 10)
+
+	tv := &ecdsa.PublicKey{Curve: elliptic.P256(), X: x, Y: y}
 
 	actual := AppraisalExtensions{}
 
-	err = actual.SetKeyAttestation(tv)
+	err := actual.SetKeyAttestation(tv)
 	assert.NoError(t, err)
 	assert.Equal(t, expected, actual)
 
