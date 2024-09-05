@@ -3,12 +3,12 @@
 
 package ear
 
-// zeroSource is an io.Reader that returns an unlimited number of zero bytes.
-type zeroSource struct{}
+// xSource is an io.Reader that returns an unlimited number of 'x' chars.
+type xSource struct{}
 
-func (zeroSource) Read(b []byte) (n int, err error) {
+func (xSource) Read(b []byte) (n int, err error) {
 	for i := range b {
-		b[i] = 0
+		b[i] = 'x'
 	}
 
 	return len(b), nil

@@ -15,11 +15,11 @@ import (
 func TestAppraisalExtensions_SetGetKeyAttestation_ok(t *testing.T) {
 	expected := AppraisalExtensions{
 		VeraisonKeyAttestation: &map[string]interface{}{
-			"akpub": "MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEaxfR8uEsQkf4vOblY6RA8ncDfYEt6zOg9KE5RdiYwpZP40Li_hp_m47n60p8D54WK84zV2sxXs7LtkBoN79R9Q",
+			"akpub": "MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEqzDTRkrGv-0lBk2QEnnhpFsLdajD5MxKGCw29Yots81gYWDu5B-cSpxKzogNMlLG7t3tFYEZoYB_U4Pxtj4Wmw",
 		},
 	}
 
-	kp, err := ecdsa.GenerateKey(elliptic.P256(), new(zeroSource))
+	kp, err := ecdsa.GenerateKey(elliptic.P256(), new(xSource))
 	require.NoError(t, err)
 	tv := kp.Public()
 
