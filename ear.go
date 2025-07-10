@@ -11,8 +11,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/lestrrat-go/jwx/v2/jwa"
-	"github.com/lestrrat-go/jwx/v2/jwt"
+	"github.com/lestrrat-go/jwx/v3/jwa"
+	"github.com/lestrrat-go/jwx/v3/jwt"
 )
 
 // EatProfile is the EAT profile implemented by this package
@@ -195,8 +195,16 @@ func (o *AttestationResult) Verify(data []byte, alg jwa.KeyAlgorithm, key interf
 		return fmt.Errorf("failed verifying JWT message: %w", err)
 	}
 
-	claims := token.PrivateClaims()
-	claims["iat"] = token.IssuedAt().Unix()
+	claims := make(map[string]any)
+	for _, k := range token.Keys() {
+		var v any
+		if err := token.Get(k, &v); err != nil {
+			return fmt.Errorf(`failed to get claim %s: %w`, k, err)
+		}
+		claims[k] = v
+	}
+	iat, _ := token.IssuedAt()
+	claims["iat"] = iat.Unix()
 
 	return o.populateFromMap(claims)
 }

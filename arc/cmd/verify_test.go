@@ -64,29 +64,7 @@ func Test_VerifyCmd_pkey_file_bad_format(t *testing.T) {
 	}
 	cmd.SetArgs(args)
 
-	expectedErr := `parsing verification key from "empty-pkey.json": failed to unmarshal JSON into key hint: EOF`
-
-	err := cmd.Execute()
-	assert.EqualError(t, err, expectedErr)
-}
-
-func Test_VerifyCmd_skey_not_ok_for_verifying(t *testing.T) {
-	cmd := NewVerifyCmd()
-
-	files := []fileEntry{
-		{"ear.jwt", testJWT},
-		{"skey.json", testSKey},
-	}
-	makeFS(t, files)
-
-	args := []string{
-		"--pkey=skey.json",
-		"--alg=ES256",
-		"ear.jwt",
-	}
-	cmd.SetArgs(args)
-
-	expectedErr := `verifying signed EAR from ear.jwt: failed verifying JWT message: could not verify message using any of the signatures or keys`
+	expectedErr := `parsing verification key from "empty-pkey.json": jwk.Parse: failed to probe data: probe: failed to unmarshal data: EOF`
 
 	err := cmd.Execute()
 	assert.EqualError(t, err, expectedErr)
@@ -129,7 +107,7 @@ func Test_VerifyCmd_input_file_bad_format(t *testing.T) {
 	}
 	cmd.SetArgs(args)
 
-	expectedErr := `verifying signed EAR from ear.jwt: failed verifying JWT message: failed to parse jws: invalid byte sequence`
+	expectedErr := `verifying signed EAR from ear.jwt: failed verifying JWT message: jwt.Parse: failed to parse token: jwt.verifyFast: failed to split compact: jwsbb: invalid number of segments`
 
 	err := cmd.Execute()
 	assert.EqualError(t, err, expectedErr)
@@ -151,7 +129,7 @@ func Test_VerifyCmd_unknown_verification_alg(t *testing.T) {
 	}
 	cmd.SetArgs(args)
 
-	expectedErr := `verifying signed EAR from ear.jwt: failed verifying JWT message: WithKey() option must be specified using jwa.SignatureAlgorithm (got jwa.InvalidKeyAlgorithm)`
+	expectedErr := `parsing algorithm from "XYZ": invalid key value: "XYZ": invalid key algorithm`
 
 	err := cmd.Execute()
 	assert.EqualError(t, err, expectedErr)

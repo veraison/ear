@@ -7,8 +7,8 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/lestrrat-go/jwx/v2/jwa"
-	"github.com/lestrrat-go/jwx/v2/jwk"
+	"github.com/lestrrat-go/jwx/v3/jwa"
+	"github.com/lestrrat-go/jwx/v3/jwk"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -181,7 +181,7 @@ func TestVerify_pass(t *testing.T) {
 	for i, tv := range tvs {
 		var ar AttestationResult
 
-		err := ar.Verify([]byte(tv.token), jwa.ES256, k)
+		err := ar.Verify([]byte(tv.token), jwa.ES256(), k)
 		assert.NoError(t, err, "failed test vector at index %d", i)
 		assert.Equal(t, tv.expected, ar)
 	}
@@ -195,17 +195,17 @@ func TestVerify_fail(t *testing.T) {
 		{
 			// non-matching alg (HS256)
 			token:    `eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdGF0dXMiOiJhZmZpcm1pbmciLCJ0aW1lc3RhbXAiOiIyMDIyLTA5LTI2VDE3OjI5OjAwWiIsImFwcHJhaXNhbC1wb2xpY3ktaWQiOiJodHRwczovL3ZlcmFpc29uLmV4YW1wbGUvcG9saWN5LzEvNjBhMDA2OGQiLCJ2ZXJhaXNvbi5wcm9jZXNzZWQtZXZpZGVuY2UiOnsiazEiOiJ2MSIsImsyIjoidjIifSwidmVyYWlzb24udmVyaWZpZXItYWRkZWQtY2xhaW1zIjp7ImJhciI6ImJheiIsImZvbyI6ImJhciJ9fQ.Dv3PqGA2W8anXne0YZs8cvIhQhNF1Su1RS83RPzDVg4OhJFNN1oSF-loDpjfIwPdzCWt0eA6JYxSMqpGiemq-Q`,
-			expected: `failed verifying JWT message: could not verify message using any of the signatures or keys`,
+			expected: `signature verification failed for ES256: jwsbb.ECDSAVerifier: invalid ECDSA signature`,
 		},
 		{
 			// alg "none"
 			token:    `eyJhbGciOiJub25lIn0.eyJzdGF0dXMiOiJhZmZpcm1pbmciLCJ0aW1lc3RhbXAiOiIyMDIyLTA5LTI2VDE3OjI5OjAwWiIsImFwcHJhaXNhbC1wb2xpY3ktaWQiOiJodHRwczovL3ZlcmFpc29uLmV4YW1wbGUvcG9saWN5LzEvNjBhMDA2OGQiLCJ2ZXJhaXNvbi5wcm9jZXNzZWQtZXZpZGVuY2UiOnsiazEiOiJ2MSIsImsyIjoidjIifSwidmVyYWlzb24udmVyaWZpZXItYWRkZWQtY2xhaW1zIjp7ImJhciI6ImJheiIsImZvbyI6ImJhciJ9fQ.`,
-			expected: `failed verifying JWT message: could not verify message using any of the signatures or keys`,
+			expected: `failed to unpack ECDSA signature: invalid signature length for curve "P-256"`,
 		},
 		{
 			// bad JWT formatting
 			token:    `.eyJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdGF0dXMiOiJhZmZpcm1pbmciLCJ0aW1lc3RhbXAiOiIyMDIyLTA5LTI2VDE3OjI5OjAwWiIsImFwcHJhaXNhbC1wb2xpY3ktaWQiOiJodHRwczovL3ZlcmFpc29uLmV4YW1wbGUvcG9saWN5LzEvNjBhMDA2OGQiLCJ2ZXJhaXNvbi5wcm9jZXNzZWQtZXZpZGVuY2UiOnsiazEiOiJ2MSIsImsyIjoidjIifSwidmVyYWlzb24udmVyaWZpZXItYWRkZWQtY2xhaW1zIjp7ImJhciI6ImJheiIsImZvbyI6ImJhciJ9fQ.Dv3PqGA2W8anXne0YZs8cvIhQhNF1Su1RS83RPzDVg4OhJFNN1oSF-loDpjfIwPdzCWt0eA6JYxSMqpGiemq-Q`,
-			expected: `failed verifying JWT message: failed to parse jws: failed to parse JOSE headers: EOF`,
+			expected: `failed to parse token: unknown payload type (payload is not JWT?)`,
 		},
 		{
 			// empty attestation results
@@ -213,9 +213,9 @@ func TestVerify_fail(t *testing.T) {
 			expected: `missing mandatory 'eat_profile', 'ear.verifier-id', 'submods'`,
 		},
 		{
-			// empty attestation results
+			// JWT with trailing rubbish
 			token:    `eyJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCJ9.eyJlYXIudmVyaWZpZXItaWQiOnsiYnVpbGQiOiJycnRyYXAtdjEuMC4wIiwiZGV2ZWxvcGVyIjoiQWNtZSBJbmMuIn0sImVhdF9wcm9maWxlIjoidGFnOmdpdGh1Yi5jb20sMjAyMzp2ZXJhaXNvbi9lYXIiLCJpYXQiOjEuNjY2MDkxMzczZSswOSwianRpIjoiMTY1Zjg0YzY3YzE0ZTEwZDFlNGI0MzM0MDgzY2IyYTIxZDI2YmYxN2FhNjBkNWU5ZGE5ZDhmNzE3NmFjNWI2MyIsIm5iZiI6MTY3NjQ3MjcwOSwic3VibW9kcyI6eyJ0ZXN0Ijp7ImVhci5hcHByYWlzYWwtcG9saWN5LWlkIjoicG9saWN5Oi8vdGVzdC8wMTIzNCIsImVhci5zdGF0dXMiOiJhZmZpcm1pbmciLCJlYXIudmVyYWlzb24uYW5ub3RhdGVkLWV2aWRlbmNlIjp7ImsxIjoidjEiLCJrMiI6InYyIn0sImVhci52ZXJhaXNvbi5wb2xpY3ktY2xhaW1zIjp7ImJhciI6ImJheiIsImZvbyI6ImJhciJ9fX19.LunlKAnUiVHZxIUr7jNnrwFlRtd7t6f6W1rzIFgcWFLdtJELKIVGkPVV5PriHh8T0uLLIEJafwvi6hmIr27aDw.trailing-rubbish`,
-			expected: `failed to parse token: invalid character 'e' looking for beginning of value`,
+			expected: `failed to parse token: unknown payload type (payload is not JWT?)`,
 		},
 	}
 
@@ -225,7 +225,7 @@ func TestVerify_fail(t *testing.T) {
 	for i, tv := range tvs {
 		var ar AttestationResult
 
-		err := ar.Verify([]byte(tv.token), jwa.ES256, k)
+		err := ar.Verify([]byte(tv.token), jwa.ES256(), k)
 		assert.ErrorContains(t, err, tv.expected, "failed test vector at index %d", i)
 	}
 }
@@ -237,7 +237,7 @@ func TestSign_fail(t *testing.T) {
 	// an empty AR is not a valid AR4SI payload
 	var ar AttestationResult
 
-	_, err = ar.Sign(jwa.ES256, sigK)
+	_, err = ar.Sign(jwa.ES256(), sigK)
 	assert.EqualError(t, err, `missing mandatory 'eat_profile', 'iat', 'verifier-id', 'submods' (at least one appraisal must be present)`)
 }
 
@@ -245,7 +245,7 @@ func TestRoundTrip_pass(t *testing.T) {
 	sigK, err := jwk.ParseKey([]byte(testECDSAPrivateKey))
 	require.NoError(t, err)
 
-	token, err := testAttestationResultsWithVeraisonExtns.Sign(jwa.ES256, sigK)
+	token, err := testAttestationResultsWithVeraisonExtns.Sign(jwa.ES256(), sigK)
 	assert.NoError(t, err)
 
 	fmt.Println(string(token))
@@ -255,7 +255,7 @@ func TestRoundTrip_pass(t *testing.T) {
 
 	var actual AttestationResult
 
-	err = actual.Verify(token, jwa.ES256, vfyK)
+	err = actual.Verify(token, jwa.ES256(), vfyK)
 	assert.NoError(t, err)
 
 	assert.Equal(t, testAttestationResultsWithVeraisonExtns, actual)
@@ -265,7 +265,7 @@ func TestRoundTrip_tampering(t *testing.T) {
 	sigK, err := jwk.ParseKey([]byte(testECDSAPrivateKey))
 	require.NoError(t, err)
 
-	token, err := testAttestationResultsWithVeraisonExtns.Sign(jwa.ES256, sigK)
+	token, err := testAttestationResultsWithVeraisonExtns.Sign(jwa.ES256(), sigK)
 	assert.NoError(t, err)
 
 	vfyK, err := jwk.ParseKey([]byte(testECDSAPublicKey))
@@ -279,7 +279,7 @@ func TestRoundTrip_tampering(t *testing.T) {
 	// than EqualError.
 	token[len(token)-1] ^= 1
 
-	err = actual.Verify(token, jwa.ES256, vfyK)
+	err = actual.Verify(token, jwa.ES256(), vfyK)
 	assert.ErrorContains(t, err, "failed verifying JWT message")
 }
 
