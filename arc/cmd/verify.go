@@ -6,8 +6,8 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/lestrrat-go/jwx/v2/jwa"
-	"github.com/lestrrat-go/jwx/v2/jwk"
+	"github.com/lestrrat-go/jwx/v3/jwa"
+	"github.com/lestrrat-go/jwx/v3/jwk"
 	"github.com/spf13/afero"
 	"github.com/spf13/cobra"
 	"github.com/veraison/ear"
@@ -62,7 +62,11 @@ embedded EAR claims-set and present a report of the trustworthiness vector.
 				return fmt.Errorf("parsing verification key from %q: %w", verifyPKey, err)
 			}
 
-			if err = ar.Verify(arBytes, jwa.KeyAlgorithmFrom(verifyAlg), vfyK); err != nil {
+			alg, err := jwa.KeyAlgorithmFrom(verifyAlg); if err != nil {
+				return fmt.Errorf("parsing algorithm from %q: %w", verifyAlg,  err)
+			}
+
+			if err = ar.Verify(arBytes, alg, vfyK); err != nil {
 				return fmt.Errorf("verifying signed EAR from %s: %w", verifyInput, err)
 			}
 

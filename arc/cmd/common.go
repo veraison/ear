@@ -5,14 +5,14 @@ package cmd
 import (
 	"strings"
 
-	"github.com/lestrrat-go/jwx/v2/jwa"
+	"github.com/lestrrat-go/jwx/v3/jwa"
 )
 
 func algList() string {
 	var l []string // nolint: prealloc
 
 	for _, a := range jwa.SignatureAlgorithms() {
-		l = append(l, string(a))
+		l = append(l, a.String())
 	}
 
 	return strings.Join(l, ", ")

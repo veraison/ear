@@ -66,7 +66,7 @@ func Test_CreateCmd_skey_file_bad_format(t *testing.T) {
 	}
 	cmd.SetArgs(args)
 
-	expectedErr := `parsing signing key from "empty-skey.json": failed to unmarshal JSON into key hint: EOF`
+	expectedErr := `parsing signing key from "empty-skey.json": jwk.Parse: failed to probe data: probe: failed to unmarshal data: EOF`
 
 	err := cmd.Execute()
 	assert.EqualError(t, err, expectedErr)
@@ -89,7 +89,7 @@ func Test_CreateCmd_skey_not_ok_for_signing(t *testing.T) {
 	}
 	cmd.SetArgs(args)
 
-	expectedErr := `failed to generate signature for signer #0 (alg=ES256): failed to sign payload: failed to retrieve ecdsa.PrivateKey out of *jwk.ecdsaPublicKey: failed to produce ecdsa.PrivateKey from *jwk.ecdsaPublicKey: argument to AssignIfCompatible() must be compatible with *ecdsa.PublicKey (was *ecdsa.PrivateKey)`
+	expectedErr := `invalid key type *jwk.ecdsaPublicKey. ecdsa.PrivateKey is required: keyconv: failed to produce ecdsa.PrivateKey from *jwk.ecdsaPublicKey`
 
 	err := cmd.Execute()
 	assert.ErrorContains(t, err, expectedErr)
@@ -154,7 +154,7 @@ func Test_CreateCmd_unknown_signing_alg(t *testing.T) {
 	}
 	cmd.SetArgs(args)
 
-	expectedErr := `expected algorithm to be of type jwa.SignatureAlgorithm but got ("XYZ", jwa.InvalidKeyAlgorithm)`
+	expectedErr := `invalid key value: "XYZ": invalid key algorithm`
 
 	err := cmd.Execute()
 	assert.ErrorContains(t, err, expectedErr)
