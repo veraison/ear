@@ -7,13 +7,10 @@ GOPKG := github.com/veraison/ear
 GOPKG += github.com/veraison/ear/arc/cmd
 
 GOLINT ?= golangci-lint
-
-ifeq ($(MAKECMDGOALS),lint)
 GOLINT_ARGS ?= run --timeout=3m -E dupl -E gocritic -E lll -E prealloc
-endif
 
-.PHONY: lint lint-extra
-lint lint-extra: ; $(GOLINT) $(GOLINT_ARGS)
+.PHONY: lint
+lint: ; $(GOLINT) $(GOLINT_ARGS)
 
 ifeq ($(MAKECMDGOALS),test)
 GOTEST_ARGS ?= -v -race $(GOPKG)
@@ -48,6 +45,5 @@ help:
 	@echo "  * test-cover: run unit tests and measure coverage for $(GOPKG)"
 	@echo "  * licenses:   check licenses of dependent packages"
 	@echo "  * lint:       lint sources using default configuration"
-	@echo "  * lint-extra: lint sources using default configuration and some extra checkers"
 	@echo "  * presubmit:  check you are ready to push your local branch to remote"
 	@echo "  * help:       print this menu"
