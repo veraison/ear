@@ -61,3 +61,24 @@ If successful:
 
 * The EAR claims-set is printed to stdout.
 * If present, the _decoded_ trust vector is also printed to stdout (the exact format depends on `--verbose` and `--color`).
+
+## Print
+
+The `print` sub-command is used to print the contents of a EAR, including the header.
+No ERA validation or veryfing are executed.
+
+```sh
+arc verify <jwt-file>
+```
+
+### Parameters
+
+| parameter | meaning |
+| --- | --- |
+| `<jwt-file>` | a JWT wrapping an EAR claims-set |
+
+### Output
+
+If EAR is successfully parsed:
+
+* The EAR header and payload are printed to stdout.
