@@ -121,7 +121,7 @@ func Example_decode_veraison_extensions() {
 	fmt.Println((*ar.Submods["test"].VeraisonKeyAttestation)["akpub"])
 	fmt.Println(*ar.VeraisonTeeInfo.TeeName)
 	fmt.Println(*ar.VeraisonTeeInfo.EvidenceID)
-	fmt.Println(*ar.VeraisonTeeInfo.Evidence)
+	fmt.Printf("%v\n", *ar.VeraisonTeeInfo.Evidence)
 
 	// Output:
 	// affirming

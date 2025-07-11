@@ -38,6 +38,7 @@ the key in the default key file "skey.json", and save the result to "my-ear.jwt"
 				claimsSet, sKey, arBytes []byte
 				sigK                     jwk.Key
 				ar                       ear.AttestationResult
+				alg                      jwa.KeyAlgorithm
 				err                      error
 			)
 
@@ -64,8 +65,8 @@ the key in the default key file "skey.json", and save the result to "my-ear.jwt"
 				return fmt.Errorf("parsing signing key from %q: %w", createSKey, err)
 			}
 
-			alg, err := jwa.KeyAlgorithmFrom(createAlg); if err != nil {
-				return fmt.Errorf("parsing algorithm from %q: %w", createAlg,  err)
+			if alg, err = jwa.KeyAlgorithmFrom(createAlg); err != nil {
+				return fmt.Errorf("parsing algorithm from %q: %w", createAlg, err)
 			}
 
 			if arBytes, err = ar.Sign(alg, sigK); err != nil {
