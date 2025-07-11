@@ -20,7 +20,7 @@ var (
 var rootCmd = &cobra.Command{
 	Use:           "arc",
 	Short:         "EAR (EAT Attestation Result) command line utility",
-	Version:       "0.0.1",
+	Version:       "1.1.3",
 	SilenceUsage:  true,
 	SilenceErrors: true,
 }

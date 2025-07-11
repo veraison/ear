@@ -4,6 +4,7 @@
 
 * synthesising attestation results in EAR (EAT Attestation Result) format,
 * cryptographically verifying and displaying the contents of an EAR
+* printing EAR header and payload without verifying
 
 ## Create
 
@@ -53,6 +54,10 @@ arc verify \
 | `--color` | trustworthiness vector report colourises the tiers (default is B&W) |
 | `<jwt-file>` | a JWT wrapping an EAR claims-set |
 
+If `--pkey` parameter is omitted or the default file name is specified then
+* key from the file will be used if exists ignoring keys in JWT header
+* the public key and algorithm from JWT header will be used if the file is missing
+
 ### Output
 
 * Validation status of the cryptographic signature.
@@ -61,3 +66,24 @@ If successful:
 
 * The EAR claims-set is printed to stdout.
 * If present, the _decoded_ trust vector is also printed to stdout (the exact format depends on `--verbose` and `--color`).
+
+## Print
+
+The `print` sub-command is used to print the contents of a EAR, including the header.
+No ERA validation or veryfing are executed.
+
+```sh
+arc verify <jwt-file>
+```
+
+### Parameters
+
+| parameter | meaning |
+| --- | --- |
+| `<jwt-file>` | a JWT wrapping an EAR claims-set |
+
+### Output
+
+If EAR is successfully parsed:
+
+* The EAR header and payload are printed to stdout.
