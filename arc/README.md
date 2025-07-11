@@ -4,6 +4,7 @@
 
 * synthesising attestation results in EAR (EAT Attestation Result) format,
 * cryptographically verifying and displaying the contents of an EAR
+* printing EAR header and payload without verifying
 
 ## Create
 
@@ -52,6 +53,10 @@ arc verify \
 | `--verbose` | trustworthiness vector detailed report (default is brief) |
 | `--color` | trustworthiness vector report colourises the tiers (default is B&W) |
 | `<jwt-file>` | a JWT wrapping an EAR claims-set |
+
+If `--pkey` parameter is omitted or the default file name is specified then
+* key from the file will be used if exists ignoring keys in JWT header
+* the public key and algorithm from JWT header will be used if the file is missing
 
 ### Output
 
