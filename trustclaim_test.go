@@ -12,7 +12,7 @@ import (
 )
 
 var (
-	ranges = map[string][]int{
+	ranges = map[string][]int8{
 		"none": {
 			-1, 0, 1,
 		},

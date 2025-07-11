@@ -473,7 +473,8 @@ func (o TrustClaim) IsWarning() bool {
 
 func (o TrustClaim) IsContraindicated() bool {
 	// contraindicated = [-128, -97] U [96, 127]
-	return (o >= -128 && o <= -97) || (o >= 96 && o <= 127)
+	// o is int8. i.e. math.MinInt8 < o < math.MaxInt8
+	return (o <= -97) || (o >= 96)
 }
 
 func (o TrustClaim) detailsPrinter(dm detailsMap, short bool, color bool) string {

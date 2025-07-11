@@ -40,6 +40,7 @@ embedded EAR claims-set and present a report of the trustworthiness vector.
 				claimsSet, pKey, arBytes []byte
 				vfyK                     jwk.Key
 				ar                       ear.AttestationResult
+				alg                      jwa.KeyAlgorithm
 				err                      error
 			)
 
@@ -62,8 +63,8 @@ embedded EAR claims-set and present a report of the trustworthiness vector.
 				return fmt.Errorf("parsing verification key from %q: %w", verifyPKey, err)
 			}
 
-			alg, err := jwa.KeyAlgorithmFrom(verifyAlg); if err != nil {
-				return fmt.Errorf("parsing algorithm from %q: %w", verifyAlg,  err)
+			if alg, err = jwa.KeyAlgorithmFrom(verifyAlg); err != nil {
+				return fmt.Errorf("parsing algorithm from %q: %w", verifyAlg, err)
 			}
 
 			if err = ar.Verify(arBytes, alg, vfyK); err != nil {
