@@ -107,7 +107,7 @@ func Test_VerifyCmd_input_file_bad_format(t *testing.T) {
 	}
 	cmd.SetArgs(args)
 
-	expectedErr := `verifying signed EAR from ear.jwt: failed verifying JWT message: jwt.Parse: failed to parse token: jwt.verifyFast: failed to split compact: jwsbb: invalid number of segments`
+	expectedErr := `verifying signed EAR from "ear.jwt" using "pkey.json" key: failed verifying JWT message: jwt.Parse: failed to parse token: jwt.verifyFast: failed to split compact: jwsbb: invalid number of segments`
 
 	err := cmd.Execute()
 	assert.EqualError(t, err, expectedErr)
@@ -133,6 +133,98 @@ func Test_VerifyCmd_unknown_verification_alg(t *testing.T) {
 
 	err := cmd.Execute()
 	assert.EqualError(t, err, expectedErr)
+}
+
+func Test_VerifyCmd_missing_header_key(t *testing.T) {
+	cmd := NewVerifyCmd()
+
+	files := []fileEntry{
+		{"ear.jwt", testJWT},
+	}
+	makeFS(t, files)
+
+	args := []string{
+		"ear.jwt",
+	}
+	cmd.SetArgs(args)
+
+	expectedErr := `failed to get JWK key from JWT header`
+
+	err := cmd.Execute()
+	assert.EqualError(t, err, expectedErr)
+}
+
+func Test_VerifyCmd_incorrect_jws(t *testing.T) {
+	cmd := NewVerifyCmd()
+
+	files := []fileEntry{
+		{"ear.jwt", testJWT_JWK[1:]},
+	}
+	makeFS(t, files)
+
+	args := []string{
+		"ear.jwt",
+	}
+	cmd.SetArgs(args)
+
+	expectedErr := `failed to parse serialized JWT: jws.Parse: failed to parse compact format: failed to decode protected headers: failed to decode source: illegal base64 data at input byte 212`
+
+	err := cmd.Execute()
+	assert.EqualError(t, err, expectedErr)
+}
+
+func Test_VerifyCmd_header_key_and_expired_token(t *testing.T) {
+	cmd := NewVerifyCmd()
+
+	files := []fileEntry{
+		{"ear.jwt", testRealmJWT},
+	}
+	makeFS(t, files)
+
+	args := []string{
+		"ear.jwt",
+	}
+	cmd.SetArgs(args)
+
+	expectedErr := `jwt.Validate: validation failed: "exp" not satisfied: token is expired`
+
+	err := cmd.Execute()
+	assert.ErrorContains(t, err, expectedErr)
+}
+
+func Test_VerifyCmd_header_key_ignore_alg(t *testing.T) {
+	cmd := NewVerifyCmd()
+
+	files := []fileEntry{
+		{"ear.jwt", testJWT_JWK},
+	}
+	makeFS(t, files)
+
+	args := []string{
+		"--alg=XYZ",
+		"ear.jwt",
+	}
+	cmd.SetArgs(args)
+
+	err := cmd.Execute()
+	assert.NoError(t, err)
+}
+
+func Test_VerifyCmd_header_key_ok(t *testing.T) {
+	cmd := NewVerifyCmd()
+
+	files := []fileEntry{
+		{"ear.jwt", testJWT_JWK},
+	}
+	makeFS(t, files)
+
+	args := []string{
+		"ear.jwt",
+	}
+	cmd.SetArgs(args)
+
+	err := cmd.Execute()
+	assert.NoError(t, err)
 }
 
 func Test_VerifyCmd_ok(t *testing.T) {

@@ -18,6 +18,11 @@ import (
 // EatProfile is the EAT profile implemented by this package
 const EatProfile = "tag:github.com,2023:veraison/ear"
 
+// Trustee profile name which is an alias for the Veraison one.
+// Both names will be replaced with a neutral one:
+// https://github.com/ietf-rats-wg/draft-ietf-rats-ear/pull/47
+const EatTrusteeProfile = "tag:github.com,2024:confidential-containers/Trustee"
+
 // AttestationResult represents the result of one or more evidence Appraisals
 // by the verifier.  It is serialized to JSON and signed by the verifier using
 // JWT.
@@ -140,7 +145,7 @@ func (o AttestationResult) validate() error {
 
 	if o.Profile == nil {
 		missing = append(missing, "'eat_profile'")
-	} else if *o.Profile != EatProfile {
+	} else if *o.Profile != EatProfile && *o.Profile != EatTrusteeProfile {
 		invalid = append(invalid, fmt.Sprintf("eat_profile (%s)", *o.Profile))
 	}
 
