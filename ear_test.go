@@ -4,6 +4,7 @@
 package ear
 
 import (
+	"crypto"
 	"fmt"
 	"testing"
 
@@ -11,6 +12,8 @@ import (
 	"github.com/lestrrat-go/jwx/v3/jwk"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"github.com/veraison/eat"
+	cose "github.com/veraison/go-cose"
 )
 
 var (
@@ -41,8 +44,6 @@ var (
 	}
 	testProfile            = EatProfile
 	testUnsupportedProfile = "1.2.3.4.5"
-	testNonce              = "0123456789abcdef"
-	testBadNonce           = "1337"
 	testEvidenceID         = "405e0c3127e455ebc22361210b43ca9499ca80d3f6b1dc79b89fa35290cee3d9"
 	testEvidence           = []byte("evidence")
 	testTeeName            = "aws-nitro"
@@ -74,6 +75,9 @@ var (
 )
 
 func TestToJSON_fail(t *testing.T) {
+	var testBadNonce eat.Nonce
+	assert.Nil(t, testBadNonce.UnmarshalJSON([]byte(`"1337"`)))
+
 	testTrustTier := TrustTierAffirming
 
 	tvs := []struct {
@@ -127,7 +131,7 @@ func TestToJSON_fail(t *testing.T) {
 					"test": {Status: &testTrustTier},
 				},
 			},
-			expected: `invalid value(s) for eat_nonce (4 bytes)`,
+			expected: `invalid value(s) for eat_nonce (found invalid nonce at index 0: a nonce must be between 8 and 64 bytes long; found 3)`,
 		},
 	}
 
@@ -304,6 +308,8 @@ func TestUpdateStatusFromTrustVector(t *testing.T) {
 
 func TestAsMap(t *testing.T) {
 	policyID := "foo"
+	testNonce := eat.Nonce{}
+	assert.Nil(t, testNonce.UnmarshalJSON([]byte(`"0123456789abcdef"`)))
 
 	ar := NewAttestationResult("someScheme", "test", "test")
 	status := NewTrustTier(TrustTierAffirming)
@@ -392,4 +398,91 @@ func TestNewAttestationResult(t *testing.T) {
 
 	assert.Equal(t, "testBuild", *ar.VerifierID.Build)
 	assert.Equal(t, "testDev", *ar.VerifierID.Developer)
+}
+
+func TestUnmarshalCBOR_ok(t *testing.T) {
+	// A5                                      # map(5)
+	//    19 0109                              # unsigned(265)
+	//    78 20                                # text(32)
+	//       7461673A6769746875622E636F6D2C323032333A7665726169736F6E2F656172 # "tag:github.com,2023:veraison/ear"
+	//    06                                   # unsigned(6)
+	//    1A 634E896D                          # unsigned(1666091373)
+	//    19 03EC                              # unsigned(1004)
+	//    A2                                   # map(2)
+	//       00                                # unsigned(0)
+	//       6D                                # text(13)
+	//          7272747261702D76312E302E30     # "rrtrap-v1.0.0"
+	//       01                                # unsigned(1)
+	//       69                                # text(9)
+	//          41636D6520496E632E             # "Acme Inc."
+	//    19 03EA                              # unsigned(1002)
+	//    4B                                   # bytes(11)
+	//       6C696665626F61746D616E            # "lifeboatman"
+	//    19 010A                              # unsigned(266)
+	//    A1                                   # map(1)
+	//       64                                # text(4)
+	//          74657374                       # "test"
+	//       A1                                # map(1)
+	//          19 03E8                        # unsigned(1000)
+	//          02                             # unsigned(2)
+	tv := []byte{
+		0xA5, 0x19, 0x01, 0x09, 0x78, 0x20, 0x74, 0x61,
+		0x67, 0x3A, 0x67, 0x69, 0x74, 0x68, 0x75, 0x62,
+		0x2E, 0x63, 0x6F, 0x6D, 0x2C, 0x32, 0x30, 0x32,
+		0x33, 0x3A, 0x76, 0x65, 0x72, 0x61, 0x69, 0x73,
+		0x6F, 0x6E, 0x2F, 0x65, 0x61, 0x72, 0x06, 0x1A,
+		0x63, 0x4E, 0x89, 0x6D, 0x19, 0x03, 0xEC, 0xA2,
+		0x00, 0x6D, 0x72, 0x72, 0x74, 0x72, 0x61, 0x70,
+		0x2D, 0x76, 0x31, 0x2E, 0x30, 0x2E, 0x30, 0x01,
+		0x69, 0x41, 0x63, 0x6D, 0x65, 0x20, 0x49, 0x6E,
+		0x63, 0x2E, 0x19, 0x03, 0xEA, 0x4B, 0x6C, 0x69,
+		0x66, 0x65, 0x62, 0x6F, 0x61, 0x74, 0x6D, 0x61,
+		0x6E, 0x19, 0x01, 0x0A, 0xA1, 0x64, 0x74, 0x65,
+		0x73, 0x74, 0xA1, 0x19, 0x03, 0xE8, 0x02,
+	}
+
+	var ar AttestationResult
+	err := ar.FromCBOR(tv)
+	assert.Nil(t, err)
+
+	testTrustTier := TrustTierAffirming
+
+	expected := AttestationResult{
+		Profile:    &testProfile,
+		VerifierID: &testVerifierID,
+		IssuedAt:   &testIAT,
+		Submods: map[string]*Appraisal{
+			"test": {Status: &testTrustTier},
+		},
+	}
+
+	assert.Equal(t, *expected.Profile, *ar.Profile)
+	assert.Equal(t, *expected.VerifierID, *ar.VerifierID)
+	assert.Equal(t, *expected.IssuedAt, *ar.IssuedAt)
+	assert.Equal(t, len(expected.Submods), len(ar.Submods))
+	assert.Equal(t, *expected.Submods["test"].Status, *ar.Submods["test"].Status)
+
+	// create a signer
+	signingKey, err := jwk.ParseKey([]byte(testECDSAPrivateKey))
+	assert.Nil(t, err)
+
+	var privateKey crypto.Signer
+	assert.Nil(t, jwk.Export(signingKey, &privateKey))
+	signed, err := ar.SignCWT(cose.AlgorithmES256, privateKey)
+	assert.Nil(t, err)
+
+	// create a verifier
+	verifyingKey, err := jwk.ParseKey([]byte(testECDSAPublicKey))
+	assert.Nil(t, err)
+
+	var publicKey crypto.PublicKey
+	assert.Nil(t, jwk.Export(verifyingKey, &publicKey))
+	verified := AttestationResult{}
+	assert.Nil(t, verified.VerifyCWT(signed, cose.AlgorithmES256, publicKey))
+
+	assert.Equal(t, *expected.Profile, *verified.Profile)
+	assert.Equal(t, *expected.VerifierID, *verified.VerifierID)
+	assert.Equal(t, *expected.IssuedAt, *verified.IssuedAt)
+	assert.Equal(t, len(expected.Submods), len(verified.Submods))
+	assert.Equal(t, *expected.Submods["test"].Status, *verified.Submods["test"].Status)
 }

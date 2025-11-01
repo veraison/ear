@@ -9,8 +9,23 @@ import (
 	"math/big"
 	"testing"
 
+	"github.com/fxamacker/cbor/v2"
 	"github.com/stretchr/testify/assert"
 )
+
+func TestAppraisal_ok(t *testing.T) {
+	// A1         # map(1)
+	//    19 03E8 # unsigned(1000)
+	//    02      # unsigned(2)
+	tv := []byte{0xA1, 0x19, 0x03, 0xE8, 0x02}
+
+	var appraisal Appraisal
+	err := cbor.Unmarshal(tv, &appraisal)
+	assert.NoError(t, err)
+
+	expectedStatus := TrustTier(2)
+	assert.Equal(t, &expectedStatus, appraisal.Status)
+}
 
 func TestAppraisalExtensions_SetGetKeyAttestation_ok(t *testing.T) {
 	expected := AppraisalExtensions{
