@@ -11,6 +11,8 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
+
+	"github.com/veraison/eat"
 )
 
 // Appraisal represents the result of an evidence appraisal
@@ -29,6 +31,7 @@ type Appraisal struct {
 // attached to the Appraisal.  For now only veraison-specific extensions are
 // supported.
 type AppraisalExtensions struct {
+	EatClaimsSet              *eat.Eat                `cbor:"65000,keyasint,omitempty" json:"ear.eat-claims-set,omitempty"`
 	VeraisonAnnotatedEvidence *map[string]interface{} `cbor:"-70000,keyasint,omitempty" json:"ear.veraison.annotated-evidence,omitempty"`
 	VeraisonPolicyClaims      *map[string]interface{} `cbor:"-70001,keyasint,omitempty" json:"ear.veraison.policy-claims,omitempty"`
 	VeraisonKeyAttestation    *map[string]interface{} `cbor:"-70002,keyasint,omitempty" json:"ear.veraison.key-attestation,omitempty"`

@@ -11,6 +11,7 @@ import (
 
 	"github.com/fxamacker/cbor/v2"
 	"github.com/stretchr/testify/assert"
+	"github.com/veraison/eat"
 )
 
 func TestAppraisal_ok(t *testing.T) {
@@ -105,4 +106,73 @@ func TestAppraisalExtensions_GetKeyAttestation_fail_akpub_no_b64url(t *testing.T
 	}
 	_, err := tv.GetKeyAttestation()
 	assert.EqualError(t, err, `"ear.veraison.key-attestation" malformed: decoding "akpub": illegal base64 data at input byte 84`)
+}
+
+func TestAppraisalExtensions_TEEPClaims_ok(t *testing.T) {
+	// A1                                      # map(1)
+	//    19 FDE8                              # unsigned(65000)
+	//    A6                                   # map(6)
+	//       0A                                # unsigned(10)
+	//       48                                # bytes(8)
+	//          948F8860D13A463E               # "\x94\x8F\x88`\xD1:F>"
+	//       19 0100                           # unsigned(256)
+	//       50                                # bytes(16)
+	//          0198F50A4FF6C05861C8860D13A638EA # "\u0001\x98\xF5\nO\xF6\xC0XaȆ\r\u0013\xA68\xEA"
+	//       19 0102                           # unsigned(258)
+	//       43                                # bytes(3)
+	//          064242                         # "\u0006BB"
+	//       19 0103                           # unsigned(259)
+	//       50                                # bytes(16)
+	//          EE80F5A66C1FB9742999A8FDAB930893 # "\xEE\x80\xF5\xA6l\u001F\xB9t)\x99\xA8\xFD\xAB\x93\b\x93"
+	//       19 0104                           # unsigned(260)
+	//       82                                # array(2)
+	//          65                             # text(5)
+	//             312E322E35                  # "1.2.5"
+	//          19 4000                        # unsigned(16384)
+	//       19 0109                           # unsigned(265)
+	//       74                                # text(20)
+	//          75726E3A696574663A7266633A72666358585858 # "urn:ietf:rfc:rfcXXXX"
+
+	expected := []byte{
+		0xA1, 0x19, 0xFD, 0xE8, 0xA6, 0x0A, 0x48, 0x94,
+		0x8F, 0x88, 0x60, 0xD1, 0x3A, 0x46, 0x3E, 0x19,
+		0x01, 0x00, 0x50, 0x01, 0x98, 0xF5, 0x0A, 0x4F,
+		0xF6, 0xC0, 0x58, 0x61, 0xC8, 0x86, 0x0D, 0x13,
+		0xA6, 0x38, 0xEA, 0x19, 0x01, 0x02, 0x43, 0x06,
+		0x42, 0x42, 0x19, 0x01, 0x03, 0x50, 0xEE, 0x80,
+		0xF5, 0xA6, 0x6C, 0x1F, 0xB9, 0x74, 0x29, 0x99,
+		0xA8, 0xFD, 0xAB, 0x93, 0x08, 0x93, 0x19, 0x01,
+		0x04, 0x82, 0x65, 0x31, 0x2E, 0x32, 0x2E, 0x35,
+		0x19, 0x40, 0x00, 0x19, 0x01, 0x09, 0x74, 0x75,
+		0x72, 0x6E, 0x3A, 0x69, 0x65, 0x74, 0x66, 0x3A,
+		0x72, 0x66, 0x63, 0x3A, 0x72, 0x66, 0x63, 0x58,
+		0x58, 0x58, 0x58,
+	}
+
+	testNonce := eat.Nonce{}
+	assert.Nil(t, testNonce.UnmarshalCBOR([]byte{0x48, 0x94, 0x8F, 0x88, 0x60, 0xD1, 0x3A, 0x46, 0x3E}))
+	testProfile := eat.Profile{}
+	testProfile.Set("urn:ietf:rfc:rfcXXXX")
+	testVersionScheme := eat.VersionScheme(16384)
+
+	tv := AppraisalExtensions{
+		EatClaimsSet: &eat.Eat{
+			Nonce: &testNonce,
+			UEID:  &eat.UEID{0x01, 0x98, 0xF5, 0x0A, 0x4F, 0xF6, 0xC0, 0x58, 0x61, 0xC8, 0x86, 0x0D, 0x13, 0xA6, 0x38, 0xEA},
+			OemID: &[]byte{0x06, 0x42, 0x42},
+			HardwareModel: &[]byte{
+				0xEE, 0x80, 0xF5, 0xA6, 0x6C, 0x1F, 0xB9, 0x74,
+				0x29, 0x99, 0xA8, 0xFD, 0xAB, 0x93, 0x08, 0x93,
+			},
+			HardwareVersion: &eat.Version{
+				Version: "1.2.5",
+				Scheme:  &testVersionScheme,
+			},
+			Profile: &testProfile,
+		},
+	}
+
+	data, err := cbor.Marshal(tv)
+	assert.NoError(t, err)
+	assert.Equal(t, expected, data)
 }
