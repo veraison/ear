@@ -4,6 +4,8 @@
 package ear
 
 import (
+	"crypto"
+	"crypto/rand"
 	"encoding/base64"
 	"encoding/json"
 	"errors"
@@ -11,8 +13,11 @@ import (
 	"strings"
 	"time"
 
+	"github.com/fxamacker/cbor/v2"
 	"github.com/lestrrat-go/jwx/v3/jwa"
 	"github.com/lestrrat-go/jwx/v3/jwt"
+	"github.com/veraison/eat"
+	cose "github.com/veraison/go-cose"
 )
 
 // EatProfile is the EAT profile implemented by this package
@@ -27,18 +32,18 @@ const EatTrusteeProfile = "tag:github.com,2024:confidential-containers/Trustee"
 // by the verifier.  It is serialized to JSON and signed by the verifier using
 // JWT.
 type AttestationResult struct {
-	Profile     *string               `json:"eat_profile"`
-	VerifierID  *VerifierIdentity     `json:"ear.verifier-id"`
-	RawEvidence *B64Url               `json:"ear.raw-evidence,omitempty"`
-	IssuedAt    *int64                `json:"iat"`
-	Nonce       *string               `json:"eat_nonce,omitempty"`
-	Submods     map[string]*Appraisal `json:"submods"`
+	Profile     *string               `cbor:"265,keyasint" json:"eat_profile"`
+	VerifierID  *VerifierIdentity     `cbor:"1004,keyasint" json:"ear.verifier-id"`
+	RawEvidence *B64Url               `cbor:"1002,keyasint,omitempty" json:"ear.raw-evidence,omitempty"`
+	IssuedAt    *int64                `cbor:"6,keyasint" json:"iat"`
+	Nonce       *eat.Nonce            `cbor:"10,keyasint,omitempty" json:"eat_nonce,omitempty"`
+	Submods     map[string]*Appraisal `cbor:"266,keyasint" json:"submods"`
 
 	AttestationResultExtensions
 }
 
 type AttestationResultExtensions struct {
-	VeraisonTeeInfo *VeraisonTeeInfo `json:"ear.veraison.tee-info,omitempty"`
+	VeraisonTeeInfo *VeraisonTeeInfo `cbor:"65001" json:"ear.veraison.tee-info,omitempty"`
 }
 
 // B64Url is base64url (§5 of RFC4648) without padding.
@@ -158,9 +163,8 @@ func (o AttestationResult) validate() error {
 	}
 
 	if o.Nonce != nil {
-		nLen := len(*o.Nonce)
-		if nLen > 88 || nLen < 8 {
-			invalid = append(invalid, fmt.Sprintf("eat_nonce (%d bytes)", nLen))
+		if err := o.Nonce.Validate(); err != nil {
+			invalid = append(invalid, fmt.Sprintf("eat_nonce (%s)", err.Error()))
 		}
 	}
 
@@ -276,4 +280,78 @@ func (o *AttestationResult) populateFromMap(m map[string]interface{}) error {
 	}
 
 	return populateStructFromMap(o, m, "json", parsers, stringPtrParser, true)
+}
+
+// MarshalCBOR validates and serializes to JSON an AttestationResult object
+func (o AttestationResult) ToCBOR() ([]byte, error) {
+	if err := o.validate(); err != nil {
+		return nil, err
+	}
+
+	return cbor.Marshal(o)
+}
+
+// UnmarshalCBOR de-serializes an AttestationResult object from its JSON
+// representation and validates it.
+func (o *AttestationResult) FromCBOR(data []byte) error {
+	if err := cbor.Unmarshal(data, o); err != nil {
+		return err
+	}
+
+	return o.validate()
+}
+
+// Verify cryptographically verifies the CWT data using the supplied key and
+// algorithm.  The payload is then parsed and validated.  On success, the target
+// AttestationResult object is populated with the decoded claims (possibly
+// including the Trustworthiness vector).
+func (o *AttestationResult) VerifyCWT(data []byte, alg cose.Algorithm, publicKey crypto.PublicKey) error {
+	// create a verifier from a trusted private key
+	verifier, err := cose.NewVerifier(alg, publicKey)
+	if err != nil {
+		return err
+	}
+
+	// Try COSE_Sign1
+	var sign1 cose.Sign1Message
+	if err := sign1.UnmarshalCBOR(data); err == nil {
+		if err := sign1.Verify(nil, verifier); err != nil {
+			return fmt.Errorf("failed verifying COSE_Sign1 message: %w", err)
+		}
+		if err := o.FromCBOR(sign1.Payload); err != nil {
+			return err
+		}
+		return nil
+	}
+	return fmt.Errorf("failed to parse CWT message (only COSE_Sign1 is supported now): %w", err)
+}
+
+// Sign validates the AttestationResult object, encodes it to JSON and wraps it
+// in a JWT using the supplied private key for signing.  The key must be
+// compatible with the requested signing algorithm.  On success, the complete
+// JWT token is returned.
+func (o AttestationResult) SignCWT(alg cose.Algorithm, privateKey crypto.Signer) ([]byte, error) {
+	if err := o.validate(); err != nil {
+		return nil, err
+	}
+
+	signer, err := cose.NewSigner(alg, privateKey)
+	if err != nil {
+		return nil, err
+	}
+
+	// create message header
+	headers := cose.Headers{
+		Protected: cose.ProtectedHeader{
+			cose.HeaderLabelAlgorithm: cose.AlgorithmES256,
+		},
+	}
+
+	data, err := o.ToCBOR()
+	if err != nil {
+		return nil, err
+	}
+
+	// sign and marshal message
+	return cose.Sign1(rand.Reader, signer, headers, data, nil)
 }

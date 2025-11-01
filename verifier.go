@@ -12,10 +12,10 @@ import (
 //	https://datatracker.ietf.org/doc/html/draft-ietf-rats-ar4si-03#section-2.2.2
 type VerifierIdentity struct {
 	// Build uniquely identifies the software build running the verifier.
-	Build *string `json:"build"`
+	Build *string `cbor:"0,keyasint,omitempty" json:"build"`
 	// Developer uniquely identifies the organizational unit responsible
 	// for this build.
-	Developer *string `json:"developer"`
+	Developer *string `cbor:"1,keyasint,omitempty" json:"developer"`
 }
 
 func ToVerifierIdentity(v interface{}) (*VerifierIdentity, error) {
