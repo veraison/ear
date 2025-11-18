@@ -12,6 +12,7 @@ import (
 	"github.com/fxamacker/cbor/v2"
 	"github.com/stretchr/testify/assert"
 	"github.com/veraison/eat"
+	"github.com/veraison/swid"
 )
 
 func TestAppraisal_ok(t *testing.T) {
@@ -153,7 +154,8 @@ func TestAppraisalExtensions_TEEPClaims_ok(t *testing.T) {
 	assert.Nil(t, testNonce.UnmarshalCBOR([]byte{0x48, 0x94, 0x8F, 0x88, 0x60, 0xD1, 0x3A, 0x46, 0x3E}))
 	testProfile := eat.Profile{}
 	testProfile.Set("urn:ietf:rfc:rfcXXXX")
-	testVersionScheme := eat.VersionScheme(16384)
+	var testVersionScheme swid.VersionScheme
+	testVersionScheme.SetCode(swid.VersionSchemeSemVer)
 
 	tv := AppraisalExtensions{
 		EatClaimsSet: &eat.Eat{
