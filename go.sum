@@ -208,6 +208,8 @@ github.com/subosito/gotenv v1.4.1 h1:jyEFiXpy21Wm81FBN71l9VoMMV8H8jG+qIK3GCpY6Qs
 github.com/subosito/gotenv v1.4.1/go.mod h1:ayKnFf/c6rvx/2iiLrJUk1e6plDbT3edrFNGqEflhK0=
 github.com/valyala/fastjson v1.6.4 h1:uAUNq9Z6ymTgGhcm0UynUAB6tlbakBrz6CQFax3BXVQ=
 github.com/valyala/fastjson v1.6.4/go.mod h1:CLCAqky6SMuOcxStkYQvblddUtoRxhYMGLrsQns1aXY=
+github.com/veraison/eat v0.0.0-20251105185612-2c0e43e22ea9 h1:noS47o2qRghkF4gpxAhzjJEEzQBvSnaJnHHlnMxdDpU=
+github.com/veraison/eat v0.0.0-20251105185612-2c0e43e22ea9/go.mod h1:LJytELnmBplHNkk1fLRMczbXGSste3ORVdBqgZWgeN8=
 github.com/veraison/go-cose v1.3.0 h1:2/H5w8kdSpQJyVtIhx8gmwPJ2uSz1PkyWFx0idbd7rk=
 github.com/veraison/go-cose v1.3.0/go.mod h1:df09OV91aHoQWLmy1KsDdYiagtXgyAwAl8vFeFn1gMc=
 github.com/veraison/swid v1.1.0 h1:jEf/jobG6j7r9W9HSj2jDi1IGGs7aMKyDgfGEMxQ6is=
