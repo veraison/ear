@@ -73,7 +73,7 @@ The `print` sub-command is used to print the contents of a EAR, including the he
 Neither EAR validation nor verification is executed.
 
 ```sh
-arc verify <jwt-file>
+arc print <jwt-file>
 ```
 
 ### Parameters
