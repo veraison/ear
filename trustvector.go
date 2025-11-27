@@ -6,14 +6,14 @@ package ear
 // TrustVector is an implementation of the Trustworthiness Vector (and Claims)
 // described in §2.3 of draft-ietf-rats-ar4si-03, using a JSON serialization.
 type TrustVector struct {
-	InstanceIdentity TrustClaim `json:"instance-identity,omitempty"`
-	Configuration    TrustClaim `json:"configuration,omitempty"`
-	Executables      TrustClaim `json:"executables,omitempty"`
-	FileSystem       TrustClaim `json:"file-system,omitempty"`
-	Hardware         TrustClaim `json:"hardware,omitempty"`
-	RuntimeOpaque    TrustClaim `json:"runtime-opaque,omitempty"`
-	StorageOpaque    TrustClaim `json:"storage-opaque,omitempty"`
-	SourcedData      TrustClaim `json:"sourced-data,omitempty"`
+	InstanceIdentity TrustClaim `cbor:"0,keyasint,omitempty" json:"instance-identity,omitempty"`
+	Configuration    TrustClaim `cbor:"1,keyasint,omitempty" json:"configuration,omitempty"`
+	Executables      TrustClaim `cbor:"2,keyasint,omitempty" json:"executables,omitempty"`
+	FileSystem       TrustClaim `cbor:"3,keyasint,omitempty" json:"file-system,omitempty"`
+	Hardware         TrustClaim `cbor:"4,keyasint,omitempty" json:"hardware,omitempty"`
+	RuntimeOpaque    TrustClaim `cbor:"5,keyasint,omitempty" json:"runtime-opaque,omitempty"`
+	StorageOpaque    TrustClaim `cbor:"6,keyasint,omitempty" json:"storage-opaque,omitempty"`
+	SourcedData      TrustClaim `cbor:"7,keyasint,omitempty" json:"sourced-data,omitempty"`
 }
 
 // AsMap() returns a map[string]TrustClaim with claims names mapped onto

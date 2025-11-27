@@ -11,6 +11,8 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
+
+	"github.com/veraison/eat"
 )
 
 // Appraisal represents the result of an evidence appraisal
@@ -18,9 +20,9 @@ import (
 // other metadata that are relevant to establish the appraisal context - the
 // evidence itself, the appraisal policy used, the time of appraisal.
 type Appraisal struct {
-	Status            *TrustTier   `json:"ear.status"`
-	TrustVector       *TrustVector `json:"ear.trustworthiness-vector,omitempty"`
-	AppraisalPolicyID *string      `json:"ear.appraisal-policy-id,omitempty"`
+	Status            *TrustTier   `cbor:"1000,keyasint" json:"ear.status"`
+	TrustVector       *TrustVector `cbor:"1001,keyasint,omitempty" json:"ear.trustworthiness-vector,omitempty"`
+	AppraisalPolicyID *string      `cbor:"1003,keyasint,omitempty" json:"ear.appraisal-policy-id,omitempty"`
 
 	AppraisalExtensions
 }
@@ -29,9 +31,10 @@ type Appraisal struct {
 // attached to the Appraisal.  For now only veraison-specific extensions are
 // supported.
 type AppraisalExtensions struct {
-	VeraisonAnnotatedEvidence *map[string]interface{} `json:"ear.veraison.annotated-evidence,omitempty"`
-	VeraisonPolicyClaims      *map[string]interface{} `json:"ear.veraison.policy-claims,omitempty"`
-	VeraisonKeyAttestation    *map[string]interface{} `json:"ear.veraison.key-attestation,omitempty"`
+	EatClaimsSet              *eat.Eat                `cbor:"65000,keyasint,omitempty" json:"ear.eat-claims-set,omitempty"`
+	VeraisonAnnotatedEvidence *map[string]interface{} `cbor:"-70000,keyasint,omitempty" json:"ear.veraison.annotated-evidence,omitempty"`
+	VeraisonPolicyClaims      *map[string]interface{} `cbor:"-70001,keyasint,omitempty" json:"ear.veraison.policy-claims,omitempty"`
+	VeraisonKeyAttestation    *map[string]interface{} `cbor:"-70002,keyasint,omitempty" json:"ear.veraison.key-attestation,omitempty"`
 }
 
 // SetKeyAttestation sets the value of `akpub` in the
