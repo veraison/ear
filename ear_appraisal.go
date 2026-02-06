@@ -1,4 +1,4 @@
-// Copyright 2023 Contributors to the Veraison project.
+// Copyright 2023-2026 Contributors to the Veraison project.
 // SPDX-License-Identifier: Apache-2.0
 
 package ear
@@ -23,6 +23,17 @@ type Appraisal struct {
 	AppraisalPolicyID *string      `json:"ear.appraisal-policy-id,omitempty"`
 
 	AppraisalExtensions
+}
+
+// NewAppraisal returns a new Appraisal with its status set to TrustTierNone
+// and all its claims set to NoClaim.
+func NewAppraisal() *Appraisal {
+	status := TrustTierNone
+
+	return &Appraisal{
+		Status:      &status,
+		TrustVector: &TrustVector{},
+	}
 }
 
 // AppraisalExtensions contains any proprietary claims that can be optionally
