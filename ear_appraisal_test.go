@@ -91,3 +91,13 @@ func TestAppraisalExtensions_GetKeyAttestation_fail_akpub_no_b64url(t *testing.T
 	_, err := tv.GetKeyAttestation()
 	assert.EqualError(t, err, `"ear.veraison.key-attestation" malformed: decoding "akpub": illegal base64 data at input byte 84`)
 }
+
+func TestNewAppraisal(t *testing.T) {
+	appraisal := NewAppraisal()
+
+	assert.Equal(t, TrustTierNone, *appraisal.Status)
+
+	for _, claim := range appraisal.TrustVector.AsMap() {
+		assert.Equal(t, NoClaim, claim)
+	}
+}
