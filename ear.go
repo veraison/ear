@@ -1,4 +1,4 @@
-// Copyright 2022-2023 Contributors to the Veraison project.
+// Copyright 2022-2026 Contributors to the Veraison project.
 // SPDX-License-Identifier: Apache-2.0
 
 package ear
@@ -211,7 +211,11 @@ func (o *AttestationResult) Verify(data []byte, alg jwa.KeyAlgorithm, key interf
 	iat, _ := token.IssuedAt()
 	claims["iat"] = iat.Unix()
 
-	return o.populateFromMap(claims)
+	if err := o.populateFromMap(claims); err != nil {
+		return err
+	}
+
+	return o.validate()
 }
 
 // Sign validates the AttestationResult object, encodes it to JSON and wraps it
