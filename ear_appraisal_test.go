@@ -101,3 +101,89 @@ func TestNewAppraisal(t *testing.T) {
 		assert.Equal(t, NoClaim, claim)
 	}
 }
+
+func TestAppraisal_UpdateStatusFromTrustVector_new(t *testing.T) {
+	appraisal := NewAppraisal()
+
+	appraisal.UpdateStatusFromTrustVector()
+
+	assert.Equal(t, TrustTier(0), *appraisal.Status)
+}
+
+func TestAppraisal_UpdateStatusFromTrustVector_basic(t *testing.T) {
+	appraisal := NewAppraisal()
+	trustVector := TrustVector{
+		InstanceIdentity: -2,
+		Configuration:    54,
+	}
+	appraisal.TrustVector = &trustVector
+
+	appraisal.UpdateStatusFromTrustVector()
+
+	assert.Equal(t, TrustTierWarning, *appraisal.Status)
+}
+
+func TestAppraisal_UpdateStatusFromTrustVector_respects_negative(t *testing.T) {
+	appraisal := NewAppraisal()
+	trustVector := TrustVector{
+		InstanceIdentity: -2,
+		Configuration:    5,
+		FileSystem:       54,
+		Hardware:         -97,
+	}
+	appraisal.TrustVector = &trustVector
+
+	appraisal.UpdateStatusFromTrustVector()
+
+	assert.Equal(t, TrustTierContraindicated, *appraisal.Status)
+}
+
+func TestAppraisal_Validate_nil(t *testing.T) {
+	appraisal := Appraisal{}
+	assert.Error(t, appraisal.Validate(), "missing mandatory 'ear.status'")
+}
+
+func TestAppraisal_Validate_new(t *testing.T) {
+	appraisal := NewAppraisal()
+	assert.Nil(t, appraisal.Validate())
+}
+
+func TestAppraisal_Validate_basic(t *testing.T) {
+	appraisal := NewAppraisal()
+	trustVector := TrustVector{
+		InstanceIdentity: -2,
+		Configuration:    5,
+		Hardware:         32,
+	}
+	appraisal.TrustVector = &trustVector
+	assert.Error(t, appraisal.Validate(), "status 0 has higher trustworthiness than InstanceIdentity trust vector element(2)")
+
+	appraisal.Status = new(TrustTier(2))
+	assert.Error(t, appraisal.Validate(), "status 2 has higher trustworthiness than Hardware trust vector element(32)")
+
+	appraisal.Status = new(TrustTier(32))
+	assert.Nil(t, appraisal.Validate())
+
+	appraisal.Status = new(TrustTier(33))
+	assert.Error(t, appraisal.Validate(), "'ear.status' must be a valid trust tier, but is: 33")
+}
+
+func TestAppraisal_Validate_respects_negative(t *testing.T) {
+	appraisal := NewAppraisal()
+	trustVector := TrustVector{
+		InstanceIdentity: -2,
+		Configuration:    1,
+		Hardware:         -54,
+	}
+	appraisal.TrustVector = &trustVector
+	assert.Error(t, appraisal.Validate(), "status 0 has higher trustworthiness than InstanceIdentity trust vector element(2)")
+
+	appraisal.Status = new(TrustTier(2))
+	assert.Error(t, appraisal.Validate(), "status 2 has higher trustworthiness than Hardware trust vector element(32)")
+
+	appraisal.Status = new(TrustTier(32))
+	assert.Nil(t, appraisal.Validate())
+
+	appraisal.Status = new(TrustTier(96))
+	assert.Nil(t, appraisal.Validate())
+}

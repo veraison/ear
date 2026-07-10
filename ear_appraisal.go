@@ -110,6 +110,10 @@ func (o AppraisalExtensions) GetKeyAttestation() (any, error) {
 // individual vector claims (though it could be less trustworthy if had been
 // manually set that way).
 func (o *Appraisal) UpdateStatusFromTrustVector() {
+	if o.TrustVector == nil {
+		return
+	}
+
 	for _, claimValue := range o.TrustVector.AsMap() {
 		claimTier := claimValue.GetTier()
 		if *o.Status < claimTier {
@@ -131,9 +135,34 @@ func (o Appraisal) AsMap() map[string]interface{} {
 	return m
 }
 
-func (o Appraisal) validate() error {
+// Validate makes sure that the value of status is indeed
+// greater than or equal to all elements of the trust vector.
+// This makes sure that it is always less trustworthy than the
+// trust vector components
+func (o Appraisal) Validate() error {
 	if o.Status == nil {
 		return errors.New("missing mandatory 'ear.status'")
+	}
+
+	// guarantee that status is one of the four trust tiers
+	switch *o.Status {
+	case TrustTierNone:
+	case TrustTierAffirming:
+	case TrustTierWarning:
+	case TrustTierContraindicated:
+	default:
+		return fmt.Errorf("'ear.status' must be a valid trust tier, but is: %d", *o.Status)
+	}
+
+	if o.TrustVector == nil {
+		return nil
+	}
+
+	for key, claimValue := range o.TrustVector.AsMap() {
+		claimTier := claimValue.GetTier()
+		if *o.Status < claimTier {
+			return fmt.Errorf("status %d has higher trustworthiness than %s trust vector element(%d)", *o.Status, key, claimTier)
+		}
 	}
 
 	return nil
