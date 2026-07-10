@@ -168,7 +168,7 @@ func (o AttestationResult) validate() error {
 		missing = append(missing, "'submods' (at least one appraisal must be present)")
 	} else {
 		for submodName, appraisal := range o.Submods {
-			if err := appraisal.validate(); err != nil {
+			if err := appraisal.Validate(); err != nil {
 				msg := fmt.Sprintf("submods[%s]: %s", submodName, err.Error())
 				invalid = append(invalid, msg)
 			}
