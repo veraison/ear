@@ -48,7 +48,7 @@ func TestAppraisalExtensions_GetKeyAttestation_fail_no_claim(t *testing.T) {
 	tv := AppraisalExtensions{}
 
 	_, err := tv.GetKeyAttestation()
-	assert.EqualError(t, err, `"ear.veraison.key-attestation" claim not found`)
+	assert.EqualError(t, err, `"ear_veraison_key_attestation" claim not found`)
 }
 
 func TestAppraisalExtensions_GetKeyAttestation_fail_akpub_missing(t *testing.T) {
@@ -57,7 +57,7 @@ func TestAppraisalExtensions_GetKeyAttestation_fail_akpub_missing(t *testing.T) 
 	}
 
 	_, err := tv.GetKeyAttestation()
-	assert.EqualError(t, err, `"akpub" claim not found in "ear.veraison.key-attestation"`)
+	assert.EqualError(t, err, `"akpub" claim not found in "ear_veraison_key_attestation"`)
 }
 
 func TestAppraisalExtensions_GetKeyAttestation_fail_akpub_truncated(t *testing.T) {
@@ -79,7 +79,7 @@ func TestAppraisalExtensions_GetKeyAttestation_fail_akpub_not_a_string(t *testin
 	}
 
 	_, err := tv.GetKeyAttestation()
-	assert.EqualError(t, err, `"ear.veraison.key-attestation" malformed: "akpub" must be string`)
+	assert.EqualError(t, err, `"ear_veraison_key_attestation" malformed: "akpub" must be string`)
 }
 
 func TestAppraisalExtensions_GetKeyAttestation_fail_akpub_no_b64url(t *testing.T) {
@@ -89,7 +89,7 @@ func TestAppraisalExtensions_GetKeyAttestation_fail_akpub_no_b64url(t *testing.T
 		},
 	}
 	_, err := tv.GetKeyAttestation()
-	assert.EqualError(t, err, `"ear.veraison.key-attestation" malformed: decoding "akpub": illegal base64 data at input byte 84`)
+	assert.EqualError(t, err, `"ear_veraison_key_attestation" malformed: decoding "akpub": illegal base64 data at input byte 84`)
 }
 
 func TestNewAppraisal(t *testing.T) {

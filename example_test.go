@@ -5,14 +5,16 @@ package ear
 
 import (
 	"fmt"
+
+	"github.com/veraison/cmw"
 )
 
 func Example_encode_minimalist() {
 	ar := AttestationResult{
 		Submods: map[string]*Appraisal{
 			"test": {
-				Status:            &testStatus,
-				AppraisalPolicyID: &testPolicyID,
+				Status:             &testStatus,
+				AppraisalPolicyIDs: &testPolicyIDs,
 			},
 		},
 
@@ -26,11 +28,11 @@ func Example_encode_minimalist() {
 	fmt.Println(string(j))
 
 	// Output:
-	// {"ear.verifier-id":{"build":"rrtrap-v1.0.0","developer":"Acme Inc."},"eat_profile":"tag:github.com,2023:veraison/ear","iat":1666091373,"submods":{"test":{"ear.appraisal-policy-id":"policy://test/01234","ear.status":"affirming"}}}
+	// {"ear_verifier_id":{"build":"rrtrap-v1.0.0","developer":"Acme Inc."},"eat_profile":"tag:ietf.org,2026:rats/ear#04","iat":1666091373,"submods":{"test":{"ear_appraisal_policy_ids":["policy://test/01234"],"ear_status":"affirming"}}}
 }
 
 func Example_encode_hefty() {
-	rawEvidence := B64Url{0xde, 0xad, 0xbe, 0xef}
+	rawEvidence, _ := cmw.NewMonad("application/octet-stream", []byte{0xde, 0xad, 0xbe, 0xef})
 
 	ar := AttestationResult{
 		Submods: map[string]*Appraisal{
@@ -46,10 +48,10 @@ func Example_encode_hefty() {
 					StorageOpaque:    2,
 					SourcedData:      2,
 				},
-				AppraisalPolicyID: &testPolicyID,
+				AppraisalPolicyIDs: &testPolicyIDs,
 			},
 		},
-		RawEvidence: &rawEvidence,
+		RawEvidence: rawEvidence,
 		IssuedAt:    &testIAT,
 		VerifierID:  &testVerifierID,
 		Profile:     &testProfile,
@@ -67,7 +69,7 @@ func Example_encode_hefty() {
 	fmt.Println(string(j))
 
 	// Output:
-	// {"ear.raw-evidence":"3q2-7w","ear.veraison.tee-info":{"tee-name":"aws-nitro","evidence-id":"405e0c3127e455ebc22361210b43ca9499ca80d3f6b1dc79b89fa35290cee3d9","evidence":"ZXZpZGVuY2U="},"ear.verifier-id":{"build":"rrtrap-v1.0.0","developer":"Acme Inc."},"eat_profile":"tag:github.com,2023:veraison/ear","iat":1666091373,"submods":{"test":{"ear.appraisal-policy-id":"policy://test/01234","ear.status":"affirming","ear.trustworthiness-vector":{"configuration":2,"executables":3,"file-system":2,"hardware":2,"instance-identity":2,"runtime-opaque":2,"sourced-data":2,"storage-opaque":2}}}}
+	// {"ear.veraison.tee-info":{"tee-name":"aws-nitro","evidence-id":"405e0c3127e455ebc22361210b43ca9499ca80d3f6b1dc79b89fa35290cee3d9","evidence":"ZXZpZGVuY2U="},"ear_raw_evidence":["application/octet-stream","3q2-7w"],"ear_verifier_id":{"build":"rrtrap-v1.0.0","developer":"Acme Inc."},"eat_profile":"tag:ietf.org,2026:rats/ear#04","iat":1666091373,"submods":{"test":{"ear_appraisal_policy_ids":["policy://test/01234"],"ear_status":"affirming","ear_trustworthiness_vector":{"configuration":2,"executables":3,"file-system":2,"hardware":2,"instance-identity":2,"runtime-opaque":2,"sourced-data":2,"storage-opaque":2}}}}
 }
 
 func Example_encode_veraison_extensions() {
@@ -78,31 +80,31 @@ func Example_encode_veraison_extensions() {
 	fmt.Println(string(j))
 
 	// Output:
-	// {"ear.verifier-id":{"build":"rrtrap-v1.0.0","developer":"Acme Inc."},"eat_profile":"tag:github.com,2023:veraison/ear","iat":1666091373,"submods":{"test":{"ear.appraisal-policy-id":"policy://test/01234","ear.status":"affirming","ear.veraison.annotated-evidence":{"k1":"v1","k2":"v2"},"ear.veraison.key-attestation":{"akpub":"YWtwdWIK"},"ear.veraison.policy-claims":{"bar":"baz","foo":"bar"}}}}
+	// {"ear_verifier_id":{"build":"rrtrap-v1.0.0","developer":"Acme Inc."},"eat_profile":"tag:ietf.org,2026:rats/ear#04","iat":1666091373,"submods":{"test":{"ear_appraisal_policy_ids":["policy://test/01234"],"ear_attester_claims":{"k1":"v1","k2":"v2"},"ear_status":"affirming","ear_veraison_key_attestation":{"akpub":"YWtwdWIK"},"ear_verifier_claims":{"bar":"baz","foo":"bar"}}}}
 }
 
 func Example_decode_veraison_extensions() {
 	j := `{
-		"eat_profile": "tag:github.com,2023:veraison/ear",
+		"eat_profile": "tag:ietf.org,2026:rats/ear#04",
 		"iat": 1666091373,
 		"submods": {
 			"test": {
-				"ear.status": "affirming",
-				"ear.appraisal-policy-id": "policy://test/01234",
-				"ear.veraison.annotated-evidence": {
+				"ear_status": "affirming",
+				"ear_appraisal_policy_ids": ["policy://test/01234"],
+				"ear_attester_claims": {
 					"k1": "v1",
 					"k2": "v2"
 				},
-				"ear.veraison.key-attestation": {
+				"ear_veraison_key_attestation": {
 					"akpub": "YWtwdWIK"
 				},
-				"ear.veraison.policy-claims": {
+				"ear_verifier_claims": {
 					"bar": "baz",
 					"foo": "bar"
 				}
 			}
 		},
-		"ear.verifier-id": {
+		"ear_verifier_id": {
 			"developer": "Contributors to the Veraison project",
 			"build": "v1.1.23"
 		},
@@ -116,8 +118,8 @@ func Example_decode_veraison_extensions() {
 	_ = ar.UnmarshalJSON([]byte(j))
 
 	fmt.Println(TrustTierToString[*ar.Submods["test"].Status])
-	fmt.Println((*ar.Submods["test"].VeraisonAnnotatedEvidence)["k1"])
-	fmt.Println((*ar.Submods["test"].VeraisonPolicyClaims)["bar"])
+	fmt.Println((*ar.Submods["test"].AttesterClaims)["k1"])
+	fmt.Println((*ar.Submods["test"].VerifierClaims)["bar"])
 	fmt.Println((*ar.Submods["test"].VeraisonKeyAttestation)["akpub"])
 	fmt.Println(*ar.VeraisonTeeInfo.TeeName)
 	fmt.Println(*ar.VeraisonTeeInfo.EvidenceID)
@@ -137,9 +139,9 @@ func Example_colors() {
 	j := `{
 		"submods": {
 			"test": {
-				"ear.status": "contraindicated",
-				"ear.appraisal-policy-id": "policy://test/01234",
-				"ear.trustworthiness-vector": {
+				"ear_status": "contraindicated",
+				"ear_appraisal_policy_ids": ["policy://test/01234"],
+				"ear_trustworthiness_vector": {
 					"instance-identity": 96,
 					"configuration": 96,
 					"executables": 32,
@@ -148,7 +150,7 @@ func Example_colors() {
 			}
 		},
 		"iat":1666091373,
-		"eat_profile": "tag:github.com,2023:veraison/ear"
+		"eat_profile": "tag:ietf.org,2026:rats/ear#04"
 	}`
 
 	var ar AttestationResult

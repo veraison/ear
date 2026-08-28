@@ -4,7 +4,6 @@
 package ear
 
 import (
-	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -13,10 +12,11 @@ import (
 
 	"github.com/lestrrat-go/jwx/v3/jwa"
 	"github.com/lestrrat-go/jwx/v3/jwt"
+	"github.com/veraison/cmw"
 )
 
 // EatProfile is the EAT profile implemented by this package
-const EatProfile = "tag:github.com,2023:veraison/ear"
+const EatProfile = "tag:ietf.org,2026:rats/ear#04"
 
 // Trustee profile name which is an alias for the Veraison one.
 // Both names will be replaced with a neutral one:
@@ -27,28 +27,21 @@ const EatTrusteeProfile = "tag:github.com,2024:confidential-containers/Trustee"
 // by the verifier.  It is serialized to JSON and signed by the verifier using
 // JWT.
 type AttestationResult struct {
-	Profile     *string               `json:"eat_profile"`
-	VerifierID  *VerifierIdentity     `json:"ear.verifier-id"`
-	RawEvidence *B64Url               `json:"ear.raw-evidence,omitempty"`
-	IssuedAt    *int64                `json:"iat"`
-	Nonce       *string               `json:"eat_nonce,omitempty"`
-	Submods     map[string]*Appraisal `json:"submods"`
+	Profile        *string               `json:"eat_profile"`
+	Status         *TrustTier            `json:"ear_status,omitempty"`
+	VerifierID     *VerifierIdentity     `json:"ear_verifier_id"`
+	RawEvidence    *cmw.CMW              `json:"ear_raw_evidence,omitempty"`
+	IssuedAt       *int64                `json:"iat"`
+	Expiry         *int64                `json:"exp,omitempty"`
+	Nonce          *string               `json:"eat_nonce,omitempty"`
+	Submods        map[string]*Appraisal `json:"submods"`
+	DeviceTopology *map[string][]string  `json:"ear_device_topology,omitempty"`
 
 	AttestationResultExtensions
 }
 
 type AttestationResultExtensions struct {
 	VeraisonTeeInfo *VeraisonTeeInfo `json:"ear.veraison.tee-info,omitempty"`
-}
-
-// B64Url is base64url (§5 of RFC4648) without padding.
-// bstr MUST be base64url encoded as per EAT §7.2.2 "JSON Interoperability".
-type B64Url []byte
-
-func (o B64Url) MarshalJSON() ([]byte, error) {
-	return json.Marshal(
-		base64.RawURLEncoding.EncodeToString(o),
-	)
 }
 
 // NewAttestationResult returns a pointer to a new fully-initialized
@@ -154,7 +147,7 @@ func (o AttestationResult) validate() error {
 	}
 
 	if o.VerifierID == nil {
-		missing = append(missing, "'verifier-id'")
+		missing = append(missing, "'ear_verifier_id'")
 	}
 
 	if o.Nonce != nil {
@@ -237,17 +230,43 @@ func (o AttestationResult) Sign(alg jwa.KeyAlgorithm, key interface{}) ([]byte, 
 	return jwt.Sign(token, jwt.WithKey(alg, key))
 }
 
+// toCMW decodes a CMW record (Section 3.1 of RFC9999),
+// serialized as the JSON array ["media-type", "base64-encoded-value"].
+func toCMW(v interface{}) (*cmw.CMW, error) {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return nil, fmt.Errorf("re-serializing CMW record: %w", err)
+	}
+
+	var c cmw.CMW
+	if err := c.UnmarshalJSON(b); err != nil {
+		return nil, fmt.Errorf("decoding CMW record: %w", err)
+	}
+
+	return &c, nil
+}
+
 func (o *AttestationResult) populateFromMap(m map[string]interface{}) error {
 	// entries not explicitly listed will use the stringPtrParser
 	parsers := map[string]parser{
 		"iat": int64PtrParser,
-		"ear.trustworthiness-vector": func(v interface{}) (interface{}, error) {
+		"exp": int64PtrParser,
+		"ear_status": func(v interface{}) (interface{}, error) {
+			return ToTrustTier(v)
+		},
+		"ear_trustworthiness_vector": func(v interface{}) (interface{}, error) {
 			return ToTrustVector(v)
 		},
-		"ear.verifier-id": func(v interface{}) (interface{}, error) {
+		"ear_verifier_id": func(v interface{}) (interface{}, error) {
 			return ToVerifierIdentity(v)
 		},
-		"ear.raw-evidence": b64urlBytesPtrParser,
+		"ear_raw_evidence": func(v interface{}) (interface{}, error) {
+			return toCMW(v)
+		},
+		"ear_device_topology": topologyPtrParser,
+		"ear.veraison.tee-info": func(v interface{}) (interface{}, error) {
+			return ToVeraisonTeeInfo(v)
+		},
 		"submods": func(v interface{}) (interface{}, error) {
 			vMap, ok := v.(map[string]interface{})
 			if !ok {
@@ -273,9 +292,6 @@ func (o *AttestationResult) populateFromMap(m map[string]interface{}) error {
 			}
 
 			return ret, nil
-		},
-		"ear.veraison.tee-info": func(v interface{}) (interface{}, error) {
-			return ToVeraisonTeeInfo(v)
 		},
 	}
 

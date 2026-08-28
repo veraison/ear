@@ -18,9 +18,13 @@ import (
 // other metadata that are relevant to establish the appraisal context - the
 // evidence itself, the appraisal policy used, the time of appraisal.
 type Appraisal struct {
-	Status            *TrustTier   `json:"ear.status"`
-	TrustVector       *TrustVector `json:"ear.trustworthiness-vector,omitempty"`
-	AppraisalPolicyID *string      `json:"ear.appraisal-policy-id,omitempty"`
+	Profile            *string                 `json:"eat_profile,omitempty"`
+	Status             *TrustTier              `json:"ear_status"`
+	TrustVector        *TrustVector            `json:"ear_trustworthiness_vector,omitempty"`
+	AppraisalPolicyIDs *[]string               `json:"ear_appraisal_policy_ids,omitempty"`
+	Nonce              *string                 `json:"eat_nonce,omitempty"`
+	AttesterClaims     *map[string]interface{} `json:"ear_attester_claims,omitempty"`
+	VerifierClaims     *map[string]interface{} `json:"ear_verifier_claims,omitempty"`
 
 	AppraisalExtensions
 }
@@ -40,13 +44,11 @@ func NewAppraisal() *Appraisal {
 // attached to the Appraisal.  For now only veraison-specific extensions are
 // supported.
 type AppraisalExtensions struct {
-	VeraisonAnnotatedEvidence *map[string]interface{} `json:"ear.veraison.annotated-evidence,omitempty"`
-	VeraisonPolicyClaims      *map[string]interface{} `json:"ear.veraison.policy-claims,omitempty"`
-	VeraisonKeyAttestation    *map[string]interface{} `json:"ear.veraison.key-attestation,omitempty"`
+	VeraisonKeyAttestation *map[string]interface{} `json:"ear_veraison_key_attestation,omitempty"`
 }
 
 // SetKeyAttestation sets the value of `akpub` in the
-// "ear.veraison.key-attestation" claim.
+// "ear_veraison_key_attestation" claim.
 // The following key types are currently supported: *rsa.PublicKey,
 // *ecdsa.PublicKey, ed25519.PublicKey (not a pointer).
 // Unsupported key types result in an error.
@@ -72,26 +74,26 @@ func (o *AppraisalExtensions) SetKeyAttestation(pub any) error {
 }
 
 // GetKeyAttestation returns the decoded public key carried in the
-// "ear.veraison.key-attestation" claim.
+// "ear_veraison_key_attestation" claim.
 // The returned key type is one supported by x509.ParsePKIXPublicKey.
 func (o AppraisalExtensions) GetKeyAttestation() (any, error) {
 	if o.VeraisonKeyAttestation == nil {
-		return nil, errors.New(`"ear.veraison.key-attestation" claim not found`)
+		return nil, errors.New(`"ear_veraison_key_attestation" claim not found`)
 	}
 
 	v, ok := (*o.VeraisonKeyAttestation)["akpub"]
 	if !ok {
-		return nil, errors.New(`"akpub" claim not found in "ear.veraison.key-attestation"`)
+		return nil, errors.New(`"akpub" claim not found in "ear_veraison_key_attestation"`)
 	}
 
 	akpub, ok := v.(string)
 	if !ok {
-		return nil, errors.New(`"ear.veraison.key-attestation" malformed: "akpub" must be string`)
+		return nil, errors.New(`"ear_veraison_key_attestation" malformed: "akpub" must be string`)
 	}
 
 	k, err := base64.RawURLEncoding.DecodeString(akpub)
 	if err != nil {
-		return nil, fmt.Errorf(`"ear.veraison.key-attestation" malformed: decoding "akpub": %w`, err)
+		return nil, fmt.Errorf(`"ear_veraison_key_attestation" malformed: decoding "akpub": %w`, err)
 	}
 
 	pub, err := x509.ParsePKIXPublicKey(k)
@@ -133,7 +135,7 @@ func (o Appraisal) AsMap() map[string]interface{} {
 
 func (o Appraisal) validate() error {
 	if o.Status == nil {
-		return errors.New("missing mandatory 'ear.status'")
+		return errors.New("missing mandatory 'ear_status'")
 	}
 
 	return nil
@@ -148,15 +150,16 @@ func ToAppraisal(v interface{}) (*Appraisal, error) {
 	}
 
 	parsers := map[string]parser{
-		"ear.status": func(v interface{}) (interface{}, error) {
+		"ear_status": func(v interface{}) (interface{}, error) {
 			return ToTrustTier(v)
 		},
-		"ear.trustworthiness-vector": func(v interface{}) (interface{}, error) {
+		"ear_trustworthiness_vector": func(v interface{}) (interface{}, error) {
 			return ToTrustVector(v)
 		},
-		"ear.veraison.annotated-evidence": stringMapPtrParser,
-		"ear.veraison.policy-claims":      stringMapPtrParser,
-		"ear.veraison.key-attestation":    stringMapPtrParser,
+		"ear_appraisal_policy_ids":     stringSlicePtrParser,
+		"ear_attester_claims":          stringMapPtrParser,
+		"ear_verifier_claims":          stringMapPtrParser,
+		"ear_veraison_key_attestation": stringMapPtrParser,
 	}
 
 	err := populateStructFromMap(&appraisal, m, "json", parsers, stringPtrParser, true)

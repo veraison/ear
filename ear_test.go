@@ -43,6 +43,7 @@ var (
 	testUnsupportedProfile = "1.2.3.4.5"
 	testNonce              = "0123456789abcdef"
 	testBadNonce           = "1337"
+	testPolicyIDs          = []string{testPolicyID}
 	testEvidenceID         = "405e0c3127e455ebc22361210b43ca9499ca80d3f6b1dc79b89fa35290cee3d9"
 	testEvidence           = []byte("evidence")
 	testTeeName            = "aws-nitro"
@@ -53,17 +54,17 @@ var (
 		Profile:    &testProfile,
 		Submods: map[string]*Appraisal{
 			"test": {
-				Status:            &testStatus,
-				AppraisalPolicyID: &testPolicyID,
+				Status:             &testStatus,
+				AppraisalPolicyIDs: &testPolicyIDs,
+				VerifierClaims: &map[string]interface{}{
+					"foo": "bar",
+					"bar": "baz",
+				},
+				AttesterClaims: &map[string]interface{}{
+					"k1": "v1",
+					"k2": "v2",
+				},
 				AppraisalExtensions: AppraisalExtensions{
-					VeraisonPolicyClaims: &map[string]interface{}{
-						"foo": "bar",
-						"bar": "baz",
-					},
-					VeraisonAnnotatedEvidence: &map[string]interface{}{
-						"k1": "v1",
-						"k2": "v2",
-					},
 					VeraisonKeyAttestation: &map[string]interface{}{
 						"akpub": "YWtwdWIK",
 					},
@@ -82,13 +83,13 @@ func TestToJSON_fail(t *testing.T) {
 	}{
 		{
 			ar:       AttestationResult{},
-			expected: `missing mandatory 'eat_profile', 'iat', 'verifier-id', 'submods' (at least one appraisal must be present)`,
+			expected: `missing mandatory 'eat_profile', 'iat', 'ear_verifier_id', 'submods' (at least one appraisal must be present)`,
 		},
 		{
 			ar: AttestationResult{
 				Submods: map[string]*Appraisal{},
 			},
-			expected: `missing mandatory 'eat_profile', 'iat', 'verifier-id', 'submods' (at least one appraisal must be present)`,
+			expected: `missing mandatory 'eat_profile', 'iat', 'ear_verifier_id', 'submods' (at least one appraisal must be present)`,
 		},
 		{
 			ar: AttestationResult{
@@ -97,7 +98,7 @@ func TestToJSON_fail(t *testing.T) {
 					"test": {},
 				},
 			},
-			expected: `missing mandatory 'eat_profile', 'verifier-id'; invalid value(s) for submods[test]: missing mandatory 'ear.status'`,
+			expected: `missing mandatory 'eat_profile', 'ear_verifier_id'; invalid value(s) for submods[test]: missing mandatory 'ear_status'`,
 		},
 		{
 			ar: AttestationResult{
@@ -106,7 +107,7 @@ func TestToJSON_fail(t *testing.T) {
 					"test": {Status: &testTrustTier},
 				},
 			},
-			expected: `missing mandatory 'iat', 'verifier-id'`,
+			expected: `missing mandatory 'iat', 'ear_verifier_id'`,
 		},
 		{
 			ar: AttestationResult{
@@ -115,7 +116,7 @@ func TestToJSON_fail(t *testing.T) {
 					"test": {Status: &testTrustTier},
 				},
 			},
-			expected: `missing mandatory 'iat', 'verifier-id'; invalid value(s) for eat_profile (1.2.3.4.5)`,
+			expected: `missing mandatory 'iat', 'ear_verifier_id'; invalid value(s) for eat_profile (1.2.3.4.5)`,
 		},
 		{
 			ar: AttestationResult{
@@ -152,7 +153,7 @@ func TestUnmarshalJSON_fail(t *testing.T) {
 		},
 		{
 			ar:       `{}`,
-			expected: `missing mandatory 'eat_profile', 'ear.verifier-id', 'iat', 'submods'`,
+			expected: `missing mandatory 'eat_profile', 'ear_verifier_id', 'iat', 'submods'`,
 		},
 	}
 
@@ -170,7 +171,7 @@ func TestVerify_pass(t *testing.T) {
 		expected AttestationResult
 	}{
 		{
-			token:    `eyJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCJ9.eyJlYXIudmVyaWZpZXItaWQiOnsiYnVpbGQiOiJycnRyYXAtdjEuMC4wIiwiZGV2ZWxvcGVyIjoiQWNtZSBJbmMuIn0sImVhdF9wcm9maWxlIjoidGFnOmdpdGh1Yi5jb20sMjAyMzp2ZXJhaXNvbi9lYXIiLCJpYXQiOjE2NjYwOTEzNzMsInN1Ym1vZHMiOnsidGVzdCI6eyJlYXIuYXBwcmFpc2FsLXBvbGljeS1pZCI6InBvbGljeTovL3Rlc3QvMDEyMzQiLCJlYXIuc3RhdHVzIjoiYWZmaXJtaW5nIiwiZWFyLnZlcmFpc29uLmFubm90YXRlZC1ldmlkZW5jZSI6eyJrMSI6InYxIiwiazIiOiJ2MiJ9LCJlYXIudmVyYWlzb24ua2V5LWF0dGVzdGF0aW9uIjp7ImFrcHViIjoiWVd0d2RXSUsifSwiZWFyLnZlcmFpc29uLnBvbGljeS1jbGFpbXMiOnsiYmFyIjoiYmF6IiwiZm9vIjoiYmFyIn19fX0.gTuJrH5Ctf6sAXlaFu1NvHAtI4H0iSqsp2ZtxPPhSfZJBkyeWmZi62lTBw644JDRI0DY9X7Wk7CBWWE6dmBVAA`,
+			token:    `eyJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCJ9.eyJlYXJfdmVyaWZpZXJfaWQiOnsiYnVpbGQiOiJycnRyYXAtdjEuMC4wIiwiZGV2ZWxvcGVyIjoiQWNtZSBJbmMuIn0sImVhdF9wcm9maWxlIjoidGFnOmlldGYub3JnLDIwMjY6cmF0cy9lYXIjMDQiLCJpYXQiOjE2NjYwOTEzNzMsInN1Ym1vZHMiOnsidGVzdCI6eyJlYXJfYXBwcmFpc2FsX3BvbGljeV9pZHMiOlsicG9saWN5Oi8vdGVzdC8wMTIzNCJdLCJlYXJfYXR0ZXN0ZXJfY2xhaW1zIjp7ImsxIjoidjEiLCJrMiI6InYyIn0sImVhcl9zdGF0dXMiOiJhZmZpcm1pbmciLCJlYXJfdmVyYWlzb25fa2V5X2F0dGVzdGF0aW9uIjp7ImFrcHViIjoiWVd0d2RXSUsifSwiZWFyX3ZlcmlmaWVyX2NsYWltcyI6eyJiYXIiOiJiYXoiLCJmb28iOiJiYXIifX19fQ.aLyO-JRxqyvEFIZyvqhVebdLar9KSAeShB-DbZZ1yqfdGzk6-5nu1tU0Dgx_Mjoyo13hgNpW19iHvvj1pBCgtg`,
 			expected: testAttestationResultsWithVeraisonExtns,
 		},
 	}
@@ -210,7 +211,7 @@ func TestVerify_fail(t *testing.T) {
 		{
 			// empty attestation results
 			token:    `eyJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCJ9.e30.9Tvx3hVBNfkmVXTndrVfv9ZeNJgX59w0JpR2vyjUn8lGxL8VT7OggUeYSYFnxrouSi2TusNh61z8rLdOqxGA-A`,
-			expected: `missing mandatory 'eat_profile', 'ear.verifier-id', 'submods'`,
+			expected: `missing mandatory 'eat_profile', 'ear_verifier_id', 'submods'`,
 		},
 		{
 			// JWT with trailing rubbish
@@ -219,7 +220,7 @@ func TestVerify_fail(t *testing.T) {
 		},
 		{
 			// JWT with invalid profile
-			token:    `eyJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCJ9.eyJlYXIudmVyaWZpZXItaWQiOnsiYnVpbGQiOiJycnRyYXAtdjEuMC4wIiwiZGV2ZWxvcGVyIjoiQWNtZSBJbmMuIn0sImVhdF9wcm9maWxlIjoiaW52YWxpZC1wcm9maWxlIiwiaWF0IjoxLjY2NjA5MTM3M2UrMDksImp0aSI6IjVlZmQ0ZjQ1ODUyMmZkYjJjMGM4NjhmZjQwNjA2NWQ1MDk4ZTA3MjNmYjc3ZDA2YWY1Njc0NTJlYTY2ZjZkNTIiLCJuYmYiOjE3NzUwNDczMjcsInN1Ym1vZHMiOnsidGVzdCI6eyJlYXIuYXBwcmFpc2FsLXBvbGljeS1pZCI6InBvbGljeTovL3Rlc3QvMDEyMzQiLCJlYXIuc3RhdHVzIjoiYWZmaXJtaW5nIiwiZWFyLnZlcmFpc29uLmFubm90YXRlZC1ldmlkZW5jZSI6eyJrMSI6InYxIiwiazIiOiJ2MiJ9LCJlYXIudmVyYWlzb24ua2V5LWF0dGVzdGF0aW9uIjp7ImFrcHViIjoiWVd0d2RXSUsifSwiZWFyLnZlcmFpc29uLnBvbGljeS1jbGFpbXMiOnsiYmFyIjoiYmF6IiwiZm9vIjoiYmFyIn19fX0.fVRX_2DYOnAUo_UjsIC6MNmj3To7PPreiG3TUKAvxik3mSfs3_H-a0CdiY_cwYo3reqE2GTTdqNq9yAine0h4w`,
+			token:    `eyJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCJ9.eyJlYXJfdmVyaWZpZXJfaWQiOnsiYnVpbGQiOiJycnRyYXAtdjEuMC4wIiwiZGV2ZWxvcGVyIjoiQWNtZSBJbmMuIn0sImVhdF9wcm9maWxlIjoiaW52YWxpZC1wcm9maWxlIiwiaWF0IjoxNjY2MDkxMzczLCJzdWJtb2RzIjp7InRlc3QiOnsiZWFyX2FwcHJhaXNhbF9wb2xpY3lfaWRzIjpbInBvbGljeTovL3Rlc3QvMDEyMzQiXSwiZWFyX2F0dGVzdGVyX2NsYWltcyI6eyJrMSI6InYxIiwiazIiOiJ2MiJ9LCJlYXJfc3RhdHVzIjoiYWZmaXJtaW5nIiwiZWFyX3ZlcmFpc29uX2tleV9hdHRlc3RhdGlvbiI6eyJha3B1YiI6IllXdHdkV0lLIn0sImVhcl92ZXJpZmllcl9jbGFpbXMiOnsiYmFyIjoiYmF6IiwiZm9vIjoiYmFyIn19fX0.HXq08DW-vCLE3bRRxCeO3U19RQ0xIx82OBK1_gNW4SOCeOPIBG7Jew1qsXxsiYswxSiH0TAprwsmJqUcb3aRNQ`,
 			expected: `invalid value(s) for eat_profile (invalid-profile)`,
 		},
 	}
@@ -243,7 +244,7 @@ func TestSign_fail(t *testing.T) {
 	var ar AttestationResult
 
 	_, err = ar.Sign(jwa.ES256(), sigK)
-	assert.EqualError(t, err, `missing mandatory 'eat_profile', 'iat', 'verifier-id', 'submods' (at least one appraisal must be present)`)
+	assert.EqualError(t, err, `missing mandatory 'eat_profile', 'iat', 'ear_verifier_id', 'submods' (at least one appraisal must be present)`)
 }
 
 func TestRoundTrip_pass(t *testing.T) {
@@ -308,20 +309,20 @@ func TestUpdateStatusFromTrustVector(t *testing.T) {
 }
 
 func TestAsMap(t *testing.T) {
-	policyID := "foo"
+	policyIDs := []string{"foo"}
 
 	ar := NewAttestationResult("someScheme", "test", "test")
 	status := NewTrustTier(TrustTierAffirming)
 	ar.Submods["someScheme"].Status = status
 	ar.Submods["someScheme"].TrustVector.Executables = ApprovedRuntimeClaim
-	ar.Submods["someScheme"].AppraisalPolicyID = &policyID
+	ar.Submods["someScheme"].AppraisalPolicyIDs = &policyIDs
 	ar.Nonce = &testNonce
 
 	expected := map[string]interface{}{
 		"submods": map[string]interface{}{
 			"someScheme": map[string]interface{}{
-				"ear.status": *status,
-				"ear.trustworthiness-vector": map[string]interface{}{
+				"ear_status": *status,
+				"ear_trustworthiness_vector": map[string]interface{}{
 					"instance-identity": NoClaim,
 					"configuration":     NoClaim,
 					"executables":       ApprovedRuntimeClaim,
@@ -331,7 +332,7 @@ func TestAsMap(t *testing.T) {
 					"storage-opaque":    NoClaim,
 					"sourced-data":      NoClaim,
 				},
-				"ear.appraisal-policy-id": "foo",
+				"ear_appraisal_policy_ids": []string{"foo"},
 			},
 		},
 		"eat_profile": EatProfile,
@@ -342,7 +343,7 @@ func TestAsMap(t *testing.T) {
 	for _, field := range []string{
 		"submods",
 		"eat_profile",
-		"ear.appraisal-policy-id",
+		"ear_appraisal_policy_ids",
 	} {
 		assert.Equal(t, expected[field], m[field])
 	}
@@ -353,8 +354,8 @@ func Test_populateFromMap(t *testing.T) {
 	m := map[string]interface{}{
 		"submods": map[string]interface{}{
 			"test": map[string]interface{}{
-				"ear.status": 2,
-				"ear.trustworthiness-vector": map[string]interface{}{
+				"ear_status": 2,
+				"ear_trustworthiness_vector": map[string]interface{}{
 					"instance-identity": 0,
 					"configuration":     0,
 					"executables":       2,
@@ -364,13 +365,13 @@ func Test_populateFromMap(t *testing.T) {
 					"storage-opaque":    0,
 					"sourced-data":      0,
 				},
-				"ear.appraisal-policy-id": "foo",
+				"ear_appraisal_policy_ids": []interface{}{"foo"},
 			},
 		},
-		"ear.raw-evidence": "SSBkaWRuJ3QgZG8gaXQ",
+		"ear_raw_evidence": []interface{}{"application/octet-stream", "SSBkaWRuJ3QgZG8gaXQ"},
 		"iat":              1234,
 		"eat_profile":      EatProfile,
-		"ear.verifier-id": map[string]interface{}{
+		"ear_verifier_id": map[string]interface{}{
 			"build":     "rrtrap-v1.0.0",
 			"developer": "Acme Inc.",
 		},

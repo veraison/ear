@@ -1,14 +1,14 @@
 {
-    "eat_profile": "tag:github.com,2023:veraison/ear",
+    "eat_profile": "tag:ietf.org,2026:rats/ear#04",
     "iat": 1666091373,
-    "ear.verifier-id": {
+    "ear_verifier_id": {
 	    "build": "rrtrap-v1.0.0",
 	    "developer": "Acme Inc."
     },
     "submods": {
 	    "test": {
-		    "ear.status": "affirming",
-		    "ear.appraisal-policy-id": "https://veraison.example/policy/1/60a0068d"
+		    "ear_status": "affirming",
+		    "ear_appraisal_policy_ids": ["https://veraison.example/policy/1/60a0068d"]
 	    }
     }
 }

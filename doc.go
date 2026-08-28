@@ -15,7 +15,7 @@ claims could be created as follows:
 
 	myStatus := TrustTierAffirming
 	myTimestamp := time.Now().Unix()
-	myPolicyID := `https://veraison.example/policy/1A4DF345-B512-4F3B-8461-967DE7F60ECA`
+	myPolicyIDs := []string{`https://veraison.example/policy/1A4DF345-B512-4F3B-8461-967DE7F60ECA`}
 	myProfile := EatProfile
 	verifierBuild := "verifier-build"
 	verifierDeveloper := "verifier-developer"
@@ -25,9 +25,9 @@ claims could be created as follows:
 	    IssuedAt: &myTimestamp,
 	    Submods: map[string]*Appraisal{
 	        "submodName": {
-	            TrustVector:       &TrustVector{},
-	            Status:            &myStatus,
-	            AppraisalPolicyID: &myPolicyID,
+	            TrustVector:        &TrustVector{},
+	            Status:             &myStatus,
+	            AppraisalPolicyIDs: &myPolicyIDs,
 	        },
 	    },
 	    VerifierID: &VerifierIdentity{
