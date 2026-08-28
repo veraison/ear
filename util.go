@@ -4,7 +4,6 @@
 package ear
 
 import (
-	"encoding/base64"
 	"errors"
 	"fmt"
 	"reflect"
@@ -69,26 +68,67 @@ func int64PtrParser(iface interface{}) (interface{}, error) {
 	return &v, err
 }
 
-func b64urlBytesParser(iface interface{}) (interface{}, error) {
-	rawEvString, okay := iface.(string)
-	if !okay {
-		return B64Url{}, errors.New("not a base64 string")
+func stringSliceParser(iface interface{}) (interface{}, error) {
+	s, ok := iface.([]interface{})
+	if !ok {
+		return nil, errors.New("not an array")
 	}
 
-	decodedRawEv, err := base64.RawURLEncoding.DecodeString(rawEvString)
-	if err != nil {
-		return B64Url{}, err
+	ret := make([]string, 0, len(s))
+
+	for i, elt := range s {
+		v, ok := elt.(string)
+		if !ok {
+			return nil, fmt.Errorf("element %d: not a string", i)
+		}
+		ret = append(ret, v)
 	}
 
-	return B64Url(decodedRawEv), nil
+	if len(ret) == 0 {
+		return nil, errors.New("empty array")
+	}
+
+	return ret, nil
 }
 
-func b64urlBytesPtrParser(iface interface{}) (interface{}, error) {
-	ret, err := b64urlBytesParser(iface)
+func stringSlicePtrParser(iface interface{}) (interface{}, error) {
+	ret, err := stringSliceParser(iface)
 	if err != nil {
 		return nil, err
 	}
-	v := ret.(B64Url)
+	v := ret.([]string)
+	return &v, err
+}
+
+func topologyParser(iface interface{}) (interface{}, error) {
+	m, ok := iface.(map[string]interface{})
+	if !ok {
+		return nil, errors.New("not a map[string]interface{}")
+	}
+
+	ret := make(map[string][]string, len(m))
+
+	for k, v := range m {
+		neighbors, err := stringSliceParser(v)
+		if err != nil {
+			return nil, fmt.Errorf("%s: %w", k, err)
+		}
+		ret[k] = neighbors.([]string)
+	}
+
+	if len(ret) == 0 {
+		return nil, errors.New("empty map")
+	}
+
+	return ret, nil
+}
+
+func topologyPtrParser(iface interface{}) (interface{}, error) {
+	ret, err := topologyParser(iface)
+	if err != nil {
+		return nil, err
+	}
+	v := ret.(map[string][]string)
 	return &v, err
 }
 

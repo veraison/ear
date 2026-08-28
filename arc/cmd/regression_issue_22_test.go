@@ -11,9 +11,9 @@ import (
 var testClaimsSetIssue22 = []byte(`{
 	"submods": {
 		"test": {
-			"ear.status": "affirming",
-			"ear.appraisal-policy-id": "https://veraison.example/policy/1/60a0068d",
-			"ear.trustworthiness-vector": {
+			"ear_status": "affirming",
+			"ear_appraisal_policy_ids": ["https://veraison.example/policy/1/60a0068d"],
+			"ear_trustworthiness_vector": {
 				"instance-identity": 2,
 				"configuration": 2,
 				"executables": 3,
@@ -25,12 +25,12 @@ var testClaimsSetIssue22 = []byte(`{
 			}
 		}
 	},
-	"eat_profile": "tag:github.com,2023:veraison/ear",
-        "ear.verifier-id": {
+	"eat_profile": "tag:ietf.org,2026:rats/ear#04",
+        "ear_verifier_id": {
                 "build": "rrtrap-v1.0.0",
                 "developer": "Acme Inc."
         },
-	"ear.raw-evidence": "3q2+7w==",
+	"ear_raw_evidence": ["application/octet-stream", "3q2+7w=="],
 	"iat": 1666091373
 }`)
 
@@ -53,7 +53,7 @@ func Test_Regression_issue_22(t *testing.T) {
 	}
 	cmd.SetArgs(args)
 
-	expectedErr := `decoding EAR claims-set from "ear-claims.json": invalid value(s) for 'ear.raw-evidence' (illegal base64 data at input byte 3)`
+	expectedErr := `decoding EAR claims-set from "ear-claims.json": invalid value(s) for 'ear_raw_evidence' (decoding CMW record: unmarshaling value: cannot base64 url-safe decode: illegal base64 data at input byte 3)`
 
 	err := cmd.Execute()
 	assert.EqualError(t, err, expectedErr)

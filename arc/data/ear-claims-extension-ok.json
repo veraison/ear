@@ -1,22 +1,22 @@
 {
 	"submods": {
 		"test": {
-			"ear.status": "affirming",
-			"ear.appraisal-policy-id": "policy://test/01234"
+			"ear_status": "affirming",
+			"ear_appraisal_policy_ids": ["policy://test/01234"],
+			"ear_attester_claims": {
+				"k1": "v1",
+				"k2": "v2"
+			},
+			"ear_verifier_claims": {
+				"foo": "bar",
+				"bar": "baz"
+			}
 		}
 	},
-	"eat_profile": "tag:github.com,2023:veraison/ear",
+	"eat_profile": "tag:ietf.org,2026:rats/ear#04",
 	"iat": 1666091373,
-	"ear.verifier-id": {
+	"ear_verifier_id": {
 		"build": "rrtrap-v1.0.0",
 		"developer": "Acme Inc."
-	},
-	"ear.veraison.annotated-evidence": {
-		"k1": "v1",
-		"k2": "v2"
-	},
-	"ear.veraison.policy-claims": {
-		"foo": "bar",
-		"bar": "baz"
 	}
 }

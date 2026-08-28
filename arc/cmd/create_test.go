@@ -131,7 +131,7 @@ func Test_CreateCmd_input_file_bad_format(t *testing.T) {
 	}
 	cmd.SetArgs(args)
 
-	expectedErr := `decoding EAR claims-set from "ear-claims.json": missing mandatory 'eat_profile', 'ear.verifier-id', 'iat', 'submods'`
+	expectedErr := `decoding EAR claims-set from "ear-claims.json": missing mandatory 'eat_profile', 'ear_verifier_id', 'iat', 'submods'`
 
 	err := cmd.Execute()
 	assert.EqualError(t, err, expectedErr)
