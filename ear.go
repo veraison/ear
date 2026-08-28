@@ -36,12 +36,6 @@ type AttestationResult struct {
 	Nonce          *string               `json:"eat_nonce,omitempty"`
 	Submods        map[string]*Appraisal `json:"submods"`
 	DeviceTopology *map[string][]string  `json:"ear_device_topology,omitempty"`
-
-	AttestationResultExtensions
-}
-
-type AttestationResultExtensions struct {
-	VeraisonTeeInfo *VeraisonTeeInfo `json:"ear.veraison.tee-info,omitempty"`
 }
 
 // NewAttestationResult returns a pointer to a new fully-initialized
@@ -264,9 +258,6 @@ func (o *AttestationResult) populateFromMap(m map[string]interface{}) error {
 			return toCMW(v)
 		},
 		"ear_device_topology": topologyPtrParser,
-		"ear.veraison.tee-info": func(v interface{}) (interface{}, error) {
-			return ToVeraisonTeeInfo(v)
-		},
 		"submods": func(v interface{}) (interface{}, error) {
 			vMap, ok := v.(map[string]interface{})
 			if !ok {
