@@ -44,9 +44,6 @@ var (
 	testNonce              = "0123456789abcdef"
 	testBadNonce           = "1337"
 	testPolicyIDs          = []string{testPolicyID}
-	testEvidenceID         = "405e0c3127e455ebc22361210b43ca9499ca80d3f6b1dc79b89fa35290cee3d9"
-	testEvidence           = []byte("evidence")
-	testTeeName            = "aws-nitro"
 
 	testAttestationResultsWithVeraisonExtns = AttestationResult{
 		IssuedAt:   &testIAT,
