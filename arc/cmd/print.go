@@ -67,7 +67,7 @@ Neither EAR validation nor verification is executed.
 			claims := make(map[string]any)
 			for _, k := range token.Keys() {
 				var v any
-				if err = token.Get(k, &v); err != nil {
+				if err := token.Get(k, &v); err != nil {
 					return fmt.Errorf(`failed to get claim %s: %w`, k, err)
 				}
 				claims[k] = v
