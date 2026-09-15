@@ -84,6 +84,13 @@ const (
 )
 
 var (
+	// Note the claim details for failed crypto validation are always the same.
+	cryptoValidationFailedClaim = details{
+		tag:   "crypto_failed",
+		short: "cryptographic validation failed",
+		long:  "Cryptographic validation of the Evidence has failed.",
+	}
+
 	// NOTE: tags are used when converting strings to claims. In order for
 	// this work, there must be an unabigous mapping between them and
 	// claims' integer values. It is OK of mulple claims to have the same
@@ -140,11 +147,7 @@ var (
 			short: "not recognized",
 			long:  "The Attesting Environment is not recognized; however the Verifier believes it should be.",
 		},
-		CryptoValidationFailedClaim: {
-			tag:   "crypto_failed",
-			short: "cryptographic validation failed",
-			long:  "Cryptographic validation of the Evidence has failed.",
-		},
+		CryptoValidationFailedClaim: cryptoValidationFailedClaim,
 	}
 	// A Verifier has appraised an Attester's configuration, and is able to make
 	// conclusions regarding the exposure of known vulnerabilities.
@@ -169,11 +172,7 @@ var (
 			short: "unacceptable security vulnerabilities",
 			long:  "The configuration is unsupportable as it exposes unacceptable security vulnerabilities",
 		},
-		CryptoValidationFailedClaim: {
-			tag:   "crypto_failed",
-			short: "cryptographic validation failed",
-			long:  "Cryptographic validation of the Evidence has failed.",
-		},
+		CryptoValidationFailedClaim: cryptoValidationFailedClaim,
 	}
 	// A Verifier has appraised and evaluated relevant runtime files, scripts,
 	// and/or other objects which have been loaded into the Target environment's
@@ -204,11 +203,7 @@ var (
 			short: "contraindicated run-time",
 			long:  "Runtime memory includes executables, scripts, files, and/or object which are contraindicated.",
 		},
-		CryptoValidationFailedClaim: {
-			tag:   "crypto_failed",
-			short: "cryptographic validation failed",
-			long:  "Cryptographic validation of the Evidence has failed.",
-		},
+		CryptoValidationFailedClaim: cryptoValidationFailedClaim,
 	}
 	// A Verifier has evaluated a specific set of directories within the
 	// Attester's file system. (Note: the Verifier may or may not indicate what
@@ -230,11 +225,7 @@ var (
 			short: "contraindicated item(s) found",
 			long:  "The file system includes contraindicated executables, scripts, or files.",
 		},
-		CryptoValidationFailedClaim: {
-			tag:   "crypto_failed",
-			short: "cryptographic validation failed",
-			long:  "Cryptographic validation of the Evidence has failed.",
-		},
+		CryptoValidationFailedClaim: cryptoValidationFailedClaim,
 	}
 	// A Verifier has appraised any Attester hardware and firmware which are
 	// able to expose fingerprints of their identity and running code.
@@ -259,11 +250,7 @@ var (
 			short: "unrecognized",
 			long:  "A Verifier does not recognize an Attester's hardware or firmware, but it should be recognized.",
 		},
-		CryptoValidationFailedClaim: {
-			tag:   "crypto_failed",
-			short: "cryptographic validation failed",
-			long:  "Cryptographic validation of the Evidence has failed.",
-		},
+		CryptoValidationFailedClaim: cryptoValidationFailedClaim,
 	}
 	// A Verifier has appraised the visibility of Attester objects in memory
 	// from perspectives outside the Attester.
@@ -284,11 +271,7 @@ var (
 			short: "visible",
 			long:  "The Verifier has concluded that in memory objects are unacceptably visible within the physical host that supports the Attester.",
 		},
-		CryptoValidationFailedClaim: {
-			tag:   "crypto_failed",
-			short: "cryptographic validation failed",
-			long:  "Cryptographic validation of the Evidence has failed.",
-		},
+		CryptoValidationFailedClaim: cryptoValidationFailedClaim,
 	}
 	// A Verifier has appraised that an Attester is capable of encrypting
 	// persistent storage.
@@ -308,11 +291,7 @@ var (
 			short: "unencrypted secrets",
 			long:  "There are persistent secrets which are stored unencrypted in an Attester.",
 		},
-		CryptoValidationFailedClaim: {
-			tag:   "crypto_failed",
-			short: "cryptographic validation failed",
-			long:  "Cryptographic validation of the Evidence has failed.",
-		},
+		CryptoValidationFailedClaim: cryptoValidationFailedClaim,
 	}
 	// A Verifier has evaluated the integrity of data objects from external
 	// systems used by the Attester.
@@ -332,11 +311,7 @@ var (
 			short: "from attesters in the contraindicated tier",
 			long:  "Attester source data objects come from contraindicated sources.",
 		},
-		CryptoValidationFailedClaim: {
-			tag:   "crypto_failed",
-			short: "cryptographic validation failed",
-			long:  "Cryptographic validation of the Evidence has failed.",
-		},
+		CryptoValidationFailedClaim: cryptoValidationFailedClaim,
 	}
 )
 
