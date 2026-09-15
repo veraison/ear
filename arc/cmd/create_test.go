@@ -66,7 +66,7 @@ func Test_CreateCmd_skey_file_bad_format(t *testing.T) {
 	}
 	cmd.SetArgs(args)
 
-	expectedErr := `parsing signing key from "empty-skey.json": jwk.Parse: failed to probe data: probe: failed to unmarshal data: EOF`
+	expectedErr := `parsing signing key from "empty-skey.json": jwk.ParseKey: jwk.Parse: failed to probe data: probe: failed to unmarshal data: EOF`
 
 	err := cmd.Execute()
 	assert.EqualError(t, err, expectedErr)
@@ -89,7 +89,7 @@ func Test_CreateCmd_skey_not_ok_for_signing(t *testing.T) {
 	}
 	cmd.SetArgs(args)
 
-	expectedErr := `invalid key type *jwk.ecdsaPublicKey. ecdsa.PrivateKey is required: keyconv: failed to produce ecdsa.PrivateKey from *jwk.ecdsaPublicKey`
+	expectedErr := ` invalid key type *jwk.ecdsaPublicKey. *ecdsa.PrivateKey is required: keyconv: failed to produce ecdsa.PrivateKey from *jwk.ecdsaPublicKey: jwk.Export: no suitable exporter found for key type '*jwk.ecdsaPublicKey'`
 
 	err := cmd.Execute()
 	assert.ErrorContains(t, err, expectedErr)
