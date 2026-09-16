@@ -2,8 +2,6 @@ module github.com/veraison/ear
 
 go 1.23.0
 
-toolchain go1.24.4
-
 require (
 	github.com/huandu/xstrings v1.3.3
 	github.com/lestrrat-go/jwx/v3 v3.0.8
