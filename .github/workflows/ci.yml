@@ -4,6 +4,7 @@ name: ci
 on: [push, pull_request]
 jobs:
   tests:
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name != github.repository
     name: Test on ubuntu-latest
     runs-on: ubuntu-latest
     env:
