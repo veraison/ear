@@ -367,7 +367,7 @@ func ToTrustClaim(v interface{}) (*TrustClaim, error) {
 	case json.Number:
 		i, e := t.Int64()
 		if e != nil {
-			err = fmt.Errorf("not a valid TrustClaim value: %v: %w", t, err)
+			err = fmt.Errorf("not a valid TrustClaim value: %v: %w", t, e)
 		} else {
 			claim, err = getTrustClaimFromInt(int(i))
 		}
@@ -407,6 +407,11 @@ func ToTrustClaim(v interface{}) (*TrustClaim, error) {
 		}
 	case float64:
 		claim, err = getTrustClaimFromInt(int(t))
+	default:
+		// Without this arm an unhandled type leaves claim at its zero value,
+		// which is NoClaim, and err at nil, so the caller is told the
+		// conversion succeeded and the claim was "no claim being made".
+		err = fmt.Errorf("not a valid TrustClaim value: %v (%T)", v, v)
 	}
 
 	return &claim, err
