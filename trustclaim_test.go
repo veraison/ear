@@ -106,6 +106,42 @@ func TestToTrustClaim(t *testing.T) {
 
 	_, err = getTrustClaimFromString("Bogus Claim")
 	assert.ErrorContains(t, err, `not a valid TrustClaim value: "Bogus Claim"`)
+
+	_, err = ToTrustClaim(json.Number("not-a-number"))
+	assert.ErrorContains(t, err, `strconv.ParseInt: parsing "not-a-number"`)
+
+	for _, v := range []interface{}{
+		true,
+		nil,
+		[]interface{}{1},
+		map[string]interface{}{"executables": 2},
+	} {
+		_, err = ToTrustClaim(v)
+		assert.ErrorContains(t, err, "not a valid TrustClaim value", "value: %v", v)
+	}
+}
+
+func TestToTrustVector_bad_claim_type(t *testing.T) {
+	_, err := ToTrustVector(map[string]interface{}{"executables": true})
+	assert.ErrorContains(t, err, "not a valid TrustClaim value: true (bool)")
+}
+
+func TestUnmarshalJSON_bad_claim_type(t *testing.T) {
+	var ar AttestationResult
+
+	err := ar.UnmarshalJSON([]byte(`{
+		"eat_profile": "` + EatProfile + `",
+		"iat": 1666091373,
+		"ear_verifier_id": {"developer": "acme", "build": "v1"},
+		"submods": {
+			"test": {
+				"ear_status": "affirming",
+				"ear_trustworthiness_vector": {"executables": true}
+			}
+		}
+	}`))
+
+	assert.ErrorContains(t, err, "not a valid TrustClaim value: true (bool)")
 }
 
 func TestTrustClaim_GetTier(t *testing.T) {
