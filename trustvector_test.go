@@ -72,7 +72,7 @@ Sourced Data [affirming]: unknown code-point -2
 }
 
 func TestToTrustVector(t *testing.T) {
-	tv, err := ToTrustVector(map[string]any{
+	tv, err := TrustVectorFromAny(map[string]any{
 		"instance-identity": TrustworthyInstanceClaim,
 		"configuration":     2,
 		"executables":       2,
@@ -89,7 +89,7 @@ func TestToTrustVector(t *testing.T) {
 	assert.Equal(t, TrustClaim(-7), tv.RuntimeOpaque)
 	assert.Equal(t, NoClaim, tv.SourcedData)
 
-	tv, err = ToTrustVector(map[string]string{
+	tv, err = TrustVectorFromAny(map[string]string{
 		"runtime-opaque": "encrypted_rt",
 		"hardware":       "unsafe_hw",
 		"file-system":    "approved_fs",
@@ -106,22 +106,22 @@ func TestToTrustVector(t *testing.T) {
 		Executables:      2,
 	}
 
-	tv, err = ToTrustVector(tv2)
+	tv, err = TrustVectorFromAny(tv2)
 	assert.NoError(t, err)
 	assert.Equal(t, TrustworthyInstanceClaim, tv.InstanceIdentity)
 	assert.Equal(t, ApprovedConfigClaim, tv.Configuration)
 	assert.Equal(t, ApprovedRuntimeClaim, tv.Executables)
 
-	tv, err = ToTrustVector(&tv2)
+	tv, err = TrustVectorFromAny(&tv2)
 	assert.NoError(t, err)
 	assert.Equal(t, TrustworthyInstanceClaim, tv.InstanceIdentity)
 	assert.Equal(t, ApprovedConfigClaim, tv.Configuration)
 	assert.Equal(t, ApprovedRuntimeClaim, tv.Executables)
 
-	_, err = ToTrustVector(42)
+	_, err = TrustVectorFromAny(42)
 	assert.ErrorContains(t, err, "invalid value '42': expected a TrustVector, but found int")
 
-	_, err = ToTrustVector(map[string]any{
+	_, err = TrustVectorFromAny(map[string]any{
 		"instance-identity": TrustworthyInstanceClaim,
 		"hardware":          "bad claim",
 		"file-system":       "approved_fs",

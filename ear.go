@@ -246,13 +246,13 @@ func (o *AttestationResult) populateFromMap(m map[string]any) error {
 		"iat": int64PtrParser,
 		"exp": int64PtrParser,
 		"ear_status": func(v any) (any, error) {
-			return ToTrustTier(v)
+			return TrustTierFromAny(v)
 		},
 		"ear_trustworthiness_vector": func(v any) (any, error) {
-			return ToTrustVector(v)
+			return TrustVectorFromAny(v)
 		},
 		"ear_verifier_id": func(v any) (any, error) {
-			return ToVerifierIdentity(v)
+			return VerifierIdentityFromAny(v)
 		},
 		"ear_raw_evidence": func(v any) (any, error) {
 			return toCMW(v)
@@ -268,7 +268,7 @@ func (o *AttestationResult) populateFromMap(m map[string]any) error {
 			var problems []string
 
 			for key, val := range vMap {
-				appraisal, err := ToAppraisal(val)
+				appraisal, err := AppraisalFromAny(val)
 				if err != nil {
 					problems = append(problems,
 						fmt.Sprintf("%s: %s", key, err.Error()))

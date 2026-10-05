@@ -170,7 +170,7 @@ func (o AppraisalExtensions) GetKeyAttestation() (any, error) {
 	return pub, nil
 }
 
-func ToAppraisal(v any) (*Appraisal, error) {
+func AppraisalFromAny(v any) (*Appraisal, error) {
 	var appraisal Appraisal
 
 	m, ok := v.(map[string]any)
@@ -180,10 +180,10 @@ func ToAppraisal(v any) (*Appraisal, error) {
 
 	parsers := map[string]parser{
 		"ear_status": func(v any) (any, error) {
-			return ToTrustTier(v)
+			return TrustTierFromAny(v)
 		},
 		"ear_trustworthiness_vector": func(v any) (any, error) {
-			return ToTrustVector(v)
+			return TrustVectorFromAny(v)
 		},
 		"ear_appraisal_policy_ids":     stringSlicePtrParser,
 		"ear_attester_claims":          stringMapPtrParser,

@@ -18,7 +18,7 @@ type VerifierIdentity struct {
 	Developer *string `json:"developer"`
 }
 
-func ToVerifierIdentity(v any) (*VerifierIdentity, error) {
+func VerifierIdentityFromAny(v any) (*VerifierIdentity, error) {
 	var verifierID VerifierIdentity
 
 	m, ok := v.(map[string]any)
