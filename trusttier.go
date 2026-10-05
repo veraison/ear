@@ -61,7 +61,7 @@ var (
 // TrustTierNone will be used instead.
 // (This is essentially a Must- wrapper for ToTrustTier().)
 func NewTrustTier(v any) *TrustTier {
-	tt, err := ToTrustTier(v)
+	tt, err := TrustTierFromAny(v)
 
 	if err != nil {
 		none := TrustTierNone
@@ -93,7 +93,7 @@ func getTrustTierFromString(s string) (TrustTier, error) {
 	return tier, nil
 }
 
-func ToTrustTier(v any) (*TrustTier, error) {
+func TrustTierFromAny(v any) (*TrustTier, error) {
 	var (
 		err error
 		ok  bool

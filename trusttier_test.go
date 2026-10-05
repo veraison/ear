@@ -123,53 +123,53 @@ func TestTrustTier_ToTrustTier(t *testing.T) {
 	var tt *TrustTier
 	var err error
 
-	tt, err = ToTrustTier(2)
+	tt, err = TrustTierFromAny(2)
 	require.NoError(t, err)
 	assert.Equal(t, TrustTierAffirming, *tt)
 
-	tt, err = ToTrustTier(2.5)
+	tt, err = TrustTierFromAny(2.5)
 	require.NoError(t, err)
 	assert.Equal(t, TrustTierAffirming, *tt)
 
-	_, err = ToTrustTier(3.1)
+	_, err = TrustTierFromAny(3.1)
 	assert.ErrorContains(t, err, "not a valid TrustTier value: 3.100000 (3)")
 
-	_, err = ToTrustTier(math.MaxFloat32)
+	_, err = TrustTierFromAny(math.MaxFloat32)
 	assert.ErrorContains(t, err, "not a valid TrustTier value: 34028234")
 
-	tt, err = ToTrustTier(int8(32))
+	tt, err = TrustTierFromAny(int8(32))
 	require.NoError(t, err)
 	assert.Equal(t, TrustTierWarning, *tt)
 
-	_, err = ToTrustTier(uint64(math.MaxUint64))
+	_, err = TrustTierFromAny(uint64(math.MaxUint64))
 	assert.ErrorContains(t, err,
 		fmt.Sprintf("not a valid TrustTier value: %d", uint64(math.MaxUint64)))
 
-	tt, err = ToTrustTier("affirming")
+	tt, err = TrustTierFromAny("affirming")
 	require.NoError(t, err)
 	assert.Equal(t, TrustTierAffirming, *tt)
 
-	tt, err = ToTrustTier("96")
+	tt, err = TrustTierFromAny("96")
 	require.NoError(t, err)
 	assert.Equal(t, TrustTierContraindicated, *tt)
 
-	tt, err = ToTrustTier([]byte{0x33, 0x32}) // "32"
+	tt, err = TrustTierFromAny([]byte{0x33, 0x32}) // "32"
 	require.NoError(t, err)
 	assert.Equal(t, TrustTierWarning, *tt)
 
-	_, err = ToTrustTier("totally safe")
+	_, err = TrustTierFromAny("totally safe")
 	assert.ErrorContains(t, err, `not a valid TrustTier name: "totally safe"`)
 
-	tt, err = ToTrustTier(UnrecognizedHardwareClaim)
+	tt, err = TrustTierFromAny(UnrecognizedHardwareClaim)
 	require.NoError(t, err)
 	assert.Equal(t, TrustTierContraindicated, *tt)
 
-	tt, err = ToTrustTier(TrustTierContraindicated)
+	tt, err = TrustTierFromAny(TrustTierContraindicated)
 	require.NoError(t, err)
 	assert.Equal(t, TrustTierContraindicated, *tt)
 
 	taff := TrustTierAffirming
-	tt, err = ToTrustTier(&taff)
+	tt, err = TrustTierFromAny(&taff)
 	require.NoError(t, err)
 	assert.Equal(t, TrustTierAffirming, *tt)
 }
