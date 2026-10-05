@@ -10,9 +10,9 @@ import (
 	"strings"
 )
 
-type parser func(interface{}) (interface{}, error)
+type parser func(any) (any, error)
 
-func stringParser(iface interface{}) (interface{}, error) {
+func stringParser(iface any) (any, error) {
 	v, ok := iface.(string)
 	if !ok {
 		return nil, errors.New("not a string")
@@ -20,7 +20,7 @@ func stringParser(iface interface{}) (interface{}, error) {
 	return v, nil
 }
 
-func stringPtrParser(iface interface{}) (interface{}, error) {
+func stringPtrParser(iface any) (any, error) {
 	ret, err := stringParser(iface)
 	if err != nil {
 		return nil, err
@@ -29,24 +29,24 @@ func stringPtrParser(iface interface{}) (interface{}, error) {
 	return &v, err
 }
 
-func stringMapParser(iface interface{}) (interface{}, error) {
-	v, ok := iface.(map[string]interface{})
+func stringMapParser(iface any) (any, error) {
+	v, ok := iface.(map[string]any)
 	if !ok {
-		return nil, errors.New("not a map[string]interface{}")
+		return nil, errors.New("not a map[string]any")
 	}
 	return v, nil
 }
 
-func stringMapPtrParser(iface interface{}) (interface{}, error) {
+func stringMapPtrParser(iface any) (any, error) {
 	ret, err := stringMapParser(iface)
 	if err != nil {
 		return nil, err
 	}
-	v := ret.(map[string]interface{})
+	v := ret.(map[string]any)
 	return &v, err
 }
 
-func int64Parser(iface interface{}) (interface{}, error) {
+func int64Parser(iface any) (any, error) {
 	switch t := iface.(type) {
 	case float64:
 		return int64(t), nil
@@ -59,7 +59,7 @@ func int64Parser(iface interface{}) (interface{}, error) {
 	}
 }
 
-func int64PtrParser(iface interface{}) (interface{}, error) {
+func int64PtrParser(iface any) (any, error) {
 	ret, err := int64Parser(iface)
 	if err != nil {
 		return nil, err
@@ -68,8 +68,8 @@ func int64PtrParser(iface interface{}) (interface{}, error) {
 	return &v, err
 }
 
-func stringSliceParser(iface interface{}) (interface{}, error) {
-	s, ok := iface.([]interface{})
+func stringSliceParser(iface any) (any, error) {
+	s, ok := iface.([]any)
 	if !ok {
 		return nil, errors.New("not an array")
 	}
@@ -91,7 +91,7 @@ func stringSliceParser(iface interface{}) (interface{}, error) {
 	return ret, nil
 }
 
-func stringSlicePtrParser(iface interface{}) (interface{}, error) {
+func stringSlicePtrParser(iface any) (any, error) {
 	ret, err := stringSliceParser(iface)
 	if err != nil {
 		return nil, err
@@ -100,10 +100,10 @@ func stringSlicePtrParser(iface interface{}) (interface{}, error) {
 	return &v, err
 }
 
-func topologyParser(iface interface{}) (interface{}, error) {
-	m, ok := iface.(map[string]interface{})
+func topologyParser(iface any) (any, error) {
+	m, ok := iface.(map[string]any)
 	if !ok {
-		return nil, errors.New("not a map[string]interface{}")
+		return nil, errors.New("not a map[string]any")
 	}
 
 	ret := make(map[string][]string, len(m))
@@ -123,7 +123,7 @@ func topologyParser(iface interface{}) (interface{}, error) {
 	return ret, nil
 }
 
-func topologyPtrParser(iface interface{}) (interface{}, error) {
+func topologyPtrParser(iface any) (any, error) {
 	ret, err := topologyParser(iface)
 	if err != nil {
 		return nil, err
@@ -133,10 +133,10 @@ func topologyPtrParser(iface interface{}) (interface{}, error) {
 }
 
 func structAsMap(
-	s interface{},
+	s any,
 	tagKey string,
-) (map[string]interface{}, error) {
-	result := map[string]interface{}{}
+) (map[string]any, error) {
+	result := map[string]any{}
 	structType := reflect.TypeOf(s)
 	structVal := reflect.ValueOf(s)
 
@@ -153,7 +153,7 @@ func structAsMap(
 func doStructAsMap(
 	structType reflect.Type,
 	structVal reflect.Value,
-	m map[string]interface{},
+	m map[string]any,
 	tagKey string,
 ) error {
 	if structType.Kind() == reflect.Pointer {
@@ -203,12 +203,12 @@ func doStructAsMap(
 			(fieldType.Elem().Kind() == reflect.Struct || // ...of structs, or...
 				(fieldType.Elem().Kind() == reflect.Pointer && // ...pointers...
 					fieldType.Elem().Elem().Kind() == reflect.Struct)) { // ...to structs
-			valMap := map[string]interface{}{}
+			valMap := map[string]any{}
 			iter := fieldVal.MapRange()
 
 			for iter.Next() {
 				mKey := iter.Key().String()
-				mVal := map[string]interface{}{}
+				mVal := map[string]any{}
 
 				if err := doStructAsMap(fieldType.Elem(), iter.Value(),
 					mVal, tagKey); err != nil {
@@ -233,10 +233,10 @@ func doStructAsMap(
 				(fieldType.Elem().Kind() == reflect.Pointer && // ...pointers...
 					fieldType.Elem().Elem().Kind() == reflect.Struct)) { // ...to structs
 
-			valSlice := []interface{}{}
+			valSlice := []any{}
 
 			for i := 0; i < fieldVal.Len(); i++ {
-				mVal := map[string]interface{}{}
+				mVal := map[string]any{}
 
 				if err := doStructAsMap(fieldType.Elem(), fieldVal.Index(i),
 					mVal, tagKey); err != nil {
@@ -271,7 +271,7 @@ func doStructAsMap(
 				return errors.New("AsMap() did not return a map") // nolint: golint
 			}
 
-			valMap := map[string]interface{}{}
+			valMap := map[string]any{}
 			iter := val.MapRange()
 			for iter.Next() {
 				valMap[iter.Key().String()] = iter.Value().Interface()
@@ -291,8 +291,8 @@ func doStructAsMap(
 }
 
 func populateStructFromInterface(
-	dest interface{},
-	v interface{},
+	dest any,
+	v any,
 	tagKey string,
 	parsers map[string]parser,
 	defaultParser parser,
@@ -304,11 +304,11 @@ func populateStructFromInterface(
 	}
 
 	switch t := v.(type) {
-	case map[string]interface{}:
+	case map[string]any:
 		return populateStructFromMap(dest, t, tagKey, parsers,
 			defaultParser, ignoreUnexpected)
 	case map[string]string:
-		m := make(map[string]interface{}, len(t))
+		m := make(map[string]any, len(t))
 		for k, v := range t {
 			m[k] = v
 		}
@@ -340,8 +340,8 @@ func populateStructFromInterface(
 }
 
 func populateStructFromMap(
-	dest interface{},
-	m map[string]interface{},
+	dest any,
+	m map[string]any,
 	tagKey string,
 	parsers map[string]parser,
 	defaultParser parser,
@@ -389,7 +389,7 @@ func populateStructFromMap(
 func doPopulateStructFromMap(
 	destType reflect.Type,
 	destVal reflect.Value,
-	m map[string]interface{},
+	m map[string]any,
 	tagKey string,
 	parsers map[string]parser,
 	defaultParser parser,
@@ -489,7 +489,7 @@ func parseTag(t reflect.StructTag, key string) (fieldSpec, bool) {
 	return ret, true
 }
 
-func getExtraKeys(m map[string]interface{}, expected []string) []string {
+func getExtraKeys(m map[string]any, expected []string) []string {
 	expectedMap := make(map[string]bool, len(expected))
 	for _, e := range expected {
 		expectedMap[e] = true

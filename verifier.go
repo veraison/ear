@@ -18,10 +18,10 @@ type VerifierIdentity struct {
 	Developer *string `json:"developer"`
 }
 
-func ToVerifierIdentity(v interface{}) (*VerifierIdentity, error) {
+func ToVerifierIdentity(v any) (*VerifierIdentity, error) {
 	var verifierID VerifierIdentity
 
-	m, ok := v.(map[string]interface{})
+	m, ok := v.(map[string]any)
 	if !ok {
 		return nil, errors.New("not a JSON object")
 	}

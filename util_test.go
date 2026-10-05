@@ -11,7 +11,7 @@ import (
 )
 
 func Test_getExtraKeys(t *testing.T) {
-	m := map[string]interface{}{
+	m := map[string]any{
 		"name":   "String Archer",
 		"alias":  "duchess",
 		"age":    42,
@@ -32,7 +32,7 @@ func Test_getExtraKeys(t *testing.T) {
 	extras = getExtraKeys(m, []string{})
 	assert.ElementsMatch(t, []string{"name", "alias", "age", "height", "eyes", "hair"}, extras)
 
-	extras = getExtraKeys(map[string]interface{}{}, []string{})
+	extras = getExtraKeys(map[string]any{}, []string{})
 	assert.ElementsMatch(t, []string{}, extras)
 }
 
@@ -63,7 +63,7 @@ func Test_populateStructFromMap(t *testing.T) {
 	var s testStruct
 	var i int
 
-	m := map[string]interface{}{
+	m := map[string]any{
 		"optional-field":  "foo",
 		"mandatory-field": 42,
 	}
@@ -79,33 +79,33 @@ func Test_populateStructFromMap(t *testing.T) {
 	assert.Equal(t, "foo", s.FieldOne)
 	assert.Equal(t, int64(42), *s.FieldTwo)
 
-	m = map[string]interface{}{
+	m = map[string]any{
 		"mandatory-field": 42.0,
 	}
 	err = populateStructFromMap(&s, m, "json", parsers, stringParser, true)
 	require.NoError(t, err)
 	assert.Equal(t, int64(42), *s.FieldTwo)
 
-	m = map[string]interface{}{
+	m = map[string]any{
 		"optional-field": "foo",
 	}
 	err = populateStructFromMap(&s, m, "json", parsers, stringParser, true)
 	assert.EqualError(t, err, "missing mandatory 'mandatory-field'")
 
-	m = map[string]interface{}{
+	m = map[string]any{
 		"optional-field":  7,
 		"mandatory-field": 42,
 	}
 	err = populateStructFromMap(&s, m, "json", parsers, stringParser, true)
 	assert.EqualError(t, err, "invalid value(s) for 'optional-field' (not a string)")
 
-	m = map[string]interface{}{
+	m = map[string]any{
 		"mandatory-field": "foo",
 	}
 	err = populateStructFromMap(&s, m, "json", parsers, stringParser, true)
 	assert.EqualError(t, err, "invalid value(s) for 'mandatory-field' (not an int64)")
 
-	m = map[string]interface{}{
+	m = map[string]any{
 		"embedded-field":  "bar",
 		"mandatory-field": 42,
 	}
@@ -113,27 +113,27 @@ func Test_populateStructFromMap(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, "bar", s.TestEmbedded.FieldOne)
 
-	m = map[string]interface{}{
+	m = map[string]any{
 		"embedded-field":  false,
 		"mandatory-field": 42,
 	}
 	err = populateStructFromMap(&s, m, "json", parsers, stringParser, true)
 	assert.EqualError(t, err, "invalid value(s) for 'embedded-field' (not a string)")
 
-	m = map[string]interface{}{
+	m = map[string]any{
 		"mandatory-field": 42,
 	}
 	err = populateStructFromMap(&s, m, "json", parsers, stringParser, true)
 	require.NoError(t, err)
 
-	m = map[string]interface{}{
+	m = map[string]any{
 		"mandatory-field":  42,
 		"unexpected-field": "nothing to see here",
 	}
 	err = populateStructFromMap(&s, m, "json", parsers, stringParser, true)
 	assert.NoError(t, err)
 
-	m = map[string]interface{}{
+	m = map[string]any{
 		"mandatory-field":  42,
 		"unexpected-field": "nothing to see here",
 	}
@@ -149,7 +149,7 @@ func Test_populateStructFromInterface(t *testing.T) {
 
 	var s testStruct
 
-	m := map[string]interface{}{
+	m := map[string]any{
 		"optional-field":  "foo",
 		"mandatory-field": 42,
 	}
@@ -205,8 +205,8 @@ type myMapable struct {
 	Key string `json:"key"`
 }
 
-func (o myMapable) AsMap() map[string]interface{} {
-	return map[string]interface{}{
+func (o myMapable) AsMap() map[string]any {
+	return map[string]any{
 		o.Key: 1,
 	}
 }
@@ -253,23 +253,23 @@ func Test_structAsMap(t *testing.T) {
 		},
 	}
 
-	expected := map[string]interface{}{
+	expected := map[string]any{
 		"field-one":   "first field",
 		"field-two":   "second field",
 		"field-three": 1337,
-		"field-four": map[string]interface{}{
+		"field-four": map[string]any{
 			"inner": 1,
 		},
-		"field-five": map[string]interface{}{
+		"field-five": map[string]any{
 			"inner": 1,
 		},
-		"field-eight": map[string]interface{}{
-			"field-eight-sub-one": map[string]interface{}{
+		"field-eight": map[string]any{
+			"field-eight-sub-one": map[string]any{
 				"key": "inner",
 			},
 		},
-		"field-nine": []interface{}{
-			map[string]interface{}{
+		"field-nine": []any{
+			map[string]any{
 				"key": "inner",
 			},
 		},
@@ -293,15 +293,15 @@ func Test_structAsMap(t *testing.T) {
 		},
 	}
 
-	expected = map[string]interface{}{
+	expected = map[string]any{
 		"field-one":   nil,
 		"field-two":   "second field",
 		"field-three": 1337,
-		"field-five": map[string]interface{}{
+		"field-five": map[string]any{
 			"inner": 1,
 		},
-		"field-eight":        map[string]interface{}{},
-		"field-nine":         []interface{}{},
+		"field-eight":        map[string]any{},
+		"field-nine":         []any{},
 		"embedded-field-one": "embedded field",
 	}
 

@@ -53,16 +53,16 @@ var (
 			"test": {
 				Status:             &testStatus,
 				AppraisalPolicyIDs: &testPolicyIDs,
-				VerifierClaims: &map[string]interface{}{
+				VerifierClaims: &map[string]any{
 					"foo": "bar",
 					"bar": "baz",
 				},
-				AttesterClaims: &map[string]interface{}{
+				AttesterClaims: &map[string]any{
 					"k1": "v1",
 					"k2": "v2",
 				},
 				AppraisalExtensions: AppraisalExtensions{
-					VeraisonKeyAttestation: &map[string]interface{}{
+					VeraisonKeyAttestation: &map[string]any{
 						"akpub": "YWtwdWIK",
 					},
 				},
@@ -315,11 +315,11 @@ func TestAsMap(t *testing.T) {
 	ar.Submods["someScheme"].AppraisalPolicyIDs = &policyIDs
 	ar.Nonce = &testNonce
 
-	expected := map[string]interface{}{
-		"submods": map[string]interface{}{
-			"someScheme": map[string]interface{}{
+	expected := map[string]any{
+		"submods": map[string]any{
+			"someScheme": map[string]any{
 				"ear_status": *status,
-				"ear_trustworthiness_vector": map[string]interface{}{
+				"ear_trustworthiness_vector": map[string]any{
 					"instance-identity": NoClaim,
 					"configuration":     NoClaim,
 					"executables":       ApprovedRuntimeClaim,
@@ -348,11 +348,11 @@ func TestAsMap(t *testing.T) {
 
 func Test_populateFromMap(t *testing.T) {
 	var ar AttestationResult
-	m := map[string]interface{}{
-		"submods": map[string]interface{}{
-			"test": map[string]interface{}{
+	m := map[string]any{
+		"submods": map[string]any{
+			"test": map[string]any{
 				"ear_status": 2,
-				"ear_trustworthiness_vector": map[string]interface{}{
+				"ear_trustworthiness_vector": map[string]any{
 					"instance-identity": 0,
 					"configuration":     0,
 					"executables":       2,
@@ -362,13 +362,13 @@ func Test_populateFromMap(t *testing.T) {
 					"storage-opaque":    0,
 					"sourced-data":      0,
 				},
-				"ear_appraisal_policy_ids": []interface{}{"foo"},
+				"ear_appraisal_policy_ids": []any{"foo"},
 			},
 		},
-		"ear_raw_evidence": []interface{}{"application/octet-stream", "SSBkaWRuJ3QgZG8gaXQ"},
+		"ear_raw_evidence": []any{"application/octet-stream", "SSBkaWRuJ3QgZG8gaXQ"},
 		"iat":              1234,
 		"eat_profile":      EatProfile,
-		"ear_verifier_id": map[string]interface{}{
+		"ear_verifier_id": map[string]any{
 			"build":     "rrtrap-v1.0.0",
 			"developer": "Acme Inc.",
 		},

@@ -353,7 +353,7 @@ func getTrustClaimFromString(s string) (TrustClaim, error) {
 	return NoClaim, fmt.Errorf("not a valid TrustClaim value: %q", s)
 }
 
-func ToTrustClaim(v interface{}) (*TrustClaim, error) {
+func ToTrustClaim(v any) (*TrustClaim, error) {
 	var (
 		claim TrustClaim
 		err   error
