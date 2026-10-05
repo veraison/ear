@@ -40,70 +40,6 @@ func NewAppraisal() *Appraisal {
 	}
 }
 
-// AppraisalExtensions contains any proprietary claims that can be optionally
-// attached to the Appraisal.  For now only veraison-specific extensions are
-// supported.
-type AppraisalExtensions struct {
-	VeraisonKeyAttestation *map[string]any `json:"ear_veraison_key_attestation,omitempty"`
-}
-
-// SetKeyAttestation sets the value of `akpub` in the
-// "ear_veraison_key_attestation" claim.
-// The following key types are currently supported: *rsa.PublicKey,
-// *ecdsa.PublicKey, ed25519.PublicKey (not a pointer).
-// Unsupported key types result in an error.
-func (o *AppraisalExtensions) SetKeyAttestation(pub any) error {
-	switch v := pub.(type) {
-	case *rsa.PublicKey, *ecdsa.PublicKey, ed25519.PublicKey:
-	default:
-		return fmt.Errorf("unsupported type for public key: %T", v)
-	}
-
-	k, err := x509.MarshalPKIXPublicKey(pub)
-	if err != nil {
-		return fmt.Errorf("unable to marshal public key: %w", err)
-	}
-
-	akpub := base64.RawURLEncoding.EncodeToString(k)
-
-	o.VeraisonKeyAttestation = &map[string]any{
-		"akpub": akpub,
-	}
-
-	return nil
-}
-
-// GetKeyAttestation returns the decoded public key carried in the
-// "ear_veraison_key_attestation" claim.
-// The returned key type is one supported by x509.ParsePKIXPublicKey.
-func (o AppraisalExtensions) GetKeyAttestation() (any, error) {
-	if o.VeraisonKeyAttestation == nil {
-		return nil, errors.New(`"ear_veraison_key_attestation" claim not found`)
-	}
-
-	v, ok := (*o.VeraisonKeyAttestation)["akpub"]
-	if !ok {
-		return nil, errors.New(`"akpub" claim not found in "ear_veraison_key_attestation"`)
-	}
-
-	akpub, ok := v.(string)
-	if !ok {
-		return nil, errors.New(`"ear_veraison_key_attestation" malformed: "akpub" must be string`)
-	}
-
-	k, err := base64.RawURLEncoding.DecodeString(akpub)
-	if err != nil {
-		return nil, fmt.Errorf(`"ear_veraison_key_attestation" malformed: decoding "akpub": %w`, err)
-	}
-
-	pub, err := x509.ParsePKIXPublicKey(k)
-	if err != nil {
-		return nil, fmt.Errorf(`parsing "akpub" failed: %w`, err)
-	}
-
-	return pub, nil
-}
-
 // UpdateStatusFromTrustVector ensure that Status trustworthiness is not
 // higher than is warranted by trust vector claims. For every claim that has
 // been made (i.e. is not in TrustTierNone), if the claim's trust tier is lower
@@ -168,6 +104,70 @@ func (o Appraisal) Validate() error {
 	}
 
 	return nil
+}
+
+// AppraisalExtensions contains any proprietary claims that can be optionally
+// attached to the Appraisal.  For now only veraison-specific extensions are
+// supported.
+type AppraisalExtensions struct {
+	VeraisonKeyAttestation *map[string]any `json:"ear_veraison_key_attestation,omitempty"`
+}
+
+// SetKeyAttestation sets the value of `akpub` in the
+// "ear_veraison_key_attestation" claim.
+// The following key types are currently supported: *rsa.PublicKey,
+// *ecdsa.PublicKey, ed25519.PublicKey (not a pointer).
+// Unsupported key types result in an error.
+func (o *AppraisalExtensions) SetKeyAttestation(pub any) error {
+	switch v := pub.(type) {
+	case *rsa.PublicKey, *ecdsa.PublicKey, ed25519.PublicKey:
+	default:
+		return fmt.Errorf("unsupported type for public key: %T", v)
+	}
+
+	k, err := x509.MarshalPKIXPublicKey(pub)
+	if err != nil {
+		return fmt.Errorf("unable to marshal public key: %w", err)
+	}
+
+	akpub := base64.RawURLEncoding.EncodeToString(k)
+
+	o.VeraisonKeyAttestation = &map[string]any{
+		"akpub": akpub,
+	}
+
+	return nil
+}
+
+// GetKeyAttestation returns the decoded public key carried in the
+// "ear_veraison_key_attestation" claim.
+// The returned key type is one supported by x509.ParsePKIXPublicKey.
+func (o AppraisalExtensions) GetKeyAttestation() (any, error) {
+	if o.VeraisonKeyAttestation == nil {
+		return nil, errors.New(`"ear_veraison_key_attestation" claim not found`)
+	}
+
+	v, ok := (*o.VeraisonKeyAttestation)["akpub"]
+	if !ok {
+		return nil, errors.New(`"akpub" claim not found in "ear_veraison_key_attestation"`)
+	}
+
+	akpub, ok := v.(string)
+	if !ok {
+		return nil, errors.New(`"ear_veraison_key_attestation" malformed: "akpub" must be string`)
+	}
+
+	k, err := base64.RawURLEncoding.DecodeString(akpub)
+	if err != nil {
+		return nil, fmt.Errorf(`"ear_veraison_key_attestation" malformed: decoding "akpub": %w`, err)
+	}
+
+	pub, err := x509.ParsePKIXPublicKey(k)
+	if err != nil {
+		return nil, fmt.Errorf(`parsing "akpub" failed: %w`, err)
+	}
+
+	return pub, nil
 }
 
 func ToAppraisal(v any) (*Appraisal, error) {

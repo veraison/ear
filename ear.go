@@ -127,6 +127,53 @@ func (o *AttestationResult) UpdateStatusFromTrustVector() {
 	}
 }
 
+// Verify cryptographically verifies the JWT data using the supplied key and
+// algorithm.  The payload is then parsed and validated.  On success, the target
+// AttestationResult object is populated with the decoded claims (possibly
+// including the Trustworthiness vector).
+func (o *AttestationResult) Verify(data []byte, alg jwa.KeyAlgorithm, key any) error {
+	token, err := jwt.Parse(data, jwt.WithKey(alg, key))
+	if err != nil {
+		return fmt.Errorf("failed verifying JWT message: %w", err)
+	}
+
+	claims := make(map[string]any)
+	for _, k := range token.Keys() {
+		var v any
+		if err := token.Get(k, &v); err != nil {
+			return fmt.Errorf(`failed to get claim %s: %w`, k, err)
+		}
+		claims[k] = v
+	}
+	iat, _ := token.IssuedAt()
+	claims["iat"] = iat.Unix()
+
+	if err := o.populateFromMap(claims); err != nil {
+		return err
+	}
+
+	return o.validate()
+}
+
+// Sign validates the AttestationResult object, encodes it to JSON and wraps it
+// in a JWT using the supplied private key for signing.  The key must be
+// compatible with the requested signing algorithm.  On success, the complete
+// JWT token is returned.
+func (o AttestationResult) Sign(alg jwa.KeyAlgorithm, key any) ([]byte, error) {
+	if err := o.validate(); err != nil {
+		return nil, err
+	}
+
+	token := jwt.New()
+	for k, v := range o.AsMap() {
+		if err := token.Set(k, v); err != nil {
+			return nil, fmt.Errorf("setting %s: %w", k, err)
+		}
+	}
+
+	return jwt.Sign(token, jwt.WithKey(alg, key))
+}
+
 func (o AttestationResult) validate() error {
 	var missing, invalid, summary []string
 
@@ -175,53 +222,6 @@ func (o AttestationResult) validate() error {
 	}
 
 	return errors.New(strings.Join(summary, "; "))
-}
-
-// Verify cryptographically verifies the JWT data using the supplied key and
-// algorithm.  The payload is then parsed and validated.  On success, the target
-// AttestationResult object is populated with the decoded claims (possibly
-// including the Trustworthiness vector).
-func (o *AttestationResult) Verify(data []byte, alg jwa.KeyAlgorithm, key any) error {
-	token, err := jwt.Parse(data, jwt.WithKey(alg, key))
-	if err != nil {
-		return fmt.Errorf("failed verifying JWT message: %w", err)
-	}
-
-	claims := make(map[string]any)
-	for _, k := range token.Keys() {
-		var v any
-		if err := token.Get(k, &v); err != nil {
-			return fmt.Errorf(`failed to get claim %s: %w`, k, err)
-		}
-		claims[k] = v
-	}
-	iat, _ := token.IssuedAt()
-	claims["iat"] = iat.Unix()
-
-	if err := o.populateFromMap(claims); err != nil {
-		return err
-	}
-
-	return o.validate()
-}
-
-// Sign validates the AttestationResult object, encodes it to JSON and wraps it
-// in a JWT using the supplied private key for signing.  The key must be
-// compatible with the requested signing algorithm.  On success, the complete
-// JWT token is returned.
-func (o AttestationResult) Sign(alg jwa.KeyAlgorithm, key any) ([]byte, error) {
-	if err := o.validate(); err != nil {
-		return nil, err
-	}
-
-	token := jwt.New()
-	for k, v := range o.AsMap() {
-		if err := token.Set(k, v); err != nil {
-			return nil, fmt.Errorf("setting %s: %w", k, err)
-		}
-	}
-
-	return jwt.Sign(token, jwt.WithKey(alg, key))
 }
 
 // toCMW decodes a CMW record (Section 3.1 of RFC9999),
