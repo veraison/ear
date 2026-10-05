@@ -43,7 +43,7 @@ func TrustVectorFromAny(v any) (*TrustVector, error) {
 		map[string]parser{}, // use defaultParser below for everything
 		func(iface any) (any, error) {
 			claim, err := TrustClaimFromAny(iface)
-			return *claim, err
+			return claim, err
 		}, false)
 
 	return &tv, err

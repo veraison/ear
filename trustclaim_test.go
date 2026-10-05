@@ -62,49 +62,49 @@ func TestTrustClaim_TrustTier_entire_range(t *testing.T) {
 func TestToTrustClaim(t *testing.T) {
 	v, err := TrustClaimFromAny(32)
 	require.NoError(t, err)
-	assert.Equal(t, UnsafeRuntimeClaim, *v)
+	assert.Equal(t, UnsafeRuntimeClaim, v)
 
 	_, err = TrustClaimFromAny(512)
 	assert.ErrorContains(t, err, "out of range for TrustClaim: 512")
 
 	v, err = TrustClaimFromAny("2")
 	require.NoError(t, err)
-	assert.Equal(t, TrustClaim(2), *v)
+	assert.Equal(t, TrustClaim(2), v)
 
 	v, err = TrustClaimFromAny("unsafe_hw")
 	require.NoError(t, err)
-	assert.Equal(t, TrustClaim(32), *v)
+	assert.Equal(t, TrustClaim(32), v)
 
 	v, err = TrustClaimFromAny("ApprovedFS")
 	require.NoError(t, err)
-	assert.Equal(t, ApprovedFilesClaim, *v)
+	assert.Equal(t, ApprovedFilesClaim, v)
 
 	v, err = TrustClaimFromAny("CRYPTO-FAILED")
 	require.NoError(t, err)
-	assert.Equal(t, CryptoValidationFailedClaim, *v)
+	assert.Equal(t, CryptoValidationFailedClaim, v)
 
 	v, err = TrustClaimFromAny("Trusted Sources")
 	require.NoError(t, err)
-	assert.Equal(t, TrustedSourcesClaim, *v)
+	assert.Equal(t, TrustedSourcesClaim, v)
 
 	v, err = TrustClaimFromAny(TrustedSourcesClaim)
 	require.NoError(t, err)
-	assert.Equal(t, TrustedSourcesClaim, *v)
+	assert.Equal(t, TrustedSourcesClaim, v)
 
 	tc := VerifierMalfunctionClaim
 	v, err = TrustClaimFromAny(&tc)
 	require.NoError(t, err)
-	assert.Equal(t, VerifierMalfunctionClaim, *v)
+	assert.Equal(t, VerifierMalfunctionClaim, v)
 
 	n := json.Number("-1")
 	v, err = TrustClaimFromAny(n)
 	require.NoError(t, err)
-	assert.Equal(t, VerifierMalfunctionClaim, *v)
+	assert.Equal(t, VerifierMalfunctionClaim, v)
 
 	_, err = TrustClaimFromAny("512")
 	assert.ErrorContains(t, err, "out of range for TrustClaim: 512")
 
-	_, err = getTrustClaimFromString("Bogus Claim")
+	_, err = TrustClaimFromString("Bogus Claim")
 	assert.ErrorContains(t, err, `not a valid TrustClaim value: "Bogus Claim"`)
 
 	_, err = ToTrustClaim(json.Number("not-a-number"))

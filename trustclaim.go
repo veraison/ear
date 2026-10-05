@@ -1,4 +1,4 @@
-// Copyright 2022 Contributors to the Veraison project.
+// Copyright 2022-2026 Contributors to the Veraison project.
 // SPDX-License-Identifier: Apache-2.0
 
 package ear
@@ -315,17 +315,26 @@ var (
 	}
 )
 
-func getTrustClaimFromInt(i int) (TrustClaim, error) {
+// TrustClaimFromInt returns a TrustClaim corresponding to the provided int
+// value. An error is returned if the provided value is outside permitted
+// range.
+func TrustClaimFromInt(i int) (TrustClaim, error) {
 	if i > 127 || i < -128 {
 		return NoClaim, fmt.Errorf("out of range for TrustClaim: %d", i)
 	}
 	return TrustClaim(i), nil
 }
 
-func getTrustClaimFromString(s string) (TrustClaim, error) {
+// TrustClaimFromString returnss a TrustClaim corresponding to the provided
+// string. If the string is an ASCII representation of a decimal integer, the
+// TrustClaim corresponding to that integer is returned (see
+// TrustClaimFromInt). Otherwise, the TrustClaim whose tag matches the provided
+// value is returned. An error is returned is the provided value does not
+// correspond to a valid integer or tag.
+func TrustClaimFromString(s string) (TrustClaim, error) {
 	i, err := strconv.Atoi(s)
 	if err == nil {
-		return getTrustClaimFromInt(i)
+		return TrustClaimFromInt(i)
 	}
 
 	detailsMaps := []detailsMap{
@@ -353,7 +362,12 @@ func getTrustClaimFromString(s string) (TrustClaim, error) {
 	return NoClaim, fmt.Errorf("not a valid TrustClaim value: %q", s)
 }
 
-func TrustClaimFromAny(v any) (*TrustClaim, error) {
+// TrustClaimFromAny returns TrustClaim corresponding to the provided value or
+// an error if the provided value could not be matched to a TrustClaim. If the
+// provided value can be converted to an integer then the result is the same as
+// TrustClaimFromInt; if the provided value can be converted to a string, then
+// the result is the same as TrustClaimFromString.
+func TrustClaimFromAny(v any) (TrustClaim, error) {
 	var (
 		claim TrustClaim
 		err   error
@@ -369,44 +383,44 @@ func TrustClaimFromAny(v any) (*TrustClaim, error) {
 		if e != nil {
 			err = fmt.Errorf("not a valid TrustClaim value: %v: %w", t, e)
 		} else {
-			claim, err = getTrustClaimFromInt(int(i))
+			claim, err = TrustClaimFromInt(int(i))
 		}
 	case string:
-		claim, err = getTrustClaimFromString(t)
+		claim, err = TrustClaimFromString(t)
 	case []byte:
-		claim, err = getTrustClaimFromString(string(t))
+		claim, err = TrustClaimFromString(string(t))
 	case int:
-		claim, err = getTrustClaimFromInt(t)
+		claim, err = TrustClaimFromInt(t)
 	case int8:
-		claim, err = getTrustClaimFromInt(int(t))
+		claim, err = TrustClaimFromInt(int(t))
 	case int16:
-		claim, err = getTrustClaimFromInt(int(t))
+		claim, err = TrustClaimFromInt(int(t))
 	case int32:
-		claim, err = getTrustClaimFromInt(int(t))
+		claim, err = TrustClaimFromInt(int(t))
 	case int64:
-		claim, err = getTrustClaimFromInt(int(t))
+		claim, err = TrustClaimFromInt(int(t))
 	case uint8:
-		claim, err = getTrustClaimFromInt(int(t))
+		claim, err = TrustClaimFromInt(int(t))
 	case uint16:
-		claim, err = getTrustClaimFromInt(int(t))
+		claim, err = TrustClaimFromInt(int(t))
 	case uint32:
-		claim, err = getTrustClaimFromInt(int(t))
+		claim, err = TrustClaimFromInt(int(t))
 	case uint:
 		if t > math.MaxInt64 {
 			err = fmt.Errorf("not a valid TrustClaim value: %d", t)
 
 		} else {
-			claim, err = getTrustClaimFromInt(int(t))
+			claim, err = TrustClaimFromInt(int(t))
 		}
 	case uint64:
 		if t > math.MaxInt64 {
 			err = fmt.Errorf("not a valid TrustClaim value: %d", t)
 
 		} else {
-			claim, err = getTrustClaimFromInt(int(t))
+			claim, err = TrustClaimFromInt(int(t))
 		}
 	case float64:
-		claim, err = getTrustClaimFromInt(int(t))
+		claim, err = TrustClaimFromInt(int(t))
 	default:
 		// Without this arm an unhandled type leaves claim at its zero value,
 		// which is NoClaim, and err at nil, so the caller is told the
@@ -414,7 +428,7 @@ func TrustClaimFromAny(v any) (*TrustClaim, error) {
 		err = fmt.Errorf("not a valid TrustClaim value: %v (%T)", v, v)
 	}
 
-	return &claim, err
+	return claim, err
 }
 
 // TrustTier provides the trust tier bucket of the trustworthiness claim
