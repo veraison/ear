@@ -14,7 +14,7 @@ import (
 
 func TestAppraisalExtensions_SetGetKeyAttestation_ok(t *testing.T) {
 	expected := AppraisalExtensions{
-		VeraisonKeyAttestation: &map[string]interface{}{
+		VeraisonKeyAttestation: &map[string]any{
 			"akpub": "MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEb_A7lJJBzh2t1DUZ5pYOCoW0GmmgXDKBA6orzhWUyhY8T3U6Vb8B3FP2wLDH7ueLQMb_fSWpbiKCuYnO9xwUSg",
 		},
 	}
@@ -53,7 +53,7 @@ func TestAppraisalExtensions_GetKeyAttestation_fail_no_claim(t *testing.T) {
 
 func TestAppraisalExtensions_GetKeyAttestation_fail_akpub_missing(t *testing.T) {
 	tv := AppraisalExtensions{
-		VeraisonKeyAttestation: &map[string]interface{}{},
+		VeraisonKeyAttestation: &map[string]any{},
 	}
 
 	_, err := tv.GetKeyAttestation()
@@ -62,7 +62,7 @@ func TestAppraisalExtensions_GetKeyAttestation_fail_akpub_missing(t *testing.T) 
 
 func TestAppraisalExtensions_GetKeyAttestation_fail_akpub_truncated(t *testing.T) {
 	tv := AppraisalExtensions{
-		VeraisonKeyAttestation: &map[string]interface{}{
+		VeraisonKeyAttestation: &map[string]any{
 			"akpub": "MFkwEwYHKo",
 		},
 	}
@@ -73,7 +73,7 @@ func TestAppraisalExtensions_GetKeyAttestation_fail_akpub_truncated(t *testing.T
 
 func TestAppraisalExtensions_GetKeyAttestation_fail_akpub_not_a_string(t *testing.T) {
 	tv := AppraisalExtensions{
-		VeraisonKeyAttestation: &map[string]interface{}{
+		VeraisonKeyAttestation: &map[string]any{
 			"akpub": 141245,
 		},
 	}
@@ -84,7 +84,7 @@ func TestAppraisalExtensions_GetKeyAttestation_fail_akpub_not_a_string(t *testin
 
 func TestAppraisalExtensions_GetKeyAttestation_fail_akpub_no_b64url(t *testing.T) {
 	tv := AppraisalExtensions{
-		VeraisonKeyAttestation: &map[string]interface{}{
+		VeraisonKeyAttestation: &map[string]any{
 			"akpub": "MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEaxfR8uEsQkf4vOblY6RA8ncDfYEt6zOg9KE5RdiYwpZP40Li/hp/m47n60p8D54WK84zV2sxXs7LtkBoN79R9Q==",
 		},
 	}

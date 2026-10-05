@@ -18,13 +18,13 @@ import (
 // other metadata that are relevant to establish the appraisal context - the
 // evidence itself, the appraisal policy used, the time of appraisal.
 type Appraisal struct {
-	Profile            *string                 `json:"eat_profile,omitempty"`
-	Status             *TrustTier              `json:"ear_status"`
-	TrustVector        *TrustVector            `json:"ear_trustworthiness_vector,omitempty"`
-	AppraisalPolicyIDs *[]string               `json:"ear_appraisal_policy_ids,omitempty"`
-	Nonce              *string                 `json:"eat_nonce,omitempty"`
-	AttesterClaims     *map[string]interface{} `json:"ear_attester_claims,omitempty"`
-	VerifierClaims     *map[string]interface{} `json:"ear_verifier_claims,omitempty"`
+	Profile            *string         `json:"eat_profile,omitempty"`
+	Status             *TrustTier      `json:"ear_status"`
+	TrustVector        *TrustVector    `json:"ear_trustworthiness_vector,omitempty"`
+	AppraisalPolicyIDs *[]string       `json:"ear_appraisal_policy_ids,omitempty"`
+	Nonce              *string         `json:"eat_nonce,omitempty"`
+	AttesterClaims     *map[string]any `json:"ear_attester_claims,omitempty"`
+	VerifierClaims     *map[string]any `json:"ear_verifier_claims,omitempty"`
 
 	AppraisalExtensions
 }
@@ -44,7 +44,7 @@ func NewAppraisal() *Appraisal {
 // attached to the Appraisal.  For now only veraison-specific extensions are
 // supported.
 type AppraisalExtensions struct {
-	VeraisonKeyAttestation *map[string]interface{} `json:"ear_veraison_key_attestation,omitempty"`
+	VeraisonKeyAttestation *map[string]any `json:"ear_veraison_key_attestation,omitempty"`
 }
 
 // SetKeyAttestation sets the value of `akpub` in the
@@ -66,7 +66,7 @@ func (o *AppraisalExtensions) SetKeyAttestation(pub any) error {
 
 	akpub := base64.RawURLEncoding.EncodeToString(k)
 
-	o.VeraisonKeyAttestation = &map[string]interface{}{
+	o.VeraisonKeyAttestation = &map[string]any{
 		"akpub": akpub,
 	}
 
@@ -124,9 +124,9 @@ func (o *Appraisal) UpdateStatusFromTrustVector() {
 	}
 }
 
-// AsMap returns a map[string]interface{} with EAR Appraisal claim names mapped
+// AsMap returns a map[string]any with EAR Appraisal claim names mapped
 // onto corresponding values.
-func (o Appraisal) AsMap() map[string]interface{} {
+func (o Appraisal) AsMap() map[string]any {
 	m, err := structAsMap(o, "json")
 	if err != nil {
 		// An error can only be returned if there is issue in implementation of
@@ -170,19 +170,19 @@ func (o Appraisal) Validate() error {
 	return nil
 }
 
-func ToAppraisal(v interface{}) (*Appraisal, error) {
+func ToAppraisal(v any) (*Appraisal, error) {
 	var appraisal Appraisal
 
-	m, ok := v.(map[string]interface{})
+	m, ok := v.(map[string]any)
 	if !ok {
 		return nil, errors.New("not a JSON object")
 	}
 
 	parsers := map[string]parser{
-		"ear_status": func(v interface{}) (interface{}, error) {
+		"ear_status": func(v any) (any, error) {
 			return ToTrustTier(v)
 		},
-		"ear_trustworthiness_vector": func(v interface{}) (interface{}, error) {
+		"ear_trustworthiness_vector": func(v any) (any, error) {
 			return ToTrustVector(v)
 		},
 		"ear_appraisal_policy_ids":     stringSlicePtrParser,

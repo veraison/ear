@@ -89,7 +89,7 @@ func (o AttestationResult) MarshalJSONIndent(prefix, indent string) ([]byte, err
 // UnmarshalJSON de-serializes an AttestationResult object from its JSON
 // representation and validates it.
 func (o *AttestationResult) UnmarshalJSON(data []byte) error {
-	var oMap map[string]interface{}
+	var oMap map[string]any
 	if err := json.Unmarshal(data, &oMap); err != nil {
 		return err
 	}
@@ -101,9 +101,9 @@ func (o *AttestationResult) UnmarshalJSON(data []byte) error {
 	return o.validate()
 }
 
-// AsMap returns a map[string]interface{} with EAR claim names mapped onto
+// AsMap returns a map[string]any with EAR claim names mapped onto
 // corresponding values.
-func (o AttestationResult) AsMap() map[string]interface{} {
+func (o AttestationResult) AsMap() map[string]any {
 	m, err := structAsMap(o, "json")
 	if err != nil {
 		// An error can only be returned if there is issue in implementation of
@@ -181,7 +181,7 @@ func (o AttestationResult) validate() error {
 // algorithm.  The payload is then parsed and validated.  On success, the target
 // AttestationResult object is populated with the decoded claims (possibly
 // including the Trustworthiness vector).
-func (o *AttestationResult) Verify(data []byte, alg jwa.KeyAlgorithm, key interface{}) error {
+func (o *AttestationResult) Verify(data []byte, alg jwa.KeyAlgorithm, key any) error {
 	token, err := jwt.Parse(data, jwt.WithKey(alg, key))
 	if err != nil {
 		return fmt.Errorf("failed verifying JWT message: %w", err)
@@ -209,7 +209,7 @@ func (o *AttestationResult) Verify(data []byte, alg jwa.KeyAlgorithm, key interf
 // in a JWT using the supplied private key for signing.  The key must be
 // compatible with the requested signing algorithm.  On success, the complete
 // JWT token is returned.
-func (o AttestationResult) Sign(alg jwa.KeyAlgorithm, key interface{}) ([]byte, error) {
+func (o AttestationResult) Sign(alg jwa.KeyAlgorithm, key any) ([]byte, error) {
 	if err := o.validate(); err != nil {
 		return nil, err
 	}
@@ -226,7 +226,7 @@ func (o AttestationResult) Sign(alg jwa.KeyAlgorithm, key interface{}) ([]byte, 
 
 // toCMW decodes a CMW record (Section 3.1 of RFC9999),
 // serialized as the JSON array ["media-type", "base64-encoded-value"].
-func toCMW(v interface{}) (*cmw.CMW, error) {
+func toCMW(v any) (*cmw.CMW, error) {
 	b, err := json.Marshal(v)
 	if err != nil {
 		return nil, fmt.Errorf("re-serializing CMW record: %w", err)
@@ -240,26 +240,26 @@ func toCMW(v interface{}) (*cmw.CMW, error) {
 	return &c, nil
 }
 
-func (o *AttestationResult) populateFromMap(m map[string]interface{}) error {
+func (o *AttestationResult) populateFromMap(m map[string]any) error {
 	// entries not explicitly listed will use the stringPtrParser
 	parsers := map[string]parser{
 		"iat": int64PtrParser,
 		"exp": int64PtrParser,
-		"ear_status": func(v interface{}) (interface{}, error) {
+		"ear_status": func(v any) (any, error) {
 			return ToTrustTier(v)
 		},
-		"ear_trustworthiness_vector": func(v interface{}) (interface{}, error) {
+		"ear_trustworthiness_vector": func(v any) (any, error) {
 			return ToTrustVector(v)
 		},
-		"ear_verifier_id": func(v interface{}) (interface{}, error) {
+		"ear_verifier_id": func(v any) (any, error) {
 			return ToVerifierIdentity(v)
 		},
-		"ear_raw_evidence": func(v interface{}) (interface{}, error) {
+		"ear_raw_evidence": func(v any) (any, error) {
 			return toCMW(v)
 		},
 		"ear_device_topology": topologyPtrParser,
-		"submods": func(v interface{}) (interface{}, error) {
-			vMap, ok := v.(map[string]interface{})
+		"submods": func(v any) (any, error) {
+			vMap, ok := v.(map[string]any)
 			if !ok {
 				return nil, errors.New("not a map object")
 			}

@@ -60,7 +60,7 @@ var (
 // specified value. If the provided value is invalid for a TrustTier,
 // TrustTierNone will be used instead.
 // (This is essentially a Must- wrapper for ToTrustTier().)
-func NewTrustTier(v interface{}) *TrustTier {
+func NewTrustTier(v any) *TrustTier {
 	tt, err := ToTrustTier(v)
 
 	if err != nil {
@@ -93,7 +93,7 @@ func getTrustTierFromString(s string) (TrustTier, error) {
 	return tier, nil
 }
 
-func ToTrustTier(v interface{}) (*TrustTier, error) {
+func ToTrustTier(v any) (*TrustTier, error) {
 	var (
 		err error
 		ok  bool

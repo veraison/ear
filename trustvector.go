@@ -31,7 +31,7 @@ func (o TrustVector) AsMap() map[string]TrustClaim {
 	}
 }
 
-func ToTrustVector(v interface{}) (*TrustVector, error) {
+func ToTrustVector(v any) (*TrustVector, error) {
 	if v == nil {
 		return nil, nil
 	}
@@ -41,7 +41,7 @@ func ToTrustVector(v interface{}) (*TrustVector, error) {
 	err := populateStructFromInterface(
 		&tv, v, "json",
 		map[string]parser{}, // use defaultParser below for everything
-		func(iface interface{}) (interface{}, error) {
+		func(iface any) (any, error) {
 			claim, err := ToTrustClaim(iface)
 			return *claim, err
 		}, false)

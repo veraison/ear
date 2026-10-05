@@ -72,7 +72,7 @@ Sourced Data [affirming]: unknown code-point -2
 }
 
 func TestToTrustVector(t *testing.T) {
-	tv, err := ToTrustVector(map[string]interface{}{
+	tv, err := ToTrustVector(map[string]any{
 		"instance-identity": TrustworthyInstanceClaim,
 		"configuration":     2,
 		"executables":       2,
@@ -121,7 +121,7 @@ func TestToTrustVector(t *testing.T) {
 	_, err = ToTrustVector(42)
 	assert.ErrorContains(t, err, "invalid value '42': expected a TrustVector, but found int")
 
-	_, err = ToTrustVector(map[string]interface{}{
+	_, err = ToTrustVector(map[string]any{
 		"instance-identity": TrustworthyInstanceClaim,
 		"hardware":          "bad claim",
 		"file-system":       "approved_fs",
