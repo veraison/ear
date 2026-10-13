@@ -3,6 +3,12 @@
 export GO111MODULE := on
 export SHELL := /bin/bash
 
+# GOEXPERIMENT needs to be set for 1.26 but not later.
+GO_VERSION := $(shell go env GOVERSION)
+ifneq ($(filter go1.26.%,$(GO_VERSION)),)
+export GOEXPERIMENT := jsonv2
+endif
+
 GOPKG := github.com/veraison/ear
 GOPKG += github.com/veraison/ear/arc/cmd
 
@@ -18,8 +24,8 @@ $(GOLINT): $(GOLINT_STAMP)
 
 $(GOLINT_STAMP):
 	mkdir -p $(dir $(GOLINT))
-	touch $(GOLINT_STAMP)
 	GOBIN=$(dir $(GOLINT)) go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@$(GOLINT_VERSION)
+	touch $(GOLINT_STAMP)
 
 .PHONY: lint
 lint: $(GOLINT)

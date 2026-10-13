@@ -7,183 +7,329 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"maps"
 	"strings"
 	"time"
 
-	"github.com/lestrrat-go/jwx/v3/jwa"
-	"github.com/lestrrat-go/jwx/v3/jwt"
+	"github.com/lestrrat-go/jwx/v4/jwa"
+	"github.com/lestrrat-go/jwx/v4/jwt"
 	"github.com/veraison/cmw"
+	"github.com/veraison/eat"
 )
 
-// EatProfile is the EAT profile implemented by this package
-const EatProfile = "tag:ietf.org,2026:rats/ear#04"
+var (
+	// EatProfile is the EAT profile implemented by this package
+	EatProfile = eat.MustNewProfile("tag:ietf.org,2026:rats/ear#04")
 
-// Trustee profile name which is an alias for the Veraison one.
-// Both names will be replaced with a neutral one:
-// https://github.com/ietf-rats-wg/draft-ietf-rats-ear/pull/47
-const EatTrusteeProfile = "tag:github.com,2024:confidential-containers/Trustee"
+	// Trustee profile name which is an alias for the Veraison one.
+	// Both names will be replaced with a neutral one:
+	// https://github.com/ietf-rats-wg/draft-ietf-rats-ear/pull/47
+	EatTrusteeProfile = eat.MustNewProfile("tag:github.com,2024:confidential-containers/Trustee")
+)
+
+// JWTKeyEntry contains a key used to verify JWT signatures.
+type JWTKeyEntry struct {
+	// Alg is the algorithm the Key is intended to be used with.
+	Alg jwa.KeyAlgorithm
+	// Key is the key used to verify JWT signatures.
+	Key any
+}
 
 // AttestationResult represents the result of one or more evidence Appraisals
 // by the verifier.  It is serialized to JSON and signed by the verifier using
 // JWT.
 type AttestationResult struct {
-	Profile        *string               `json:"eat_profile"`
-	Status         *TrustTier            `json:"ear_status,omitempty"`
-	VerifierID     *VerifierIdentity     `json:"ear_verifier_id"`
-	RawEvidence    *cmw.CMW              `json:"ear_raw_evidence,omitempty"`
-	IssuedAt       *int64                `json:"iat"`
-	Expiry         *int64                `json:"exp,omitempty"`
-	Nonce          *string               `json:"eat_nonce,omitempty"`
-	Submods        map[string]*Appraisal `json:"submods"`
-	DeviceTopology *map[string][]string  `json:"ear_device_topology,omitempty"`
+	Profile        *eat.Profile      `json:"eat_profile"`
+	Status         *TrustTier        `json:"ear_status,omitempty"`
+	IssuedAt       int64             `json:"iat"`
+	Expiry         *int64            `json:"exp,omitempty"`
+	VerifierID     *VerifierIdentity `json:"ear_verifier_id"`
+	RawEvidence    *cmw.CMW          `json:"ear_raw_evidence,omitempty"`
+	Submods        Submods           `json:"submods"`
+	Nonce          *eat.Nonce        `json:"eat_nonce,omitempty"`
+	DeviceTopology DeviceTopology    `json:"ear_device_topology,omitempty"`
+	Extensions     *Extensions       `json:"-"`
 }
 
-// NewAttestationResult returns a pointer to a new fully-initialized
-// AttestationResult.
+// NewAttestationResult returns a pointer to a new AttestationResult.
 func NewAttestationResult(
+	verifierBuild string,
+	verifierDeveloper string,
+) *AttestationResult {
+	iat := time.Now().Unix()
+
+	return &AttestationResult{
+		Profile:    EatProfile,
+		IssuedAt:   iat,
+		Submods:    NewSubmods(),
+		VerifierID: NewVerifierIdentity(verifierBuild, verifierDeveloper),
+		Extensions: NewExtensions(),
+	}
+}
+
+// NewAttestationResultWithAppraisal returns a pointer to a new
+// AttestationResult that has a single submod Appraisal under the specified
+// submod name.
+func NewAttestationResultWithAppraisal(
 	submodName string,
 	verifierBuild string,
 	verifierDeveloper string,
 ) *AttestationResult {
+	result := NewAttestationResult(verifierBuild, verifierDeveloper)
+	result.Submods.AddAppraisal(submodName, NewAppraisal())
+	return result
+}
+
+// AttestationResultFromVerifiedJWT returns a pointer to an AttestationResult
+// extracted from the provided JWT after verifying its signature using the
+// provided key and algorithm.
+func AttestationResultFromVerifiedJWT(
+	data []byte,
+	keyEntry *JWTKeyEntry,
+) (*AttestationResult, error) {
+	var ret AttestationResult
+	if err := ret.FromVerifiedJWT(data, keyEntry.Alg, keyEntry.Key); err != nil {
+		return nil, err
+	}
+
+	return &ret, nil
+}
+
+// AttestationResultFromUnverifiedJWT returns a pointer to an AttestationResult
+// extracted from the provided JWT without verifying its signature.
+func AttestationResultFromUnverifiedJWT(data []byte) (*AttestationResult, error) {
+	var ret AttestationResult
+	if err := ret.FromUnverifiedJWT(data); err != nil {
+		return nil, err
+	}
+
+	return &ret, nil
+}
+
+// AttestationResultFromNestedToken returns a pointer to an AttestationResult
+// extracted from the provided NestedToken. An error is returned if the
+// NestedToken does not contain a valid AttestationResult. No signature
+// verification is performed.
+func AttestationResultFromNestedToken(token *eat.NestedToken) (*AttestationResult, error) {
+	switch token.Type {
+	case eat.NestedTokenBundle, eat.NestedTokenDigest, eat.NestedTokenInvalid:
+		return nil, fmt.Errorf("cannot create AttestationResult from %s", token.Type.String())
+	case eat.NestedTokenCBOR:
+		// TODO(setrofim): this requires CBOR/CWT support
+		return nil, fmt.Errorf("CBOR encoding not supported")
+	case eat.NestedTokenJWT:
+		var encodedToken string
+		if err := json.Unmarshal(token.Data, &encodedToken); err != nil {
+			return nil, err
+		}
+
+		return AttestationResultFromUnverifiedJWT([]byte(encodedToken))
+	default:
+		// The cases are exhaustive.
+		panic(token.Type)
+	}
+}
+
+// AttestationResultFromAny converts provided input into an AttestationResult,
+// returning a pointer to it or an error if conversion is not possible or the
+// AttestationResult is invalid.
+func AttestationResultFromAny(input any) (*AttestationResult, error) {
+	var result AttestationResult
+
+	switch t := input.(type) {
+	case *AttestationResult:
+		return t, nil
+	case AttestationResult:
+		return &t, nil
+	case *eat.NestedToken:
+		return AttestationResultFromNestedToken(t)
+	case eat.NestedToken:
+		return AttestationResultFromNestedToken(&t)
+	}
+
+	claims, err := eat.IntOrStringMapFromAny(input)
+	if err != nil {
+		return nil, err
+	}
+
+	var extensions Extensions
+
+	for key, value := range claims {
+		switch key {
+		case eat.IntOrStringFromString("eat_profile"):
+			profileText, ok := value.(string)
+			if !ok {
+				return nil, fmt.Errorf("eat_profile: expected a string, got %T", value)
+			}
+
+			profile, err := eat.NewProfile(profileText)
+			if err != nil {
+				return nil, fmt.Errorf("eat_profile: %w", err)
+			}
+
+			result.Profile = profile
+		case eat.IntOrStringFromString("ear_status"):
+			tier, err := TrustTierFromAny(value)
+			if err != nil {
+				return nil, fmt.Errorf("ear_status: %w", err)
+			}
+
+			result.Status = &tier
+		case eat.IntOrStringFromString("iat"):
+			iat, err := Int64FromAny(value)
+			if err != nil {
+				return nil, fmt.Errorf("iat: %w", err)
+			}
+
+			result.IssuedAt = iat
+		case eat.IntOrStringFromString("exp"):
+			exp, err := Int64FromAny(value)
+			if err != nil {
+				return nil, fmt.Errorf("exp: %w", err)
+			}
+
+			result.Expiry = &exp
+		case eat.IntOrStringFromString("ear_verifier_id"):
+			verifierID, err := VerifierIdentityFromAny(value)
+			if err != nil {
+				return nil, fmt.Errorf("ear_verifier_id: %w", err)
+			}
+
+			result.VerifierID = verifierID
+		case eat.IntOrStringFromString("ear_raw_evidence"):
+			evidence, err := CMWFromAny(value)
+			if err != nil {
+				return nil, fmt.Errorf("ear_raw_evidence: %w", err)
+			}
+
+			result.RawEvidence = evidence
+		case eat.IntOrStringFromString("submods"):
+			submods, err := SubmodsFromAny(value)
+			if err != nil {
+				return nil, fmt.Errorf("submods: %w", err)
+			}
+
+			result.Submods = submods
+		case eat.IntOrStringFromString("eat_nonce"):
+			nonce, err := eat.NonceFromAny(value)
+			if err != nil {
+				return nil, fmt.Errorf("eat_nonce: %w", err)
+			}
+
+			result.Nonce = nonce
+		case eat.IntOrStringFromString("ear_device_topology"):
+			topology, err := DeviceTopologyFromAny(value)
+			if err != nil {
+				return nil, fmt.Errorf("ear_device_topology: %w", err)
+			}
+
+			result.DeviceTopology = topology
+		default:
+			extensions.Set(key, value)
+		}
+	}
+
+	result.Extensions = &extensions
+
+	if err := result.Validate(); err != nil {
+		return nil, err
+	}
+
+	return &result, nil
+}
+
+// Map returns a map[string]any with EAR claim names mapped onto corresponding
+// values. If there are conflicts between standard claims and extension values,
+// nil is returned instead.
+func (o *AttestationResult) Map() map[eat.IntOrString]any {
+	ret, _ := structWithExtensionsToMap(o, "json")
+	return ret
+}
+
+// UpdateStatusFromSubmods ensure that Status trustworthiness of each submod
+// Appraisal or AttestationResult is not higher than is warranted by its trust
+// vector claims. For every claim that has been made (i.e. is not NoClaim), if
+// the claim's trust tier is lower than that of the Status, adjust the status
+// to the claim's tier. This means that the overall result will not assert to
+// be more trustworthy than individual vector claims (though it could be less
+// trustworthy if had been manually set that way). If submods contain nested
+// tokens, an attempt is made to verify its signature using provided keys. If
+// no keys were provided, or if verification fails using all provided keys,
+// status is set to TrustTierIncomplete.
+func (o *AttestationResult) UpdateStatusFromSubmods(keys ...*JWTKeyEntry) {
 	status := TrustTierNone
-	iat := time.Now().Unix()
-	profile := EatProfile
-
-	return &AttestationResult{
-		Profile:  &profile,
-		IssuedAt: &iat,
-		Submods: map[string]*Appraisal{
-			submodName: {
-				TrustVector: &TrustVector{},
-				Status:      &status,
-			},
-		},
-		VerifierID: &VerifierIdentity{
-			Build:     &verifierBuild,
-			Developer: &verifierDeveloper,
-		},
-	}
-}
-
-// MarshalJSON validates and serializes to JSON an AttestationResult object
-func (o AttestationResult) MarshalJSON() ([]byte, error) {
-	if err := o.validate(); err != nil {
-		return nil, err
+	if o.Status != nil {
+		status = *o.Status
 	}
 
-	return json.Marshal(o.AsMap())
-}
-
-// MarshalJSONIndent is like MarshalJSON but applies Indent to format the
-// output. Each JSON element in the output will begin on a new line beginning
-// with prefix followed by one or more copies of indent according to the
-// indentation nesting.
-func (o AttestationResult) MarshalJSONIndent(prefix, indent string) ([]byte, error) {
-	if err := o.validate(); err != nil {
-		return nil, err
-	}
-
-	return json.MarshalIndent(o.AsMap(), prefix, indent)
-}
-
-// UnmarshalJSON de-serializes an AttestationResult object from its JSON
-// representation and validates it.
-func (o *AttestationResult) UnmarshalJSON(data []byte) error {
-	var oMap map[string]any
-	if err := json.Unmarshal(data, &oMap); err != nil {
-		return err
-	}
-
-	if err := o.populateFromMap(oMap); err != nil {
-		return err
-	}
-
-	return o.validate()
-}
-
-// AsMap returns a map[string]any with EAR claim names mapped onto
-// corresponding values.
-func (o AttestationResult) AsMap() map[string]any {
-	m, err := structAsMap(o, "json")
-	if err != nil {
-		// An error can only be returned if there is issue in implementation of
-		// AttestationResult; specifically, if any of its
-		// constituents incorrectly implement AsMap() themselves.
-		panic(err)
-	}
-	return m
-}
-
-// UpdateStatusFromTrustVector ensure that Status trustworthiness of each
-// Appraisal is not higher than is warranted by its trust vector claims. For every
-// claim that has been made (i.e. is not in TrustTierNone), if the claim's
-// trust tier is lower than that of the Status, adjust the status to the
-// claim's tier. This means that the overall result will not assert to be more
-// trustworthy than individual vector claims (though it could be less
-// trustworthy if had been manually set that way).
-func (o *AttestationResult) UpdateStatusFromTrustVector() {
-	for _, appraisal := range o.Submods {
-		appraisal.UpdateStatusFromTrustVector()
-	}
-}
-
-// Verify cryptographically verifies the JWT data using the supplied key and
-// algorithm.  The payload is then parsed and validated.  On success, the target
-// AttestationResult object is populated with the decoded claims (possibly
-// including the Trustworthiness vector).
-func (o *AttestationResult) Verify(data []byte, alg jwa.KeyAlgorithm, key any) error {
-	token, err := jwt.Parse(data, jwt.WithKey(alg, key))
-	if err != nil {
-		return fmt.Errorf("failed verifying JWT message: %w", err)
-	}
-
-	claims := make(map[string]any)
-	for _, k := range token.Keys() {
-		var v any
-		if err := token.Get(k, &v); err != nil {
-			return fmt.Errorf(`failed to get claim %s: %w`, k, err)
+	for _, submod := range o.Submods {
+		if submod == nil || submod.value == nil {
+			continue
 		}
-		claims[k] = v
-	}
-	iat, _ := token.IssuedAt()
-	claims["iat"] = iat.Unix()
 
-	if err := o.populateFromMap(claims); err != nil {
-		return err
-	}
+		switch t := submod.Value().(type) {
+		case *Appraisal:
+			t.UpdateStatusFromTrustVector()
+			if t.Status.WorseThan(status) {
+				status = t.Status
+			}
+		case *AttestationResult:
+			t.UpdateStatusFromSubmods(keys...)
+			if t.Status.WorseThan(status) {
+				status = *t.Status
+			}
+		case *eat.NestedToken:
+			if t.Type != eat.NestedTokenJWT {
+				status = TrustTierIncomplete
+				continue
+			}
 
-	return o.validate()
-}
+			var jwtText string
+			if err := json.Unmarshal(t.Data, &jwtText); err != nil {
+				status = TrustTierIncomplete
+				continue
+			}
 
-// Sign validates the AttestationResult object, encodes it to JSON and wraps it
-// in a JWT using the supplied private key for signing.  The key must be
-// compatible with the requested signing algorithm.  On success, the complete
-// JWT token is returned.
-func (o AttestationResult) Sign(alg jwa.KeyAlgorithm, key any) ([]byte, error) {
-	if err := o.validate(); err != nil {
-		return nil, err
-	}
+			verified := false
+			for _, keyEntry := range keys {
+				result, err := AttestationResultFromVerifiedJWT([]byte(jwtText), keyEntry)
+				if err != nil {
+					continue
+				}
 
-	token := jwt.New()
-	for k, v := range o.AsMap() {
-		if err := token.Set(k, v); err != nil {
-			return nil, fmt.Errorf("setting %s: %w", k, err)
+				verified = true
+
+				result.UpdateStatusFromSubmods(keys...)
+				if result.Status.WorseThan(status) {
+					status = *result.Status
+				}
+			}
+
+			if !verified {
+				status = TrustTierIncomplete
+			}
+		default:
+			// cases are exhaustive
+			panic(fmt.Sprintf("unexpected submod type %T", t))
 		}
 	}
 
-	return jwt.Sign(token, jwt.WithKey(alg, key))
+	o.Status = &status
 }
 
-func (o AttestationResult) validate() error {
+// Validate returns an error if any of the AttestationResult fields contain
+// invalid values or if mandatory claims are missing.
+func (o *AttestationResult) Validate() error {
 	var missing, invalid, summary []string
 
 	if o.Profile == nil {
 		missing = append(missing, "'eat_profile'")
-	} else if *o.Profile != EatProfile && *o.Profile != EatTrusteeProfile {
+	} else if o.Profile.String() != EatProfile.String() &&
+		o.Profile.String() != EatTrusteeProfile.String() {
 		invalid = append(invalid, fmt.Sprintf("eat_profile (%s)", *o.Profile))
 	}
 
-	if o.IssuedAt == nil {
+	if o.IssuedAt == 0 {
 		missing = append(missing, "'iat'")
 	}
 
@@ -191,22 +337,22 @@ func (o AttestationResult) validate() error {
 		missing = append(missing, "'ear_verifier_id'")
 	}
 
-	if o.Nonce != nil {
-		nLen := len(*o.Nonce)
-		if nLen > 88 || nLen < 8 {
-			invalid = append(invalid, fmt.Sprintf("eat_nonce (%d bytes)", nLen))
-		}
+	if o.Submods.IsEmpty() {
+		missing = append(missing, "'submods'")
+	} else if err := o.Submods.Validate(); err != nil {
+		invalid = append(invalid, fmt.Sprintf("submods: %s", err.Error()))
 	}
 
-	if len(o.Submods) == 0 {
-		missing = append(missing, "'submods' (at least one appraisal must be present)")
-	} else {
-		for submodName, appraisal := range o.Submods {
-			if err := appraisal.Validate(); err != nil {
-				msg := fmt.Sprintf("submods[%s]: %s", submodName, err.Error())
-				invalid = append(invalid, msg)
-			}
+	var badTopologyEntries []string
+	for submodName := range o.DeviceTopology {
+		_, ok := o.Submods[submodName]
+		if !ok {
+			badTopologyEntries = append(badTopologyEntries, submodName)
 		}
+	}
+	if len(badTopologyEntries) != 0 {
+		bad := strings.Join(badTopologyEntries, ",")
+		invalid = append(invalid, fmt.Sprintf("ear_device_topology entries not in submods: %s", bad))
 	}
 
 	if len(missing) == 0 && len(invalid) == 0 {
@@ -224,67 +370,137 @@ func (o AttestationResult) validate() error {
 	return errors.New(strings.Join(summary, "; "))
 }
 
-// toCMW decodes a CMW record (Section 3.1 of RFC9999),
-// serialized as the JSON array ["media-type", "base64-encoded-value"].
-func toCMW(v any) (*cmw.CMW, error) {
-	b, err := json.Marshal(v)
-	if err != nil {
-		return nil, fmt.Errorf("re-serializing CMW record: %w", err)
+// SignJWT validates the AttestationResult object, encodes it to JSON and wraps it
+// in a JWT using the supplied private key for signing.  The key must be
+// compatible with the requested signing algorithm.  On success, the complete
+// JWT token is returned.
+func (o *AttestationResult) SignJWT(alg jwa.KeyAlgorithm, key any) ([]byte, error) {
+	if err := o.Validate(); err != nil {
+		return nil, err
 	}
 
-	var c cmw.CMW
-	if err := c.UnmarshalJSON(b); err != nil {
-		return nil, fmt.Errorf("decoding CMW record: %w", err)
+	claims := o.Map()
+	if claims == nil {
+		return nil, fmt.Errorf("extensions conflict with standard claims")
 	}
 
-	return &c, nil
+	token := jwt.New()
+	for k, v := range claims {
+		// token.Set() will convert int64 but not *int64 to time.Time
+		// when setting exp claim.
+		if k == eat.IntOrStringFromString("exp") {
+			v = *v.(*int64)
+		}
+
+		if err := token.Set(k.String(), v); err != nil {
+			return nil, fmt.Errorf("setting %s: %w", k, err)
+		}
+	}
+
+	return jwt.Sign(token, jwt.WithKey(alg, key))
 }
 
-func (o *AttestationResult) populateFromMap(m map[string]any) error {
-	// entries not explicitly listed will use the stringPtrParser
-	parsers := map[string]parser{
-		"iat": int64PtrParser,
-		"exp": int64PtrParser,
-		"ear_status": func(v any) (any, error) {
-			return TrustTierFromAny(v)
-		},
-		"ear_trustworthiness_vector": func(v any) (any, error) {
-			return TrustVectorFromAny(v)
-		},
-		"ear_verifier_id": func(v any) (any, error) {
-			return VerifierIdentityFromAny(v)
-		},
-		"ear_raw_evidence": func(v any) (any, error) {
-			return toCMW(v)
-		},
-		"ear_device_topology": topologyPtrParser,
-		"submods": func(v any) (any, error) {
-			vMap, ok := v.(map[string]any)
-			if !ok {
-				return nil, errors.New("not a map object")
-			}
-
-			ret := map[string]*Appraisal{}
-			var problems []string
-
-			for key, val := range vMap {
-				appraisal, err := AppraisalFromAny(val)
-				if err != nil {
-					problems = append(problems,
-						fmt.Sprintf("%s: %s", key, err.Error()))
-					continue
-				}
-
-				ret[key] = appraisal
-			}
-
-			if len(problems) > 0 {
-				return nil, errors.New(strings.Join(problems, "; "))
-			}
-
-			return ret, nil
-		},
+// FromVerifiedJWT cryptographically verifies the JWT data using the supplied key and
+// algorithm.  The payload is then parsed and validated.  On success, the target
+// AttestationResult object is populated with the decoded claims (possibly
+// including the Trustworthiness vector).
+func (o *AttestationResult) FromVerifiedJWT(data []byte, alg jwa.KeyAlgorithm, key any) error {
+	token, err := jwt.Parse(data, jwt.WithKey(alg, key), jwt.WithStrictBase64Encoding(false))
+	if err != nil {
+		return fmt.Errorf("jwt: %w", err)
 	}
 
-	return populateStructFromMap(o, m, "json", parsers, stringPtrParser, true)
+	return o.fromJWTToken(token)
+}
+
+// FromUnverifiedJWT populates the AttestationResult using claims parsed from
+// the provided JWT. No signature verification is performed.
+func (o *AttestationResult) FromUnverifiedJWT(data []byte) error {
+	token, err := jwt.ParseInsecure(data, jwt.WithStrictBase64Encoding(false))
+	if err != nil {
+		return fmt.Errorf("jwt: %w", err)
+	}
+
+	return o.fromJWTToken(token)
+}
+
+// MarshalJSON validates and serializes to JSON an AttestationResult object
+func (o *AttestationResult) MarshalJSON() ([]byte, error) {
+	if err := o.Validate(); err != nil {
+		return nil, err
+	}
+
+	claims, err := structWithExtensionsToMap(o, "json")
+	if err != nil {
+		return nil, err
+	}
+
+	return json.Marshal(claims)
+}
+
+// MarshalJSONIndent is like MarshalJSON but applies Indent to format the
+// output. Each JSON element in the output will begin on a new line beginning
+// with prefix followed by one or more copies of indent according to the
+// indentation nesting.
+func (o *AttestationResult) MarshalJSONIndent(prefix, indent string) ([]byte, error) {
+	if err := o.Validate(); err != nil {
+		return nil, err
+	}
+
+	claims, err := structWithExtensionsToMap(o, "json")
+	if err != nil {
+		return nil, err
+	}
+
+	return json.MarshalIndent(claims, prefix, indent)
+}
+
+type resultUnmarshalHelper AttestationResult
+
+// UnmarshalJSON de-serializes an AttestationResult object from its JSON
+// representation and validates it.
+func (o *AttestationResult) UnmarshalJSON(data []byte) error { // nolint:dupl
+	if err := json.Unmarshal(data, (*resultUnmarshalHelper)(o)); err != nil {
+		return err
+	}
+
+	var claims map[eat.IntOrString]any
+	if err := json.Unmarshal(data, &claims); err != nil {
+		return err
+	}
+
+	var extensions Extensions
+	knownLabels := getTagLabels(o, "json")
+	for label, value := range claims {
+		if _, isKnown := knownLabels[label]; !isKnown {
+			extensions.Set(label, value)
+		}
+	}
+
+	o.Extensions = &extensions
+
+	if err := o.Validate(); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (o *AttestationResult) fromJWTToken(token jwt.Token) error {
+	claims := maps.Collect(token.Claims())
+	if iat, ok := token.IssuedAt(); ok {
+		claims["iat"] = iat.Unix()
+	}
+	if exp, ok := token.Expiration(); ok {
+		claims["exp"] = exp.Unix()
+	}
+
+	result, err := AttestationResultFromAny(claims)
+	if err != nil {
+		return err
+	}
+
+	*o = *result
+
+	return nil
 }

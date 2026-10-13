@@ -5,8 +5,10 @@ package ear
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"math"
+	"reflect"
 	"strconv"
 	"strings"
 
@@ -17,7 +19,7 @@ import (
 type TrustClaim int8
 
 // Description of a particular claim
-// tag: an itentifier-compantible label to be used in serialized values as an
+// tag: an identifier-compatible label to be used in serialized values as an
 //
 //	alternative to integers.
 //
@@ -92,10 +94,10 @@ var (
 	}
 
 	// NOTE: tags are used when converting strings to claims. In order for
-	// this work, there must be an unabigous mapping between them and
-	// claims' integer values. It is OK of mulple claims to have the same
+	// this work, there must be an unambiguous mapping between them and
+	// claims' integer values. It is OK of multiple claims to have the same
 	// tag, as long as their integer values are also the same.
-	noneDetails = detailsMap{
+	sharedDetails = detailsMap{
 		// Value -1: A verifier malfunction occurred during the Verifier's
 		// appraisal processing.
 		// NOTE: similar to HTTP 5xx (server error)
@@ -343,7 +345,7 @@ func TrustClaimFromString(s string) (TrustClaim, error) {
 		fileSystemDetails,
 		hardwareDetails,
 		instanceIdentityDetails,
-		noneDetails,
+		sharedDetails,
 		runtimeOpaqueDetails,
 		sourcedDataDetails,
 		storageOpaqueDetails,
@@ -367,17 +369,24 @@ func TrustClaimFromString(s string) (TrustClaim, error) {
 // provided value can be converted to an integer then the result is the same as
 // TrustClaimFromInt; if the provided value can be converted to a string, then
 // the result is the same as TrustClaimFromString.
-func TrustClaimFromAny(v any) (TrustClaim, error) {
+func TrustClaimFromAny(value any) (TrustClaim, error) {
 	var (
 		claim TrustClaim
 		err   error
 	)
 
-	switch t := v.(type) {
+	valueInfo := reflect.ValueOf(value)
+	if valueInfo.Kind() == reflect.Pointer {
+		if valueInfo.IsNil() {
+			return claim, errors.New("nil pointer")
+		}
+
+		value = valueInfo.Elem().Interface()
+	}
+
+	switch t := value.(type) {
 	case TrustClaim:
 		claim = t
-	case *TrustClaim:
-		claim = *t
 	case json.Number:
 		i, e := t.Int64()
 		if e != nil {
@@ -387,8 +396,6 @@ func TrustClaimFromAny(v any) (TrustClaim, error) {
 		}
 	case string:
 		claim, err = TrustClaimFromString(t)
-	case []byte:
-		claim, err = TrustClaimFromString(string(t))
 	case int:
 		claim, err = TrustClaimFromInt(t)
 	case int8:
@@ -422,17 +429,14 @@ func TrustClaimFromAny(v any) (TrustClaim, error) {
 	case float64:
 		claim, err = TrustClaimFromInt(int(t))
 	default:
-		// Without this arm an unhandled type leaves claim at its zero value,
-		// which is NoClaim, and err at nil, so the caller is told the
-		// conversion succeeded and the claim was "no claim being made".
-		err = fmt.Errorf("not a valid TrustClaim value: %v (%T)", v, v)
+		err = fmt.Errorf("cannot convert %v (%T) to TrustClaim", t, t)
 	}
 
 	return claim, err
 }
 
 // TrustTier provides the trust tier bucket of the trustworthiness claim
-func (o TrustClaim) GetTier() TrustTier {
+func (o TrustClaim) Tier() TrustTier {
 	if o.IsNone() {
 		return TrustTierNone
 	} else if o.IsAffirming() {
@@ -441,18 +445,20 @@ func (o TrustClaim) GetTier() TrustTier {
 		return TrustTierWarning
 	} else if o.IsContraindicated() {
 		return TrustTierContraindicated
+	} else if o.IsIncomplete() {
+		return TrustTierIncomplete
 	} else {
 		panic(o) // should never get here -- above conditions exhaust int8 range
 	}
 }
 
 func (o TrustClaim) trustTierTag(color bool) string {
-	return "[" + o.GetTier().Format(color) + "]"
+	return "[" + o.Tier().Format(color) + "]"
 }
 
 func (o TrustClaim) IsNone() bool {
-	// none = [-1, 1]
-	return o >= -1 && o <= 1
+	// none = 0
+	return o == 0
 }
 
 func (o TrustClaim) IsAffirming() bool {
@@ -471,10 +477,15 @@ func (o TrustClaim) IsContraindicated() bool {
 	return (o <= -97) || (o >= 96)
 }
 
+func (o TrustClaim) IsIncomplete() bool {
+	// incomplete = [-1] U [1]
+	return o == -1 || o == 1
+}
+
 func (o TrustClaim) detailsPrinter(dm detailsMap, short bool, color bool) string {
-	// "none" statuses have shared semantics
-	if o.IsNone() {
-		return noneToString(o, short, color)
+	// "none" and "incomplete" statuses have shared semantics
+	if o.IsNone() || o.IsIncomplete() {
+		return sharedToString(o, short, color)
 	}
 
 	// other statuses are per-category therefore they are dispatched to the
@@ -523,13 +534,13 @@ func (o TrustClaim) asSourcedDataDetails(short, color bool) string {
 	return o.detailsPrinter(sourcedDataDetails, short, color)
 }
 
-func noneToString(tc TrustClaim, short, color bool) string {
-	s, ok := noneDetails[tc]
+func sharedToString(tc TrustClaim, short, color bool) string {
+	s, ok := sharedDetails[tc]
 	if ok {
 		if short {
 			return s.short
 		}
 		return s.long
 	}
-	panic(`not a "none" code point`)
+	panic(`not a shared code point`)
 }

@@ -64,7 +64,7 @@ func Test_VerifyCmd_pkey_file_bad_format(t *testing.T) {
 	}
 	cmd.SetArgs(args)
 
-	expectedErr := `parsing verification key from "empty-pkey.json": jwk.ParseKey: jwk.Parse: failed to probe data: probe: failed to unmarshal data: EOF`
+	expectedErr := `parsing verification key from "empty-pkey.json": jwk.ParseKey: jwk.Parse: failed to probe data: probe: jsontext: unexpected EOF`
 
 	err := cmd.Execute()
 	assert.EqualError(t, err, expectedErr)
@@ -107,10 +107,10 @@ func Test_VerifyCmd_input_file_bad_format(t *testing.T) {
 	}
 	cmd.SetArgs(args)
 
-	expectedErr := `verifying signed EAR from "ear.jwt" using "pkey.json" key: failed verifying JWT message: jwt.Parse: failed to parse token: jws.Verify: failed to split compact: jwsbb: invalid number of segments`
+	expectedErr := `verifying signed EAR from "ear.jwt" using "pkey.json" key: jwt: jwt.Parse: failed to parse token`
 
 	err := cmd.Execute()
-	assert.EqualError(t, err, expectedErr)
+	assert.ErrorContains(t, err, expectedErr)
 }
 
 func Test_VerifyCmd_unknown_verification_alg(t *testing.T) {

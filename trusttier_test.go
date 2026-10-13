@@ -1,175 +1,249 @@
+// Copyright 2023-2026 Contributors to the Veraison project.
+// SPDX-License-Identifier: Apache-2.0
+
 package ear
 
 import (
-	"fmt"
+	"encoding/json"
 	"math"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 )
 
-func TestTrustTier_MarshalJSON_pass(t *testing.T) {
-	tvs := []struct {
-		status   TrustTier
-		expected string
+func TestTrustTier_round_trip(t *testing.T) {
+	testCases := []struct {
+		title        string
+		tier         TrustTier
+		expectedJSON string
 	}{
 		{
-			status:   TrustTierNone,
-			expected: `"none"`,
+			title:        "ok none",
+			tier:         TrustTierNone,
+			expectedJSON: `"none"`,
 		},
 		{
-			status:   TrustTierAffirming,
-			expected: `"affirming"`,
+			title:        "ok affirming",
+			tier:         TrustTierAffirming,
+			expectedJSON: `"affirming"`,
 		},
 		{
-			status:   TrustTierWarning,
-			expected: `"warning"`,
+			title:        "ok warning",
+			tier:         TrustTierWarning,
+			expectedJSON: `"warning"`,
 		},
 		{
-			status:   TrustTierContraindicated,
-			expected: `"contraindicated"`,
+			title:        "ok contraindicated",
+			tier:         TrustTierContraindicated,
+			expectedJSON: `"contraindicated"`,
+		},
+		{
+			title:        "ok incomplete",
+			tier:         TrustTierIncomplete,
+			expectedJSON: `"incomplete"`,
 		},
 	}
 
-	for _, tv := range tvs {
-		actual, err := tv.status.MarshalJSON()
-		assert.NoError(t, err)
-		assert.JSONEq(t, tv.expected, string(actual))
+	for _, tc := range testCases {
+		t.Run(tc.title, func(t *testing.T) {
+			encodedJSON, err := json.Marshal(tc.tier)
+			assert.NoError(t, err)
+			assert.JSONEq(t, tc.expectedJSON, string(encodedJSON))
+
+			var tier TrustTier
+			err = json.Unmarshal(encodedJSON, &tier)
+			assert.NoError(t, err)
+			assert.Equal(t, tc.tier, tier)
+		})
 	}
 }
 
-func TestTrustTier_MarshalJSON_fail(t *testing.T) {
-	tvs := []struct {
-		status   TrustTier
-		expected string
-	}{
-		{
-			status:   TrustTier(123),
-			expected: `unknown trust tier '123'`,
-		},
-	}
+func TestTrustTier_UnmarshalJSON_negative(t *testing.T) {
+	var tier TrustTier
+	err := tier.UnmarshalJSON([]byte(`"foo"`))
+	assert.ErrorContains(t, err, `unknown trust tier "foo"`)
 
-	for i, tv := range tvs {
-		_, err := tv.status.MarshalJSON()
-		assert.EqualError(t, err, tv.expected, "failed test vector at index %d", i)
-	}
+	err = tier.UnmarshalJSON([]byte(`@@@`))
+	assert.ErrorContains(t, err, `unable to decode trust tier "@@@"`)
 }
 
-func TestTrustTier_UnmarshalJSON_pass(t *testing.T) {
-	tvs := []struct {
-		status   string
+func TestTrustTierFromInt(t *testing.T) {
+	tier, err := TrustTierFromInt(2)
+	assert.NoError(t, err)
+	assert.Equal(t, TrustTierAffirming, tier)
+
+	_, err = TrustTierFromInt(999)
+	assert.ErrorContains(t, err, "not a valid TrustTier value: 999")
+}
+
+func TestTrustTierFromString(t *testing.T) {
+	tier, err := TrustTierFromString("affirming")
+	assert.NoError(t, err)
+	assert.Equal(t, TrustTierAffirming, tier)
+
+	tier, err = TrustTierFromString("2")
+	assert.NoError(t, err)
+	assert.Equal(t, TrustTierAffirming, tier)
+
+	_, err = TrustTierFromString("foo")
+	assert.ErrorContains(t, err, `not a valid TrustTier name: "foo"`)
+}
+
+func TestTrustTierFromAny(t *testing.T) {
+	testCases := []struct {
+		title    string
+		input    any
 		expected TrustTier
+		err      string
 	}{
 		{
-			status:   `"none"`,
-			expected: TrustTierNone,
-		},
-		{
-			status:   `"affirming"`,
+			title:    "ok TrustTier",
+			input:    TrustTierAffirming,
 			expected: TrustTierAffirming,
 		},
 		{
-			status:   `"warning"`,
-			expected: TrustTierWarning,
+			title:    "ok pointer",
+			input:    &TrustTierAffirming,
+			expected: TrustTierAffirming,
 		},
 		{
-			status:   `"contraindicated"`,
-			expected: TrustTierContraindicated,
+			title:    "ok TrustClaim",
+			input:    TrustClaim(2),
+			expected: TrustTierAffirming,
+		},
+		{
+			title:    "ok string",
+			input:    "affirming",
+			expected: TrustTierAffirming,
+		},
+		{
+			title:    "ok int",
+			input:    2,
+			expected: TrustTierAffirming,
+		},
+		{
+			title:    "ok int8",
+			input:    int8(2),
+			expected: TrustTierAffirming,
+		},
+		{
+			title:    "ok int16",
+			input:    int16(2),
+			expected: TrustTierAffirming,
+		},
+		{
+			title:    "ok int32",
+			input:    int32(2),
+			expected: TrustTierAffirming,
+		},
+		{
+			title:    "ok int64",
+			input:    int64(2),
+			expected: TrustTierAffirming,
+		},
+		{
+			title:    "ok uint",
+			input:    2,
+			expected: TrustTierAffirming,
+		},
+		{
+			title:    "ok uint8",
+			input:    uint8(2),
+			expected: TrustTierAffirming,
+		},
+		{
+			title:    "ok uint16",
+			input:    uint16(2),
+			expected: TrustTierAffirming,
+		},
+		{
+			title:    "ok uint32",
+			input:    uint32(2),
+			expected: TrustTierAffirming,
+		},
+		{
+			title:    "ok uint64",
+			input:    uint64(2),
+			expected: TrustTierAffirming,
+		},
+		{
+			title:    "ok uint",
+			input:    uint(2),
+			expected: TrustTierAffirming,
+		},
+		{
+			title:    "ok float",
+			input:    2.0,
+			expected: TrustTierAffirming,
+		},
+		{
+			title:    "ok json.Number",
+			input:    json.Number("2"),
+			expected: TrustTierAffirming,
+		},
+		{
+			title: "err bad type",
+			input: true,
+			err:   "cannot convert true (bool) to TrustTier",
+		},
+		{
+			title: "err uint out of range",
+			input: uint(math.MaxInt64) + 1,
+			err:   "not a valid TrustTier value: 9223372036854775808",
+		},
+		{
+			title: "err uint64 out of range",
+			input: uint64(math.MaxInt64) + 1,
+			err:   "not a valid TrustTier value: 9223372036854775808",
+		},
+		{
+			title: "err invalid json.Number",
+			input: json.Number("foo"),
+			err:   "not a valid TrustTier value: foo",
+		},
+		{
+			title: "err bad json.Number",
+			input: json.Number("7"),
+			err:   "not a valid TrustTier value: 7",
+		},
+		{
+			title: "err nil",
+			input: (*TrustTier)(nil),
+			err:   "nil pointer",
+		},
+		{
+			title: "err bad float64",
+			input: 3.4,
+			err:   "not a valid TrustTier value: 3.4",
 		},
 	}
 
-	for i, tv := range tvs {
-		var actual TrustTier
+	for _, tc := range testCases {
+		t.Run(tc.title, func(t *testing.T) {
+			result, err := TrustTierFromAny(tc.input)
 
-		err := actual.UnmarshalJSON([]byte(tv.status))
-		assert.NoError(t, err)
-		assert.Equal(t, tv.expected, actual, "failed test vector at index %d", i)
+			if tc.err == "" {
+				assert.NoError(t, err)
+				assert.Equal(t, tc.expected, result)
+			} else {
+				assert.ErrorContains(t, err, tc.err)
+			}
+		})
 	}
 }
 
-func TestTrustTier_UnmarshalJSON_fail(t *testing.T) {
-	tvs := []struct {
-		status   string
-		expected string
-	}{
-		{
-			status:   `"unknown string"`,
-			expected: `unknown trust tier 'unknown string'`,
-		},
-		{
-			status:   `"1000000"`,
-			expected: `unknown trust tier '1000000'`,
-		},
-		{
-			status:   `[]`,
-			expected: `unable to decode trust tier '[]': json: cannot unmarshal array into Go value of type string`,
-		},
-		{
-			status:   `"none`,
-			expected: `unable to decode trust tier '"none': unexpected end of JSON input`,
-		},
-	}
-
-	for i, tv := range tvs {
-		var actual TrustTier
-
-		err := actual.UnmarshalJSON([]byte(tv.status))
-		assert.EqualError(t, err, tv.expected, "failed test vector at index %d", i)
-	}
+func TestTrustTier_Int8(t *testing.T) {
+	assert.Equal(t, int8(0), TrustTierNone.Int8())
+	assert.Equal(t, int8(2), TrustTierAffirming.Int8())
+	assert.Equal(t, int8(32), TrustTierWarning.Int8())
+	assert.Equal(t, int8(96), TrustTierContraindicated.Int8())
+	assert.Equal(t, int8(127), TrustTierIncomplete.Int8())
 }
 
-func TestTrustTier_ToTrustTier(t *testing.T) {
-	var tt *TrustTier
-	var err error
-
-	tt, err = TrustTierFromAny(2)
-	require.NoError(t, err)
-	assert.Equal(t, TrustTierAffirming, *tt)
-
-	tt, err = TrustTierFromAny(2.5)
-	require.NoError(t, err)
-	assert.Equal(t, TrustTierAffirming, *tt)
-
-	_, err = TrustTierFromAny(3.1)
-	assert.ErrorContains(t, err, "not a valid TrustTier value: 3.100000 (3)")
-
-	_, err = TrustTierFromAny(math.MaxFloat32)
-	assert.ErrorContains(t, err, "not a valid TrustTier value: 34028234")
-
-	tt, err = TrustTierFromAny(int8(32))
-	require.NoError(t, err)
-	assert.Equal(t, TrustTierWarning, *tt)
-
-	_, err = TrustTierFromAny(uint64(math.MaxUint64))
-	assert.ErrorContains(t, err,
-		fmt.Sprintf("not a valid TrustTier value: %d", uint64(math.MaxUint64)))
-
-	tt, err = TrustTierFromAny("affirming")
-	require.NoError(t, err)
-	assert.Equal(t, TrustTierAffirming, *tt)
-
-	tt, err = TrustTierFromAny("96")
-	require.NoError(t, err)
-	assert.Equal(t, TrustTierContraindicated, *tt)
-
-	tt, err = TrustTierFromAny([]byte{0x33, 0x32}) // "32"
-	require.NoError(t, err)
-	assert.Equal(t, TrustTierWarning, *tt)
-
-	_, err = TrustTierFromAny("totally safe")
-	assert.ErrorContains(t, err, `not a valid TrustTier name: "totally safe"`)
-
-	tt, err = TrustTierFromAny(UnrecognizedHardwareClaim)
-	require.NoError(t, err)
-	assert.Equal(t, TrustTierContraindicated, *tt)
-
-	tt, err = TrustTierFromAny(TrustTierContraindicated)
-	require.NoError(t, err)
-	assert.Equal(t, TrustTierContraindicated, *tt)
-
-	taff := TrustTierAffirming
-	tt, err = TrustTierFromAny(&taff)
-	require.NoError(t, err)
-	assert.Equal(t, TrustTierAffirming, *tt)
+func TestTrustTier_ColorString(t *testing.T) {
+	assert.Equal(t, "\\033[47mnone\\033[0m", TrustTierNone.ColorString())
+	assert.Equal(t, "\\033[42maffirming\\033[0m", TrustTierAffirming.ColorString())
+	assert.Equal(t, "\\033[43mwarning\\033[0m", TrustTierWarning.ColorString())
+	assert.Equal(t, "\\033[41mcontraindicated\\033[0m", TrustTierContraindicated.ColorString())
+	assert.Equal(t, "\\033[1;33;41mincomplete\\033[0m", TrustTierIncomplete.ColorString())
 }

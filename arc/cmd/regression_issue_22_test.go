@@ -53,7 +53,7 @@ func Test_Regression_issue_22(t *testing.T) {
 	}
 	cmd.SetArgs(args)
 
-	expectedErr := `decoding EAR claims-set from "ear-claims.json": invalid value(s) for 'ear_raw_evidence' (decoding CMW record: unmarshaling value: cannot base64 url-safe decode: illegal base64 data at input byte 3)`
+	expectedErr := `decoding EAR claims-set from "ear-claims.json": unmarshaling value: cannot base64 url-safe decode: illegal base64 data at input byte 3`
 
 	err := cmd.Execute()
 	assert.EqualError(t, err, expectedErr)

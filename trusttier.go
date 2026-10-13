@@ -1,12 +1,14 @@
-// Copyright 2023 Contributors to the Veraison project.
+// Copyright 2023-2026 Contributors to the Veraison project.
 // SPDX-License-Identifier: Apache-2.0
 
 package ear
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"math"
+	"reflect"
 	"strconv"
 )
 
@@ -24,55 +26,48 @@ import (
 //
 // TrustTierContraindicated means some specific checks have failed and the
 // attester cannot be considered trustworthy.
-type TrustTier int8
+type TrustTier struct {
+	value int8
+}
 
-const (
-	TrustTierNone            TrustTier = 0
-	TrustTierAffirming       TrustTier = 2
-	TrustTierWarning         TrustTier = 32
-	TrustTierContraindicated TrustTier = 96
+var (
+	TrustTierNone            = TrustTier{0}
+	TrustTierAffirming       = TrustTier{2}
+	TrustTierWarning         = TrustTier{32}
+	TrustTierContraindicated = TrustTier{96}
+	TrustTierIncomplete      = TrustTier{127}
 )
 
 var (
-	TrustTierToString = map[TrustTier]string{
+	trustTierToString = map[TrustTier]string{
 		TrustTierNone:            "none",
 		TrustTierAffirming:       "affirming",
 		TrustTierWarning:         "warning",
 		TrustTierContraindicated: "contraindicated",
+		TrustTierIncomplete:      "incomplete",
 	}
 
-	StringToTrustTier = map[string]TrustTier{
+	stringToTrustTier = map[string]TrustTier{
 		"none":            TrustTierNone,
 		"affirming":       TrustTierAffirming,
 		"warning":         TrustTierWarning,
 		"contraindicated": TrustTierContraindicated,
+		"incomplete":      TrustTierIncomplete,
 	}
 
-	IntToTrustTier = map[int]TrustTier{
-		0:  TrustTierNone,
-		2:  TrustTierAffirming,
-		32: TrustTierWarning,
-		96: TrustTierContraindicated,
+	intToTrustTier = map[int]TrustTier{
+		0:   TrustTierNone,
+		2:   TrustTierAffirming,
+		32:  TrustTierWarning,
+		96:  TrustTierContraindicated,
+		127: TrustTierIncomplete,
 	}
 )
 
-// NewTrustTier returns a pointer to a newly-created TrustTier that has the
-// specified value. If the provided value is invalid for a TrustTier,
-// TrustTierNone will be used instead.
-// (This is essentially a Must- wrapper for ToTrustTier().)
-func NewTrustTier(v any) *TrustTier {
-	tt, err := TrustTierFromAny(v)
-
-	if err != nil {
-		none := TrustTierNone
-		return &none
-	}
-
-	return tt
-}
-
-func getTrustTierFromInt(i int) (TrustTier, error) {
-	tier, ok := IntToTrustTier[i]
+// TrustTierFromInt creates a TrustTier from the provided int value. If the
+// value does not correspond to a valid TrustTier, an error is returned.
+func TrustTierFromInt(i int) (TrustTier, error) {
+	tier, ok := intToTrustTier[i]
 	if !ok {
 		return TrustTierNone, fmt.Errorf("not a valid TrustTier value: %d", i)
 	}
@@ -80,12 +75,14 @@ func getTrustTierFromInt(i int) (TrustTier, error) {
 	return tier, nil
 }
 
-func getTrustTierFromString(s string) (TrustTier, error) {
-	tier, ok := StringToTrustTier[s]
+// TrustTierFromInt creates a TrustTier from the provided string value. If the
+// value does not correspond to a valid TrustTier, an error is returned.
+func TrustTierFromString(s string) (TrustTier, error) {
+	tier, ok := stringToTrustTier[s]
 	if !ok {
 		i, err := strconv.Atoi(s)
 		if err == nil {
-			return getTrustTierFromInt(i)
+			return TrustTierFromInt(i)
 		}
 		return TrustTierNone, fmt.Errorf("not a valid TrustTier name: %q", s)
 	}
@@ -93,7 +90,9 @@ func getTrustTierFromString(s string) (TrustTier, error) {
 	return tier, nil
 }
 
-func TrustTierFromAny(v any) (*TrustTier, error) {
+// TrustTierFromInt creates a TrustTier from the provided interface. If its
+// value does not correspond to a valid TrustTier, an error is returned.
+func TrustTierFromAny(value any) (TrustTier, error) {
 	var (
 		err error
 		ok  bool
@@ -101,89 +100,103 @@ func TrustTierFromAny(v any) (*TrustTier, error) {
 		tier = TrustTierNone
 	)
 
-	switch t := v.(type) {
+	valueInfo := reflect.ValueOf(value)
+	if valueInfo.Kind() == reflect.Pointer {
+		if valueInfo.IsNil() {
+			return tier, errors.New("nil pointer")
+		}
+
+		value = valueInfo.Elem().Interface()
+	}
+
+	switch t := value.(type) {
 	case string:
-		tier, err = getTrustTierFromString(t)
-	case []byte:
-		tier, err = getTrustTierFromString(string(t))
+		tier, err = TrustTierFromString(t)
 	case TrustClaim:
-		tier = t.GetTier()
+		tier = t.Tier()
 	case int:
-		tier, err = getTrustTierFromInt(t)
+		tier, err = TrustTierFromInt(t)
 	case int8:
-		tier, err = getTrustTierFromInt(int(t))
+		tier, err = TrustTierFromInt(int(t))
 	case int16:
-		tier, err = getTrustTierFromInt(int(t))
+		tier, err = TrustTierFromInt(int(t))
 	case int32:
-		tier, err = getTrustTierFromInt(int(t))
+		tier, err = TrustTierFromInt(int(t))
 	case int64:
-		tier, err = getTrustTierFromInt(int(t))
+		tier, err = TrustTierFromInt(int(t))
 	case uint8:
-		tier, err = getTrustTierFromInt(int(t))
+		tier, err = TrustTierFromInt(int(t))
 	case uint16:
-		tier, err = getTrustTierFromInt(int(t))
+		tier, err = TrustTierFromInt(int(t))
 	case uint32:
-		tier, err = getTrustTierFromInt(int(t))
+		tier, err = TrustTierFromInt(int(t))
 	case uint:
 		if t > math.MaxInt64 {
 			err = fmt.Errorf("not a valid TrustTier value: %d", t)
 		} else {
-			tier, err = getTrustTierFromInt(int(t))
+			tier, err = TrustTierFromInt(int(t))
 		}
 	case uint64:
 		if t > math.MaxInt64 {
 			err = fmt.Errorf("not a valid TrustTier value: %d", t)
-
 		} else {
-			tier, err = getTrustTierFromInt(int(t))
+			tier, err = TrustTierFromInt(int(t))
 		}
 	case float64:
-		tier, ok = IntToTrustTier[int(t)]
+		tier, ok = intToTrustTier[int(t)]
 		if !ok {
 			err = fmt.Errorf("not a valid TrustTier value: %f (%d)", t, int(t))
 		}
 	case json.Number:
 		i, e := t.Int64()
 		if e != nil {
-			err = fmt.Errorf("not a valid TrustTier value: %v: %w", t, err)
+			err = fmt.Errorf("not a valid TrustTier value: %v: %w", t, e)
 		} else {
-			tier, ok = IntToTrustTier[int(i)]
+			tier, ok = intToTrustTier[int(i)]
 			if !ok {
 				err = fmt.Errorf("not a valid TrustTier value: %v (%d)", t, int(i))
 			}
 		}
 	case TrustTier:
 		tier = t
-	case *TrustTier:
-		tier = *t
 	default:
-		err = fmt.Errorf("cannot convert %v (type %T) to TrustTier", t, t)
+		err = fmt.Errorf("cannot convert %v (%T) to TrustTier", t, t)
 	}
 
-	return &tier, err
+	return tier, err
 }
 
-func (o TrustTier) Format(color bool) string {
-	if color {
-		return o.ColorString()
-	}
-
-	return o.String()
+// WorseThan returns true if the provided TrustTrier is worse than (has higher
+// severity) than the receiver.
+func (o TrustTier) WorseThan(other TrustTier) bool {
+	return o.value > other.value
 }
 
+// Int8 returns the int8 value corresponding to the TrustTier.
+func (o TrustTier) Int8() int8 {
+	return o.value
+}
+
+// Int returns the int value corresponding to the TrustTier.
+func (o TrustTier) Int() int {
+	return int(o.value)
+}
+
+// String returns the string value corresponding to the TrustTier.
 func (o TrustTier) String() string {
-	return TrustTierToString[o]
+	return trustTierToString[o]
 }
 
+// ColorString returns the string value corresponding to the TrustTier
+// surrounded by color ANSI escape sequences.
 func (o TrustTier) ColorString() string {
 	const (
-		reset  = `\033[0m`
-		red    = `\033[41m`
-		yellow = `\033[43m`
-		green  = `\033[42m`
-		white  = `\033[47m`
-
-		unexpected = `\033[1;33;41m`
+		reset      = `\033[0m`
+		red        = `\033[41m`
+		yellow     = `\033[43m`
+		green      = `\033[42m`
+		white      = `\033[47m`
+		incomplete = `\033[1;33;41m`
 	)
 
 	var color string
@@ -196,11 +209,24 @@ func (o TrustTier) ColorString() string {
 		color = yellow
 	case TrustTierContraindicated:
 		color = red
+	case TrustTierIncomplete:
+		color = incomplete
 	default:
-		color = unexpected
+		// cases are exhaustive
+		panic(fmt.Sprintf("unexpected TrustTier %v", o))
 	}
 
 	return color + o.String() + reset
+}
+
+// Format behaves like ColorString when color is true, and like String
+// otherwise.
+func (o TrustTier) Format(color bool) string {
+	if color {
+		return o.ColorString()
+	}
+
+	return o.String()
 }
 
 func (o TrustTier) MarshalJSON() ([]byte, error) {
@@ -209,9 +235,11 @@ func (o TrustTier) MarshalJSON() ([]byte, error) {
 		ok bool
 	)
 
-	s, ok = TrustTierToString[o]
+	s, ok = trustTierToString[o]
 	if !ok {
-		return nil, fmt.Errorf("unknown trust tier '%d'", o)
+		// Cannot get here as an invalid TrustTier cannot be created
+		// outside this package.
+		panic(fmt.Sprintf("unknown trust tier '%d'", o))
 	}
 
 	return json.Marshal(s)
@@ -221,12 +249,12 @@ func (o *TrustTier) UnmarshalJSON(data []byte) error {
 	var s string
 
 	if err := json.Unmarshal(data, &s); err != nil {
-		return fmt.Errorf("unable to decode trust tier '%s': %w", string(data), err)
+		return fmt.Errorf("unable to decode trust tier %q: %w", string(data), err)
 	}
 
-	r, ok := StringToTrustTier[s]
+	r, ok := stringToTrustTier[s]
 	if !ok {
-		return fmt.Errorf("unknown trust tier '%s'", s)
+		return fmt.Errorf("unknown trust tier %q", s)
 	}
 
 	*o = r

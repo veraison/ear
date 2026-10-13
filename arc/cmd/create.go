@@ -6,8 +6,8 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/lestrrat-go/jwx/v3/jwa"
-	"github.com/lestrrat-go/jwx/v3/jwk"
+	"github.com/lestrrat-go/jwx/v4/jwa"
+	"github.com/lestrrat-go/jwx/v4/jwk"
 	"github.com/spf13/afero"
 	"github.com/spf13/cobra"
 	"github.com/veraison/ear"
@@ -69,7 +69,7 @@ the key in the default key file "skey.json", and save the result to "my-ear.jwt"
 				return fmt.Errorf("parsing algorithm from %q: %w", createAlg, err)
 			}
 
-			if arBytes, err = ar.Sign(alg, sigK); err != nil {
+			if arBytes, err = ar.SignJWT(alg, sigK); err != nil {
 				return fmt.Errorf("signing EAR: %w", err)
 			}
 
