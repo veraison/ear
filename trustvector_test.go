@@ -71,7 +71,7 @@ Sourced Data [affirming]: unknown code-point -2
 	assert.Equal(t, expectedLong, tv.Report(short, color))
 }
 
-func TestToTrustVector(t *testing.T) {
+func TestTrustVectorFromAny(t *testing.T) {
 	tv, err := TrustVectorFromAny(map[string]any{
 		"instance-identity": TrustworthyInstanceClaim,
 		"configuration":     2,
@@ -89,7 +89,7 @@ func TestToTrustVector(t *testing.T) {
 	assert.Equal(t, TrustClaim(-7), tv.RuntimeOpaque)
 	assert.Equal(t, NoClaim, tv.SourcedData)
 
-	tv, err = TrustVectorFromAny(map[string]string{
+	tv, err = TrustVectorFromAny(map[string]any{
 		"runtime-opaque": "encrypted_rt",
 		"hardware":       "unsafe_hw",
 		"file-system":    "approved_fs",
@@ -119,14 +119,14 @@ func TestToTrustVector(t *testing.T) {
 	assert.Equal(t, ApprovedRuntimeClaim, tv.Executables)
 
 	_, err = TrustVectorFromAny(42)
-	assert.ErrorContains(t, err, "invalid value '42': expected a TrustVector, but found int")
+	assert.ErrorContains(t, err, "cannot convert int to map[eat.IntOrString]any")
 
 	_, err = TrustVectorFromAny(map[string]any{
 		"instance-identity": TrustworthyInstanceClaim,
 		"hardware":          "bad claim",
 		"file-system":       "approved_fs",
 	})
-	assert.ErrorContains(t, err, `invalid value(s) for 'hardware' (not a valid TrustClaim value: "bad claim")`)
+	assert.ErrorContains(t, err, `hardware: not a valid TrustClaim value: "bad claim"`)
 }
 
 func TestTrustVector_SetAll(t *testing.T) {

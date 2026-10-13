@@ -6,12 +6,13 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"maps"
 
 	"github.com/spf13/afero"
 	"github.com/spf13/cobra"
 
-	"github.com/lestrrat-go/jwx/v3/jws"
-	"github.com/lestrrat-go/jwx/v3/jwt"
+	"github.com/lestrrat-go/jwx/v4/jws"
+	"github.com/lestrrat-go/jwx/v4/jwt"
 )
 
 var (
@@ -64,14 +65,7 @@ Neither EAR validation nor verification is executed.
 				return fmt.Errorf("failed to parse JWT message: %w", err)
 			}
 
-			claims := make(map[string]any)
-			for _, k := range token.Keys() {
-				var v any
-				if err := token.Get(k, &v); err != nil {
-					return fmt.Errorf(`failed to get claim %s: %w`, k, err)
-				}
-				claims[k] = v
-			}
+			claims := maps.Collect(token.Claims())
 			if data, err = json.MarshalIndent(claims, "", "    "); err != nil {
 				return fmt.Errorf("unable to re-serialize the EAR claims-set: %w", err)
 			}

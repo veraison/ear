@@ -1,4 +1,4 @@
-// Copyright 2022 Contributors to the Veraison project.
+// Copyright 2022-2026 Contributors to the Veraison project.
 // SPDX-License-Identifier: Apache-2.0
 package cmd
 
@@ -6,9 +6,9 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/lestrrat-go/jwx/v3/jwa"
-	"github.com/lestrrat-go/jwx/v3/jwk"
-	"github.com/lestrrat-go/jwx/v3/jws"
+	"github.com/lestrrat-go/jwx/v4/jwa"
+	"github.com/lestrrat-go/jwx/v4/jwk"
+	"github.com/lestrrat-go/jwx/v4/jws"
 	"github.com/spf13/afero"
 	"github.com/spf13/cobra"
 	"github.com/veraison/ear"
@@ -90,7 +90,7 @@ embedded EAR claims-set and present a report of the trustworthiness vector.
 				}
 			}
 
-			if err = ar.Verify(arBytes, vfyAlg, vfyK); err != nil {
+			if err = ar.FromVerifiedJWT(arBytes, vfyAlg, vfyK); err != nil {
 				return fmt.Errorf("verifying signed EAR from %q using %q key: %w", verifyInput, verifyPKey, err)
 			}
 
@@ -103,12 +103,17 @@ embedded EAR claims-set and present a report of the trustworthiness vector.
 			fmt.Println(string(claimsSet))
 
 			fmt.Println("[trustworthiness vectors]")
-			for submodName, appraisal := range ar.Submods {
-				fmt.Printf("submod(%s):\n", submodName)
-				if appraisal.TrustVector != nil {
-					fmt.Println(appraisal.TrustVector.Report(!verifyVerbose, verifyColor))
-				} else {
-					fmt.Println("not present")
+			for submodName, submod := range ar.Submods {
+				if appraisal := submod.Appraisal(); appraisal != nil {
+					fmt.Printf("submod(%s):\n", submodName)
+					if appraisal.TrustVector != nil {
+						fmt.Println(appraisal.TrustVector.Report(
+							!verifyVerbose,
+							verifyColor,
+						))
+					} else {
+						fmt.Println("not present")
+					}
 				}
 			}
 

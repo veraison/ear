@@ -4,13 +4,11 @@
 package ear
 
 import (
-	"crypto/ecdsa"
-	"crypto/ed25519"
-	"crypto/rsa"
-	"crypto/x509"
-	"encoding/base64"
+	"encoding/json"
 	"errors"
 	"fmt"
+
+	"github.com/veraison/eat"
 )
 
 // Appraisal represents the result of an evidence appraisal
@@ -18,180 +16,213 @@ import (
 // other metadata that are relevant to establish the appraisal context - the
 // evidence itself, the appraisal policy used, the time of appraisal.
 type Appraisal struct {
-	Profile            *string         `json:"eat_profile,omitempty"`
-	Status             *TrustTier      `json:"ear_status"`
-	TrustVector        *TrustVector    `json:"ear_trustworthiness_vector,omitempty"`
-	AppraisalPolicyIDs *[]string       `json:"ear_appraisal_policy_ids,omitempty"`
-	Nonce              *string         `json:"eat_nonce,omitempty"`
-	AttesterClaims     *map[string]any `json:"ear_attester_claims,omitempty"`
-	VerifierClaims     *map[string]any `json:"ear_verifier_claims,omitempty"`
-
-	AppraisalExtensions
+	Profile            *eat.Profile            `json:"eat_profile,omitempty"`
+	Status             TrustTier               `json:"ear_status"`
+	TrustVector        *TrustVector            `json:"ear_trustworthiness_vector,omitzero"`
+	AppraisalPolicyIDs []string                `json:"ear_appraisal_policy_ids,omitempty"`
+	Nonce              *eat.Nonce              `json:"eat_nonce,omitempty"`
+	AttesterClaims     map[eat.IntOrString]any `json:"ear_attester_claims,omitempty"`
+	VerifierClaims     map[eat.IntOrString]any `json:"ear_verifier_claims,omitempty"`
+	Extensions         *Extensions             `json:"-"`
 }
 
 // NewAppraisal returns a new Appraisal with its status set to TrustTierNone
 // and all its claims set to NoClaim.
 func NewAppraisal() *Appraisal {
-	status := TrustTierNone
-
 	return &Appraisal{
-		Status:      &status,
-		TrustVector: &TrustVector{},
+		Status:      TrustTierNone,
+		TrustVector: NewTrustVector(),
+		Extensions:  NewExtensions(),
 	}
 }
 
-// UpdateStatusFromTrustVector ensure that Status trustworthiness is not
-// higher than is warranted by trust vector claims. For every claim that has
-// been made (i.e. is not in TrustTierNone), if the claim's trust tier is lower
-// than that of the Status, adjust the status to the claim's tier. This means
-// that the overall result will not assert to be more trustworthy than
-// individual vector claims (though it could be less trustworthy if had been
-// manually set that way).
+// AppraisalFromAny returns a pointer to an Appraisal obtained from provided
+// input. If input is already an Appraisal (or a pointer to one) then a pointer
+// to that Appraisal is returned. Otherwise, a conversion is attempted and an
+// error is returned if it fails.
+func AppraisalFromAny(input any) (*Appraisal, error) {
+	switch t := input.(type) {
+	case *Appraisal:
+		return t, nil
+	case Appraisal:
+		return &t, nil
+	}
+
+	var appraisal Appraisal
+	var extensions Extensions
+
+	claims, err := eat.IntOrStringMapFromAny(input)
+	if err != nil {
+		return nil, err
+	}
+
+	for key, value := range claims {
+		switch key {
+		case eat.IntOrStringFromString("eat_profile"):
+			profileText, ok := value.(string)
+			if !ok {
+				return nil, fmt.Errorf("eat_profile: expected a string, got %T", value)
+			}
+
+			profile, err := eat.NewProfile(profileText)
+			if err != nil {
+				return nil, fmt.Errorf("eat_profile: %w", err)
+			}
+
+			appraisal.Profile = profile
+		case eat.IntOrStringFromString("ear_status"):
+			tier, err := TrustTierFromAny(value)
+			if err != nil {
+				return nil, fmt.Errorf("ear_status: %w", err)
+			}
+
+			appraisal.Status = tier
+		case eat.IntOrStringFromString("ear_trustworthiness_vector"):
+			vector, err := TrustVectorFromAny(value)
+			if err != nil {
+				return nil, fmt.Errorf("ear_trustworthiness_vector: %w", err)
+			}
+
+			appraisal.TrustVector = vector
+		case eat.IntOrStringFromString("ear_appraisal_policy_ids"):
+			rawIds, ok := value.([]any)
+			if !ok {
+				return nil, fmt.Errorf(
+					"ear_appraisal_policy_ids: expected an []any, got %T",
+					value,
+				)
+			}
+
+			ids := make([]string, len(rawIds))
+			for i, id := range rawIds {
+				ids[i], ok = id.(string)
+				if !ok {
+					return nil, fmt.Errorf(
+						"ear_appraisal_policy_ids[%d]: expected a string, got %T",
+						i, value,
+					)
+				}
+			}
+
+			appraisal.AppraisalPolicyIDs = ids
+		case eat.IntOrStringFromString("eat_nonce"):
+			nonce, err := eat.NonceFromAny(value)
+			if err != nil {
+				return nil, fmt.Errorf("eat_nonce: %w", err)
+			}
+
+			appraisal.Nonce = nonce
+		case eat.IntOrStringFromString("ear_attester_claims"):
+			claims, err := eat.IntOrStringMapFromAny(value)
+			if err != nil {
+				return nil, fmt.Errorf("ear_attester_claims: %w", err)
+			}
+
+			appraisal.AttesterClaims = claims
+		case eat.IntOrStringFromString("ear_verifier_claims"):
+			claims, err := eat.IntOrStringMapFromAny(value)
+			if err != nil {
+				return nil, fmt.Errorf("ear_verifier_claims: %w", err)
+			}
+
+			appraisal.VerifierClaims = claims
+		default:
+			extensions.Set(key, value)
+		}
+	}
+
+	appraisal.Extensions = &extensions
+
+	if err := appraisal.Validate(); err != nil {
+		return nil, err
+	}
+
+	return &appraisal, nil
+}
+
+// UpdateStatusFromTrustVector ensure that Status trustworthiness is not higher
+// than is warranted by trust vector claims. For every claim that has been made
+// (i.e. is not NoClaim), if the claim's trust tier is lower than that of the
+// Status, adjust the status to the claim's tier. This means that the overall
+// result will not assert to be more trustworthy than individual vector claims
+// (though it could be less trustworthy if had been manually set that way).
 func (o *Appraisal) UpdateStatusFromTrustVector() {
 	if o.TrustVector == nil {
 		return
 	}
 
-	for _, claimValue := range o.TrustVector.AsMap() {
-		claimTier := claimValue.GetTier()
-		if *o.Status < claimTier {
-			*o.Status = claimTier
+	for _, claimValue := range o.TrustVector.Map() {
+		claimTier := claimValue.Tier()
+		if claimTier.WorseThan(o.Status) {
+			o.Status = claimTier
 		}
 	}
 }
 
-// AsMap returns a map[string]any with EAR Appraisal claim names mapped
-// onto corresponding values.
-func (o Appraisal) AsMap() map[string]any {
-	m, err := structAsMap(o, "json")
-	if err != nil {
-		// An error can only be returned if there is issue in implementation of
-		// AttestationResult; specifically, if any of its
-		// constituents incorrectly implement AsMap() themselves.
-		panic(err)
-	}
-	return m
-}
-
-// Validate makes sure that the value of status is indeed
-// greater than or equal to all elements of the trust vector.
-// This makes sure that it is always less trustworthy than the
-// trust vector components
-func (o Appraisal) Validate() error {
-	if o.Status == nil {
-		return errors.New("missing mandatory 'ear_status'")
-	}
-
-	// guarantee that status is one of the four trust tiers
-	switch *o.Status {
-	case TrustTierNone:
-	case TrustTierAffirming:
-	case TrustTierWarning:
-	case TrustTierContraindicated:
-	default:
-		return fmt.Errorf("'ear.status' must be a valid trust tier, but is: %d", *o.Status)
-	}
-
-	if o.TrustVector == nil {
-		return nil
-	}
-
-	for key, claimValue := range o.TrustVector.AsMap() {
-		claimTier := claimValue.GetTier()
-		if *o.Status < claimTier && *o.Status != TrustTierNone {
-			return fmt.Errorf("status %d has higher trustworthiness than %s trust vector element(%d)", *o.Status, key, claimTier)
+// Validate makes sure that the value of status is no better than any of the
+// elements of the trust vector. This makes sure that it is always no more
+// trustworthy than the trust vector components.
+func (o *Appraisal) Validate() error {
+	if o.Status != TrustTierNone {
+		claimName, claimTier := o.TrustVector.WorstTier()
+		if claimTier.WorseThan(o.Status) {
+			return fmt.Errorf(
+				"status %d has higher trustworthiness than %s trust vector element(%d)",
+				o.Status.Int(), claimName, claimTier.Int(),
+			)
 		}
 	}
 
 	return nil
 }
 
-// AppraisalExtensions contains any proprietary claims that can be optionally
-// attached to the Appraisal.  For now only veraison-specific extensions are
-// supported.
-type AppraisalExtensions struct {
-	VeraisonKeyAttestation *map[string]any `json:"ear_veraison_key_attestation,omitempty"`
+func (o *Appraisal) MarshalJSON() ([]byte, error) {
+	if err := o.Validate(); err != nil {
+		return nil, err
+	}
+
+	claims, err := structWithExtensionsToMap(o, "json")
+	if err != nil {
+		return nil, err
+	}
+
+	return json.Marshal(claims)
 }
 
-// SetKeyAttestation sets the value of `akpub` in the
-// "ear_veraison_key_attestation" claim.
-// The following key types are currently supported: *rsa.PublicKey,
-// *ecdsa.PublicKey, ed25519.PublicKey (not a pointer).
-// Unsupported key types result in an error.
-func (o *AppraisalExtensions) SetKeyAttestation(pub any) error {
-	switch v := pub.(type) {
-	case *rsa.PublicKey, *ecdsa.PublicKey, ed25519.PublicKey:
-	default:
-		return fmt.Errorf("unsupported type for public key: %T", v)
+func (o *Appraisal) UnmarshalJSON(data []byte) error { // nolint:dupl
+	type appraisalUnmarshalHelper Appraisal
+
+	if err := json.Unmarshal(data, (*appraisalUnmarshalHelper)(o)); err != nil {
+		return err
 	}
 
-	k, err := x509.MarshalPKIXPublicKey(pub)
-	if err != nil {
-		return fmt.Errorf("unable to marshal public key: %w", err)
+	var claims map[eat.IntOrString]any
+	if err := json.Unmarshal(data, &claims); err != nil {
+		return err
 	}
 
-	akpub := base64.RawURLEncoding.EncodeToString(k)
+	var extensions Extensions
+	seenStatus := false
+	knownLabels := getTagLabels(o, "json")
+	for label, value := range claims {
+		if label == eat.IntOrStringFromString("ear_status") {
+			seenStatus = true
+		}
 
-	o.VeraisonKeyAttestation = &map[string]any{
-		"akpub": akpub,
+		if _, isKnown := knownLabels[label]; !isKnown {
+			extensions.Set(label, value)
+		}
+	}
+
+	if !seenStatus {
+		return errors.New(`missing mandatory "ear_status" claim`)
+	}
+
+	o.Extensions = &extensions
+
+	if err := o.Validate(); err != nil {
+		return err
 	}
 
 	return nil
-}
-
-// GetKeyAttestation returns the decoded public key carried in the
-// "ear_veraison_key_attestation" claim.
-// The returned key type is one supported by x509.ParsePKIXPublicKey.
-func (o AppraisalExtensions) GetKeyAttestation() (any, error) {
-	if o.VeraisonKeyAttestation == nil {
-		return nil, errors.New(`"ear_veraison_key_attestation" claim not found`)
-	}
-
-	v, ok := (*o.VeraisonKeyAttestation)["akpub"]
-	if !ok {
-		return nil, errors.New(`"akpub" claim not found in "ear_veraison_key_attestation"`)
-	}
-
-	akpub, ok := v.(string)
-	if !ok {
-		return nil, errors.New(`"ear_veraison_key_attestation" malformed: "akpub" must be string`)
-	}
-
-	k, err := base64.RawURLEncoding.DecodeString(akpub)
-	if err != nil {
-		return nil, fmt.Errorf(`"ear_veraison_key_attestation" malformed: decoding "akpub": %w`, err)
-	}
-
-	pub, err := x509.ParsePKIXPublicKey(k)
-	if err != nil {
-		return nil, fmt.Errorf(`parsing "akpub" failed: %w`, err)
-	}
-
-	return pub, nil
-}
-
-func AppraisalFromAny(v any) (*Appraisal, error) {
-	var appraisal Appraisal
-
-	m, ok := v.(map[string]any)
-	if !ok {
-		return nil, errors.New("not a JSON object")
-	}
-
-	parsers := map[string]parser{
-		"ear_status": func(v any) (any, error) {
-			return TrustTierFromAny(v)
-		},
-		"ear_trustworthiness_vector": func(v any) (any, error) {
-			return TrustVectorFromAny(v)
-		},
-		"ear_appraisal_policy_ids":     stringSlicePtrParser,
-		"ear_attester_claims":          stringMapPtrParser,
-		"ear_verifier_claims":          stringMapPtrParser,
-		"ear_veraison_key_attestation": stringMapPtrParser,
-	}
-
-	err := populateStructFromMap(&appraisal, m, "json", parsers, stringPtrParser, true)
-
-	return &appraisal, err
 }

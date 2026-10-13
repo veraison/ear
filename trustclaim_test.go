@@ -5,6 +5,7 @@ package ear
 
 import (
 	"encoding/json"
+	"math"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -14,7 +15,7 @@ import (
 var (
 	ranges = map[string][]int8{
 		"none": {
-			-1, 0, 1,
+			0,
 		},
 		"affirming": {
 			// negative
@@ -48,13 +49,16 @@ var (
 			110, 111, 112, 113, 114, 115, 116, 117, 118, 119, 120, 121, 122,
 			123, 124, 125, 126, 127,
 		},
+		"incomplete": {
+			-1, 1,
+		},
 	}
 )
 
 func TestTrustClaim_TrustTier_entire_range(t *testing.T) {
 	for s, a := range ranges {
 		for _, i := range a {
-			assert.Equal(t, s, TrustClaim(i).GetTier().String(), "enum: %d", i)
+			assert.Equal(t, s, TrustClaim(i).Tier().String(), "enum: %d", i)
 		}
 	}
 }
@@ -106,47 +110,140 @@ func TestToTrustClaim(t *testing.T) {
 
 	_, err = TrustClaimFromString("Bogus Claim")
 	assert.ErrorContains(t, err, `not a valid TrustClaim value: "Bogus Claim"`)
-
-	_, err = ToTrustClaim(json.Number("not-a-number"))
-	assert.ErrorContains(t, err, `strconv.ParseInt: parsing "not-a-number"`)
-
-	for _, v := range []interface{}{
-		true,
-		nil,
-		[]interface{}{1},
-		map[string]interface{}{"executables": 2},
-	} {
-		_, err = ToTrustClaim(v)
-		assert.ErrorContains(t, err, "not a valid TrustClaim value", "value: %v", v)
-	}
-}
-
-func TestToTrustVector_bad_claim_type(t *testing.T) {
-	_, err := ToTrustVector(map[string]interface{}{"executables": true})
-	assert.ErrorContains(t, err, "not a valid TrustClaim value: true (bool)")
-}
-
-func TestUnmarshalJSON_bad_claim_type(t *testing.T) {
-	var ar AttestationResult
-
-	err := ar.UnmarshalJSON([]byte(`{
-		"eat_profile": "` + EatProfile + `",
-		"iat": 1666091373,
-		"ear_verifier_id": {"developer": "acme", "build": "v1"},
-		"submods": {
-			"test": {
-				"ear_status": "affirming",
-				"ear_trustworthiness_vector": {"executables": true}
-			}
-		}
-	}`))
-
-	assert.ErrorContains(t, err, "not a valid TrustClaim value: true (bool)")
 }
 
 func TestTrustClaim_GetTier(t *testing.T) {
-	assert.Equal(t, TrustTierNone, VerifierMalfunctionClaim.GetTier())
-	assert.Equal(t, TrustTierAffirming, ApprovedBootClaim.GetTier())
-	assert.Equal(t, TrustTierWarning, UnsafeConfigClaim.GetTier())
-	assert.Equal(t, TrustTierContraindicated, UnsupportableConfigClaim.GetTier())
+	assert.Equal(t, TrustTierNone, NoClaim.Tier())
+	assert.Equal(t, TrustTierAffirming, ApprovedBootClaim.Tier())
+	assert.Equal(t, TrustTierWarning, UnsafeConfigClaim.Tier())
+	assert.Equal(t, TrustTierContraindicated, UnsupportableConfigClaim.Tier())
+	assert.Equal(t, TrustTierIncomplete, VerifierMalfunctionClaim.Tier())
+}
+
+func TestTrustClaimFromAny(t *testing.T) {
+	testCases := []struct {
+		title    string
+		input    any
+		expected TrustClaim
+		err      string
+	}{
+		{
+			title:    "ok TrustClaim",
+			input:    TrustClaim(2),
+			expected: TrustClaim(2),
+		},
+		{
+			title:    "ok TrustClaim pointer",
+			input:    Ptr(TrustClaim(2)),
+			expected: TrustClaim(2),
+		},
+		{
+			title:    "ok json.Number",
+			input:    json.Number("2"),
+			expected: TrustClaim(2),
+		},
+		{
+			title:    "ok string",
+			input:    "approved_rt",
+			expected: TrustClaim(2),
+		},
+		{
+			title:    "ok int",
+			input:    2,
+			expected: TrustClaim(2),
+		},
+		{
+			title:    "ok int8",
+			input:    int8(2),
+			expected: TrustClaim(2),
+		},
+		{
+			title:    "ok int16",
+			input:    int16(2),
+			expected: TrustClaim(2),
+		},
+		{
+			title:    "ok int32",
+			input:    int32(2),
+			expected: TrustClaim(2),
+		},
+		{
+			title:    "ok int64",
+			input:    int64(2),
+			expected: TrustClaim(2),
+		},
+		{
+			title:    "ok uint",
+			input:    2,
+			expected: TrustClaim(2),
+		},
+		{
+			title:    "ok uint8",
+			input:    uint8(2),
+			expected: TrustClaim(2),
+		},
+		{
+			title:    "ok uint16",
+			input:    uint16(2),
+			expected: TrustClaim(2),
+		},
+		{
+			title:    "ok uint32",
+			input:    uint32(2),
+			expected: TrustClaim(2),
+		},
+		{
+			title:    "ok uint64",
+			input:    uint64(2),
+			expected: TrustClaim(2),
+		},
+		{
+			title:    "ok uint",
+			input:    uint(2),
+			expected: TrustClaim(2),
+		},
+		{
+			title:    "ok float",
+			input:    2.0,
+			expected: TrustClaim(2),
+		},
+		{
+			title: "err bad type",
+			input: true,
+			err:   "cannot convert true (bool) to TrustClaim",
+		},
+		{
+			title: "err uint out of range",
+			input: uint(math.MaxInt64) + 1,
+			err:   "not a valid TrustClaim value: 9223372036854775808",
+		},
+		{
+			title: "err uint64 out of range",
+			input: uint64(math.MaxInt64) + 1,
+			err:   "not a valid TrustClaim value: 9223372036854775808",
+		},
+		{
+			title: "err nil",
+			input: (*TrustClaim)(nil),
+			err:   "nil pointer",
+		},
+		{
+			title: "err invalid json.Number",
+			input: json.Number("foo"),
+			err:   "not a valid TrustClaim value: foo",
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.title, func(t *testing.T) {
+			result, err := TrustClaimFromAny(tc.input)
+
+			if tc.err == "" {
+				assert.NoError(t, err)
+				assert.Equal(t, tc.expected, result)
+			} else {
+				assert.ErrorContains(t, err, tc.err)
+			}
+		})
+	}
 }
