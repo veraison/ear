@@ -6,24 +6,39 @@ export SHELL := /bin/bash
 GOPKG := github.com/veraison/ear
 GOPKG += github.com/veraison/ear/arc/cmd
 
-GOLINT ?= golangci-lint
-GOLINT_ARGS ?= run
+TOPDIR := $(realpath $(dir $(lastword $(MAKEFILE_LIST))))
+
+GOLINT_ARGS ?= run --timeout=3m -E dupl -E gocritic -E prealloc
+
+GOLINT_VERSION = v2.13.2
+GOLINT = $(TOPDIR)/tools-bin/golangci-lint
+GOLINT_STAMP = $(TOPDIR)/tools-bin/golangci-lint-$(GOLINT_VERSION).stamp
+
+$(GOLINT): $(GOLINT_STAMP)
+
+$(GOLINT_STAMP):
+	mkdir -p $(dir $(GOLINT))
+	touch $(GOLINT_STAMP)
+	GOBIN=$(dir $(GOLINT)) go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@$(GOLINT_VERSION)
 
 .PHONY: lint
-lint: ; $(GOLINT) $(GOLINT_ARGS)
+lint: $(GOLINT)
+	$(GOLINT) $(GOLINT_ARGS)
 
-ifeq ($(MAKECMDGOALS),test)
-GOTEST_ARGS ?= -v -race $(GOPKG)
-else
-  ifeq ($(MAKECMDGOALS),test-cover)
-  GOTEST_ARGS ?= -short -cover $(GOPKG)
-  endif
-endif
+.PHONY: test
+test:
+	go test $(GOTEST_ARGS) -v -race $(GOPKG)
 
 COVER_THRESHOLD := $(shell sed -n "s/^ *min-coverage: '\(.*\)'/≥\1%/p" .github/workflows/ci-go-cover.yml)
 
-.PHONY: test test-cover
-test test-cover: ; go test $(GOTEST_ARGS)
+.PHONY: test-cover cover
+test-cover cover:
+	go test $(GOTEST_ARGS) -short -cover $(GOPKG)
+
+.PHONY: cover-report report
+cover-report report coverage.html:
+	go test -coverprofile=coverage.out $(GOPKG)
+	go tool cover -html=coverage.out -o coverage.html
 
 presubmit:
 	@echo
