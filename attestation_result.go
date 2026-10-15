@@ -39,16 +39,16 @@ type JWTKeyEntry struct {
 // by the verifier.  It is serialized to JSON and signed by the verifier using
 // JWT.
 type AttestationResult struct {
-	Profile        *eat.Profile      `json:"eat_profile"`
-	Status         *TrustTier        `json:"ear_status,omitempty"`
-	IssuedAt       int64             `json:"iat"`
-	Expiry         *int64            `json:"exp,omitempty"`
-	VerifierID     *VerifierIdentity `json:"ear_verifier_id"`
-	RawEvidence    *cmw.CMW          `json:"ear_raw_evidence,omitempty"`
-	Submods        Submods           `json:"submods"`
-	Nonce          *eat.Nonce        `json:"eat_nonce,omitempty"`
-	DeviceTopology DeviceTopology    `json:"ear_device_topology,omitempty"`
-	Extensions     *Extensions       `json:"-"`
+	Profile        *eat.Profile      `cbor:"265,keyasint" json:"eat_profile"`
+	Status         *TrustTier        `cbor:"1000,keyasint,omitempty" json:"ear_status,omitempty"`
+	IssuedAt       int64             `cbor:"6,keyasint" json:"iat"`
+	Expiry         *int64            `cbor:"4,keyasint,omitempty" json:"exp,omitempty"`
+	VerifierID     *VerifierIdentity `cbor:"1004,keyasint" json:"ear_verifier_id"`
+	RawEvidence    *cmw.CMW          `cbor:"1002,keyasint,omitempty" json:"ear_raw_evidence,omitempty"`
+	Submods        Submods           `cbor:"266,keyasint" json:"submods"`
+	Nonce          *eat.Nonce        `cbor:"10,keyasint,omitempty" json:"eat_nonce,omitempty"`
+	DeviceTopology DeviceTopology    `cbor:"1007,keyasint,omitempty" json:"ear_device_topology,omitempty"`
+	Extensions     *Extensions       `cbor:"-" json:"-"`
 }
 
 // NewAttestationResult returns a pointer to a new AttestationResult.
@@ -156,7 +156,7 @@ func AttestationResultFromAny(input any) (*AttestationResult, error) {
 
 	for key, value := range claims {
 		switch key {
-		case eat.IntOrStringFromString("eat_profile"):
+		case eat.IntOrStringFromString("eat_profile"), eat.IntOrStringFromInt(265):
 			profileText, ok := value.(string)
 			if !ok {
 				return nil, fmt.Errorf("eat_profile: expected a string, got %T", value)
@@ -168,56 +168,56 @@ func AttestationResultFromAny(input any) (*AttestationResult, error) {
 			}
 
 			result.Profile = profile
-		case eat.IntOrStringFromString("ear_status"):
+		case eat.IntOrStringFromString("ear_status"), eat.IntOrStringFromInt(1000):
 			tier, err := TrustTierFromAny(value)
 			if err != nil {
 				return nil, fmt.Errorf("ear_status: %w", err)
 			}
 
 			result.Status = &tier
-		case eat.IntOrStringFromString("iat"):
+		case eat.IntOrStringFromString("iat"), eat.IntOrStringFromInt(6):
 			iat, err := Int64FromAny(value)
 			if err != nil {
 				return nil, fmt.Errorf("iat: %w", err)
 			}
 
 			result.IssuedAt = iat
-		case eat.IntOrStringFromString("exp"):
+		case eat.IntOrStringFromString("exp"), eat.IntOrStringFromInt(4):
 			exp, err := Int64FromAny(value)
 			if err != nil {
 				return nil, fmt.Errorf("exp: %w", err)
 			}
 
 			result.Expiry = &exp
-		case eat.IntOrStringFromString("ear_verifier_id"):
+		case eat.IntOrStringFromString("ear_verifier_id"), eat.IntOrStringFromInt(1004):
 			verifierID, err := VerifierIdentityFromAny(value)
 			if err != nil {
 				return nil, fmt.Errorf("ear_verifier_id: %w", err)
 			}
 
 			result.VerifierID = verifierID
-		case eat.IntOrStringFromString("ear_raw_evidence"):
+		case eat.IntOrStringFromString("ear_raw_evidence"), eat.IntOrStringFromInt(1002):
 			evidence, err := CMWFromAny(value)
 			if err != nil {
 				return nil, fmt.Errorf("ear_raw_evidence: %w", err)
 			}
 
 			result.RawEvidence = evidence
-		case eat.IntOrStringFromString("submods"):
+		case eat.IntOrStringFromString("submods"), eat.IntOrStringFromInt(266):
 			submods, err := SubmodsFromAny(value)
 			if err != nil {
 				return nil, fmt.Errorf("submods: %w", err)
 			}
 
 			result.Submods = submods
-		case eat.IntOrStringFromString("eat_nonce"):
+		case eat.IntOrStringFromString("eat_nonce"), eat.IntOrStringFromInt(10):
 			nonce, err := eat.NonceFromAny(value)
 			if err != nil {
 				return nil, fmt.Errorf("eat_nonce: %w", err)
 			}
 
 			result.Nonce = nonce
-		case eat.IntOrStringFromString("ear_device_topology"):
+		case eat.IntOrStringFromString("ear_device_topology"), eat.IntOrStringFromInt(1007):
 			topology, err := DeviceTopologyFromAny(value)
 			if err != nil {
 				return nil, fmt.Errorf("ear_device_topology: %w", err)
@@ -455,11 +455,11 @@ func (o *AttestationResult) MarshalJSONIndent(prefix, indent string) ([]byte, er
 	return json.MarshalIndent(claims, prefix, indent)
 }
 
-type resultUnmarshalHelper AttestationResult
-
 // UnmarshalJSON de-serializes an AttestationResult object from its JSON
 // representation and validates it.
 func (o *AttestationResult) UnmarshalJSON(data []byte) error { // nolint:dupl
+	type resultUnmarshalHelper AttestationResult
+
 	if err := json.Unmarshal(data, (*resultUnmarshalHelper)(o)); err != nil {
 		return err
 	}
@@ -471,6 +471,48 @@ func (o *AttestationResult) UnmarshalJSON(data []byte) error { // nolint:dupl
 
 	var extensions Extensions
 	knownLabels := getTagLabels(o, "json")
+	for label, value := range claims {
+		if _, isKnown := knownLabels[label]; !isKnown {
+			extensions.Set(label, value)
+		}
+	}
+
+	o.Extensions = &extensions
+
+	if err := o.Validate(); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (o *AttestationResult) MarshalCBOR() ([]byte, error) {
+	if err := o.Validate(); err != nil {
+		return nil, err
+	}
+
+	claims, err := structWithExtensionsToMap(o, "cbor")
+	if err != nil {
+		return nil, err
+	}
+
+	return em.Marshal(claims)
+}
+
+func (o *AttestationResult) UnmarshalCBOR(data []byte) error { // nolint:dupl
+	type resultUnmarshalHelper AttestationResult
+
+	if err := dm.Unmarshal(data, (*resultUnmarshalHelper)(o)); err != nil {
+		return err
+	}
+
+	var claims map[eat.IntOrString]any
+	if err := dm.Unmarshal(data, &claims); err != nil {
+		return err
+	}
+
+	var extensions Extensions
+	knownLabels := getTagLabels(o, "cbor")
 	for label, value := range claims {
 		if _, isKnown := knownLabels[label]; !isKnown {
 			extensions.Set(label, value)

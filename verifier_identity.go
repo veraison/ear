@@ -15,9 +15,9 @@ import (
 type VerifierIdentity struct {
 	// Developer uniquely identifies the organizational unit responsible
 	// for this build.
-	Developer string `json:"developer"`
+	Developer string `cbor:"0,keyasint" json:"developer"`
 	// Build uniquely identifies the software build running the verifier.
-	Build string `json:"build"`
+	Build string `cbor:"1,keyasint" json:"build"`
 }
 
 // NewVerifierIdentity returns a pointer to a new NewVerifierIdentity

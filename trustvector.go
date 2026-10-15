@@ -16,14 +16,14 @@ import (
 // TrustVector is an implementation of the Trustworthiness Vector (and Claims)
 // described in §2.3 of draft-ietf-rats-ar4si-03, using a JSON serialization.
 type TrustVector struct {
-	InstanceIdentity TrustClaim `json:"instance-identity,omitzero"`
-	Configuration    TrustClaim `json:"configuration,omitzero"`
-	Executables      TrustClaim `json:"executables,omitzero"`
-	FileSystem       TrustClaim `json:"file-system,omitzero"`
-	Hardware         TrustClaim `json:"hardware,omitzero"`
-	RuntimeOpaque    TrustClaim `json:"runtime-opaque,omitzero"`
-	StorageOpaque    TrustClaim `json:"storage-opaque,omitzero"`
-	SourcedData      TrustClaim `json:"sourced-data,omitzero"`
+	InstanceIdentity TrustClaim `cbor:"0,keyasint,omitzero" json:"instance-identity,omitzero"`
+	Configuration    TrustClaim `cbor:"1,keyasint,omitzero" json:"configuration,omitzero"`
+	Executables      TrustClaim `cbor:"2,keyasint,omitzero" json:"executables,omitzero"`
+	FileSystem       TrustClaim `cbor:"3,keyasint,omitzero" json:"file-system,omitzero"`
+	Hardware         TrustClaim `cbor:"4,keyasint,omitzero" json:"hardware,omitzero"`
+	RuntimeOpaque    TrustClaim `cbor:"5,keyasint,omitzero" json:"runtime-opaque,omitzero"`
+	StorageOpaque    TrustClaim `cbor:"6,keyasint,omitzero" json:"storage-opaque,omitzero"`
+	SourcedData      TrustClaim `cbor:"7,keyasint,omitzero" json:"sourced-data,omitzero"`
 }
 
 // NewTrustVector returns a new TrustVector with all its claims set to NoClaim.
