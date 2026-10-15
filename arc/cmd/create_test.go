@@ -1,4 +1,4 @@
-// Copyright 2022 Contributors to the Veraison project.
+// Copyright 2022-2026 Contributors to the Veraison project.
 // SPDX-License-Identifier: Apache-2.0
 package cmd
 
@@ -181,5 +181,30 @@ func Test_CreateCmd_ok(t *testing.T) {
 	assert.NoError(t, err)
 
 	_, err = fs.Stat("ear.jwt")
+	assert.NoError(t, err)
+}
+
+func Test_CreateCmd_CWT_ok(t *testing.T) {
+	cmd := NewCreateCmd()
+
+	files := []fileEntry{
+		{"skey.json", testSKey},
+		{"ear-claims.json", testMiniClaimsSet},
+	}
+	makeFS(t, files)
+
+	args := []string{
+		"--skey=skey.json",
+		"--claims=ear-claims.json",
+		"--alg=ES256",
+		"--cwt",
+		"ear.cwt",
+	}
+	cmd.SetArgs(args)
+
+	err := cmd.Execute()
+	assert.NoError(t, err)
+
+	_, err = fs.Stat("ear.cwt")
 	assert.NoError(t, err)
 }
