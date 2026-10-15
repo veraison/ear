@@ -261,3 +261,19 @@ func (o *TrustTier) UnmarshalJSON(data []byte) error {
 
 	return nil
 }
+
+func (o TrustTier) MarshalCBOR() ([]byte, error) {
+	return em.Marshal(o.value)
+}
+
+func (o *TrustTier) UnmarshalCBOR(data []byte) error {
+	var value int
+	var err error
+
+	if err := dm.Unmarshal(data, &value); err != nil {
+		return err
+	}
+
+	*o, err = TrustTierFromInt(value)
+	return err
+}

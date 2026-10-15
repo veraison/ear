@@ -70,6 +70,7 @@ func TestAttestationResult_round_trip(t *testing.T) {
 		title        string
 		result       AttestationResult
 		expectedJSON string
+		expectedCBOR []byte
 	}{
 		{
 			title: "ok minimal",
@@ -87,6 +88,35 @@ func TestAttestationResult_round_trip(t *testing.T) {
 				Extensions: NewExtensions(),
 			},
 			expectedJSON: `{"ear_verifier_id":{"build":"test-build","developer":"test-developer"},"eat_profile":"tag:ietf.org,2026:rats/ear#04","iat":1666091373,"submods":{"test-appraisal":{"ear_status":"affirming"}}}`,
+			expectedCBOR: []byte{
+				0xa4,                         //                   map(4)
+				0x06,                         //                   . key: 6 [iat]
+				0x1a, 0x63, 0x4e, 0x89, 0x6d, //                   . value: 1666091373
+				0x19, 0x01, 0x09, //                            // . key: 265 [eat_profile]
+				0x78, 0x1d, //                                  // . value: tstr(29)
+				0x74, 0x61, 0x67, 0x3a, 0x69, 0x65, 0x74, 0x66, // . . "tag:ietf"
+				0x2e, 0x6f, 0x72, 0x67, 0x2c, 0x32, 0x30, 0x32, // . . ".org,202"
+				0x36, 0x3a, 0x72, 0x61, 0x74, 0x73, 0x2f, 0x65, // . . "6:rats/e"
+				0x61, 0x72, 0x23, 0x30, 0x34, //                   . . "ar#04"
+				0x19, 0x01, 0x0a, //                               . key: 266 [submods]
+				0xa1,                                           // . value: map(1) [Submods]
+				0x6e,                                           // . . key: tstr(15)
+				0x74, 0x65, 0x73, 0x74, 0x2d, 0x61, 0x70, 0x70, // . . . "test-app"
+				0x72, 0x61, 0x69, 0x73, 0x61, 0x6c, //             . . . "raisal"
+				0xa1,             //                               . . value: map(1) [Appraisal]
+				0x19, 0x03, 0xe8, //                               . . . key: 1000 [ear_status]
+				0x02,             //                               . . . value: 2 [affirming]
+				0x19, 0x03, 0xec, //                               . . key: 1004 [ear_verifier_id]
+				0xa2,                                           // . . value: map(2) [VerifierIdentity]
+				0x00,                                           // . . key: 0 [developer]
+				0x6e,                                           // . . value: tstr(14)
+				0x74, 0x65, 0x73, 0x74, 0x2d, 0x64, 0x65, 0x76, // . . . "test-dev"
+				0x65, 0x6c, 0x6f, 0x70, 0x65, 0x72, //             . . . "eloper"
+				0x01,                                           // . . key: 1 [build]
+				0x6a,                                           // . . value: tstr(10)
+				0x74, 0x65, 0x73, 0x74, 0x2d, 0x62, 0x75, 0x69, // . . . "test-bui"
+				0x6c, 0x64, //                                     . . . "ld"
+			},
 		},
 		{
 			title: "ok complete",
@@ -118,6 +148,53 @@ func TestAttestationResult_round_trip(t *testing.T) {
 				Extensions: NewExtensions(),
 			},
 			expectedJSON: `{"ear_device_topology":{"test-appraisal":["foo","bar"]},"ear_raw_evidence":["application/x-test","3q2-7w"],"ear_status":"affirming","ear_verifier_id":{"build":"test-build","developer":"test-developer"},"eat_nonce":"3q2-796tvu8","eat_profile":"tag:ietf.org,2026:rats/ear#04","exp":9999999999,"iat":1666091373,"submods":{"test-appraisal":{"ear_status":"affirming"}}}`,
+			expectedCBOR: []byte{
+				0xa8,                                           // map(4)
+				0x04,                                           // . key: 4 [exp]
+				0x1b,                                           // . value: uint(8)
+				0x00, 0x00, 0x00, 0x02, 0x54, 0x0b, 0xe3, 0xff, // . . 9999999999
+				0x06,                         //                   . key: 6 [iat]
+				0x1a, 0x63, 0x4e, 0x89, 0x6d, //                   . value: 1666091373
+				0x0a, //                                           . key: 10 [nonce]
+				0x48, //                                           . value: bstr(8)
+				0xde, 0xad, 0xbe, 0xef, 0xde, 0xad, 0xbe, 0xef,
+				0x19, 0x01, 0x09, //                            // . key: 265 [eat_profile]
+				0x78, 0x1d, //                                  // . value: tstr(29)
+				0x74, 0x61, 0x67, 0x3a, 0x69, 0x65, 0x74, 0x66, // . . "tag:ietf"
+				0x2e, 0x6f, 0x72, 0x67, 0x2c, 0x32, 0x30, 0x32, // . . ".org,202"
+				0x36, 0x3a, 0x72, 0x61, 0x74, 0x73, 0x2f, 0x65, // . . "6:rats/e"
+				0x61, 0x72, 0x23, 0x30, 0x34, //                   . . "ar#04"
+				0x19, 0x01, 0x0a, //                               . key: 266 [submods]
+				0xa1,                                           // . value: map(1) [Submods]
+				0x6e,                                           // . . key: tstr(15)
+				0x74, 0x65, 0x73, 0x74, 0x2d, 0x61, 0x70, 0x70, // . . . "test-app"
+				0x72, 0x61, 0x69, 0x73, 0x61, 0x6c, //             . . . "raisal"
+				0xa1,             //                               . . value: map(1) [Appraisal]
+				0x19, 0x03, 0xe8, //                               . . . key: 1000 [ear_status]
+				0x02,             //                               . . . value: 2 [affirming]
+				0x19, 0x03, 0xe8, //                               . . key: 1000 [ear_status]
+				0x02,             //                               . . value: 2 [affirming]
+				0x19, 0x03, 0xec, //                               . . key: 1004 [ear_verifier_id]
+				0xa2,                                           // . . value: map(2) [VerifierIdentity]
+				0x00,                                           // . . key: 0 [developer]
+				0x6e,                                           // . . value: tstr(14)
+				0x74, 0x65, 0x73, 0x74, 0x2d, 0x64, 0x65, 0x76, // . . . "test-dev"
+				0x65, 0x6c, 0x6f, 0x70, 0x65, 0x72, //             . . . "eloper"
+				0x01,                                           // . . key: 1 [build]
+				0x6a,                                           // . . value: tstr(10)
+				0x74, 0x65, 0x73, 0x74, 0x2d, 0x62, 0x75, 0x69, // . . . "test-bui"
+				0x6c, 0x64, //                                     . . . "ld"
+				0x19, 0x03, 0xef, //                               . . key: 1007 [ear_device_topology]
+				0xa1,                                           // . . value: map(1) [DeviceTopology]
+				0x6e,                                           // . . . key: tstr(14)
+				0x74, 0x65, 0x73, 0x74, 0x2d, 0x61, 0x70, 0x70, // . . . . "test-app"
+				0x72, 0x61, 0x69, 0x73, 0x61, 0x6c, //             . . . . "raisal"
+				0x82,             //                               . . . value: array(2)
+				0x63,             //                               . . . . [0]tstr(3)
+				0x66, 0x6f, 0x6f, //                               . . . . . "foo"
+				0x63,             //                               . . . . [1]tstr(3)
+				0x62, 0x61, 0x72, //                               . . . . . "bar"
+			},
 		},
 	}
 
@@ -138,6 +215,28 @@ func TestAttestationResult_round_trip(t *testing.T) {
 			// the field. To get around that, we validate the
 			// values manually and then set RawEvidence to nil so
 			// we can use assert.EqualValues() to check the rest.
+			if tc.result.RawEvidence != nil {
+				expectedType, _ := tc.result.RawEvidence.GetMonadType()
+				actualType, _ := decoded.RawEvidence.GetMonadType()
+				assert.Equal(t, expectedType, actualType)
+
+				expectedValue, _ := tc.result.RawEvidence.GetMonadValue()
+				actualValue, _ := decoded.RawEvidence.GetMonadValue()
+				assert.Equal(t, expectedValue, actualValue)
+
+				tc.result.RawEvidence = nil
+				decoded.RawEvidence = nil
+			}
+
+			assert.EqualValues(t, tc.result, decoded)
+
+			encodedCBOR, err := tc.result.MarshalCBOR()
+			assert.NoError(t, err)
+			assert.Equal(t, tc.expectedCBOR, encodedCBOR)
+
+			err = decoded.UnmarshalCBOR(encodedCBOR)
+			assert.NoError(t, err)
+
 			if tc.result.RawEvidence != nil {
 				expectedType, _ := tc.result.RawEvidence.GetMonadType()
 				actualType, _ := decoded.RawEvidence.GetMonadType()
