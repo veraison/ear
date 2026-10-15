@@ -16,31 +16,37 @@ func TestTrustTier_round_trip(t *testing.T) {
 		title        string
 		tier         TrustTier
 		expectedJSON string
+		expectedCBOR []byte
 	}{
 		{
 			title:        "ok none",
 			tier:         TrustTierNone,
 			expectedJSON: `"none"`,
+			expectedCBOR: []byte{0x00},
 		},
 		{
 			title:        "ok affirming",
 			tier:         TrustTierAffirming,
 			expectedJSON: `"affirming"`,
+			expectedCBOR: []byte{0x02},
 		},
 		{
 			title:        "ok warning",
 			tier:         TrustTierWarning,
 			expectedJSON: `"warning"`,
+			expectedCBOR: []byte{0x18, 0x20},
 		},
 		{
 			title:        "ok contraindicated",
 			tier:         TrustTierContraindicated,
 			expectedJSON: `"contraindicated"`,
+			expectedCBOR: []byte{0x18, 0x60},
 		},
 		{
 			title:        "ok incomplete",
 			tier:         TrustTierIncomplete,
 			expectedJSON: `"incomplete"`,
+			expectedCBOR: []byte{0x18, 0x7f},
 		},
 	}
 
@@ -52,6 +58,14 @@ func TestTrustTier_round_trip(t *testing.T) {
 
 			var tier TrustTier
 			err = json.Unmarshal(encodedJSON, &tier)
+			assert.NoError(t, err)
+			assert.Equal(t, tc.tier, tier)
+
+			encodedCBOR, err := tc.tier.MarshalCBOR()
+			assert.NoError(t, err)
+			assert.Equal(t, tc.expectedCBOR, encodedCBOR)
+
+			err = tier.UnmarshalCBOR(encodedCBOR)
 			assert.NoError(t, err)
 			assert.Equal(t, tc.tier, tier)
 		})

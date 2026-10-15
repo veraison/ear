@@ -16,14 +16,14 @@ import (
 // other metadata that are relevant to establish the appraisal context - the
 // evidence itself, the appraisal policy used, the time of appraisal.
 type Appraisal struct {
-	Profile            *eat.Profile            `json:"eat_profile,omitempty"`
-	Status             TrustTier               `json:"ear_status"`
-	TrustVector        *TrustVector            `json:"ear_trustworthiness_vector,omitzero"`
-	AppraisalPolicyIDs []string                `json:"ear_appraisal_policy_ids,omitempty"`
-	Nonce              *eat.Nonce              `json:"eat_nonce,omitempty"`
-	AttesterClaims     map[eat.IntOrString]any `json:"ear_attester_claims,omitempty"`
-	VerifierClaims     map[eat.IntOrString]any `json:"ear_verifier_claims,omitempty"`
-	Extensions         *Extensions             `json:"-"`
+	Profile            *eat.Profile            `cbor:"265,keyasint,omitempty" json:"eat_profile,omitempty"`
+	Status             TrustTier               `cbor:"1000,keyasint" json:"ear_status"`
+	TrustVector        *TrustVector            `cbor:"1001,keyasint,omitempty" json:"ear_trustworthiness_vector,omitzero"`
+	AppraisalPolicyIDs []string                `cbor:"1003,keyasint,omitempty" json:"ear_appraisal_policy_ids,omitempty"`
+	Nonce              *eat.Nonce              `cbor:"10,keyasint,omitempty" json:"eat_nonce,omitempty"`
+	AttesterClaims     map[eat.IntOrString]any `cbor:"1005,keyasint,omitempty" json:"ear_attester_claims,omitempty"`
+	VerifierClaims     map[eat.IntOrString]any `cbor:"1006,keyasint,omitempty" json:"ear_verifier_claims,omitempty"`
+	Extensions         *Extensions             `cbor:"-" json:"-"`
 }
 
 // NewAppraisal returns a new Appraisal with its status set to TrustTierNone
@@ -58,7 +58,7 @@ func AppraisalFromAny(input any) (*Appraisal, error) {
 
 	for key, value := range claims {
 		switch key {
-		case eat.IntOrStringFromString("eat_profile"):
+		case eat.IntOrStringFromString("eat_profile"), eat.IntOrStringFromInt(265):
 			profileText, ok := value.(string)
 			if !ok {
 				return nil, fmt.Errorf("eat_profile: expected a string, got %T", value)
@@ -70,21 +70,21 @@ func AppraisalFromAny(input any) (*Appraisal, error) {
 			}
 
 			appraisal.Profile = profile
-		case eat.IntOrStringFromString("ear_status"):
+		case eat.IntOrStringFromString("ear_status"), eat.IntOrStringFromInt(1000):
 			tier, err := TrustTierFromAny(value)
 			if err != nil {
 				return nil, fmt.Errorf("ear_status: %w", err)
 			}
 
 			appraisal.Status = tier
-		case eat.IntOrStringFromString("ear_trustworthiness_vector"):
+		case eat.IntOrStringFromString("ear_trustworthiness_vector"), eat.IntOrStringFromInt(1001):
 			vector, err := TrustVectorFromAny(value)
 			if err != nil {
 				return nil, fmt.Errorf("ear_trustworthiness_vector: %w", err)
 			}
 
 			appraisal.TrustVector = vector
-		case eat.IntOrStringFromString("ear_appraisal_policy_ids"):
+		case eat.IntOrStringFromString("ear_appraisal_policy_ids"), eat.IntOrStringFromInt(1003):
 			rawIds, ok := value.([]any)
 			if !ok {
 				return nil, fmt.Errorf(
@@ -105,21 +105,21 @@ func AppraisalFromAny(input any) (*Appraisal, error) {
 			}
 
 			appraisal.AppraisalPolicyIDs = ids
-		case eat.IntOrStringFromString("eat_nonce"):
+		case eat.IntOrStringFromString("eat_nonce"), eat.IntOrStringFromInt(10):
 			nonce, err := eat.NonceFromAny(value)
 			if err != nil {
 				return nil, fmt.Errorf("eat_nonce: %w", err)
 			}
 
 			appraisal.Nonce = nonce
-		case eat.IntOrStringFromString("ear_attester_claims"):
+		case eat.IntOrStringFromString("ear_attester_claims"), eat.IntOrStringFromInt(1005):
 			claims, err := eat.IntOrStringMapFromAny(value)
 			if err != nil {
 				return nil, fmt.Errorf("ear_attester_claims: %w", err)
 			}
 
 			appraisal.AttesterClaims = claims
-		case eat.IntOrStringFromString("ear_verifier_claims"):
+		case eat.IntOrStringFromString("ear_verifier_claims"), eat.IntOrStringFromInt(1006):
 			claims, err := eat.IntOrStringMapFromAny(value)
 			if err != nil {
 				return nil, fmt.Errorf("ear_verifier_claims: %w", err)
@@ -216,6 +216,57 @@ func (o *Appraisal) UnmarshalJSON(data []byte) error { // nolint:dupl
 
 	if !seenStatus {
 		return errors.New(`missing mandatory "ear_status" claim`)
+	}
+
+	o.Extensions = &extensions
+
+	if err := o.Validate(); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (o *Appraisal) MarshalCBOR() ([]byte, error) {
+	if err := o.Validate(); err != nil {
+		return nil, err
+	}
+
+	claims, err := structWithExtensionsToMap(o, "cbor")
+	if err != nil {
+		return nil, err
+	}
+
+	return em.Marshal(claims)
+}
+
+func (o *Appraisal) UnmarshalCBOR(data []byte) error { // nolint:dupl
+	type appraisalUnmarshalHelper Appraisal
+
+	if err := dm.Unmarshal(data, (*appraisalUnmarshalHelper)(o)); err != nil {
+		return err
+	}
+
+	var claims map[eat.IntOrString]any
+	if err := dm.Unmarshal(data, &claims); err != nil {
+		return err
+	}
+
+	var extensions Extensions
+	seenStatus := false
+	knownLabels := getTagLabels(o, "cbor")
+	for label, value := range claims {
+		if label == eat.IntOrStringFromInt(1000) {
+			seenStatus = true
+		}
+
+		if _, isKnown := knownLabels[label]; !isKnown {
+			extensions.Set(label, value)
+		}
+	}
+
+	if !seenStatus {
+		return errors.New(`missing mandatory claim 1000 (ear_status)`)
 	}
 
 	o.Extensions = &extensions
