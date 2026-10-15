@@ -4,6 +4,7 @@
 package ear
 
 import (
+	"crypto/ecdsa"
 	"fmt"
 	"testing"
 
@@ -13,6 +14,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"github.com/veraison/cmw"
 	"github.com/veraison/eat"
+	"github.com/veraison/go-cose"
 )
 
 var (
@@ -30,6 +32,69 @@ var (
 "y": "IBOL-C3BttVivg-lSreASjpkttcsz-1rb7btKLv8EX4",
 "d": "V8kgd2ZBRuh2dgyVINBUqpPDr7BOMGcF22CQMIUHtNM"
 }`
+
+	testECDSAPublicKeyOther = `{
+"kty": "EC",
+"crv": "P-256",
+"x": "MKBCTNIcKUSDii11ySs3526iDZ8AiTo7Tu6KPAqv7D4",
+"y": "4Etl6SRW2YiLUrN5vfvVHuhp7x8PxltmWWlbbM4IFyM",
+"kid": "1"
+}`
+	testCWT = []byte{
+		0xd8, 0x3d, //                                     tag(61) [CWT]
+		0xd2,       //                                     . tag(18) [cose-sign1]
+		0x84,       //                                     . . array(4) [COSE_Sign1]
+		0x43,       //                                     . . . [0]bstr(3) [protected-header]
+		0xa1,       //                                     . . . . map(1) [header_map]
+		0x01,       //                                     . . . . . key: 1 [alg]
+		0x26,       //                                     . . . . . value: -7 [ES256]
+		0xa0,       //                                     . . . [1]map(0) [unprotected-header]
+		0x58, 0x85, //                                     . . . [2]bstr(133) [payload]
+		0xa4,                         //                   . . . . map(4) [AttestationResult]
+		0x06,                         //                   . . . . . key: 6 [iat]
+		0x1a, 0x63, 0x4e, 0x89, 0x6d, //                   . . . . . value: 1666091373
+		0x19, 0x01, 0x09, //                            // . . . . . key: 265 [eat_profile]
+		0x78, 0x1d, //                                  // . . . . . value: tstr(29)
+		0x74, 0x61, 0x67, 0x3a, 0x69, 0x65, 0x74, 0x66, // . . . . . . "tag:ietf"
+		0x2e, 0x6f, 0x72, 0x67, 0x2c, 0x32, 0x30, 0x32, // . . . . . . ".org,202"
+		0x36, 0x3a, 0x72, 0x61, 0x74, 0x73, 0x2f, 0x65, // . . . . . . "6:rats/e"
+		0x61, 0x72, 0x23, 0x30, 0x34, //                   . . . . . . "ar#04"
+		0x19, 0x01, 0x0a, //                               . . . . . key: 266 [submods]
+		0xa1,                   //                         . . . . . value: map(1) [Submods]
+		0x64,                   //                         . . . . . . key: tstr(4)
+		0x74, 0x65, 0x73, 0x74, //                         . . . . . . . "test"
+		0xa2,             //                               . . . . . . value: map(2) [Appraisal]
+		0x19, 0x03, 0xe8, //                               . . . . . . . key: 1000 [ear_status]
+		0x02,             //                               . . . . . . . value: 2 [affirming]
+		0x19, 0x03, 0xeb, //                               . . . . . . . key: 1003 [ear_appraisal_policy]
+		0x81,       //                                     . . . . . . . value: array(1)
+		0x78, 0x2a, //                                     . . . . . . . . [0]tstr(42)
+		0x68, 0x74, 0x74, 0x70, 0x73, 0x3a, 0x2f, 0x2f, // . . . . . . . . . "https://"
+		0x76, 0x65, 0x72, 0x61, 0x69, 0x73, 0x6f, 0x6e, // . . . . . . . . . "veraison"
+		0x2e, 0x65, 0x78, 0x61, 0x6d, 0x70, 0x6c, 0x65, // . . . . . . . . . ".example"
+		0x2f, 0x70, 0x6f, 0x6c, 0x69, 0x63, 0x79, 0x2f, // . . . . . . . . . "/policy/"
+		0x31, 0x2f, 0x36, 0x30, 0x61, 0x30, 0x30, 0x36, // . . . . . . . . . "1/60a006"
+		0x38, 0x64, //                                     . . . . . . . . . "8d"
+		0x19, 0x03, 0xec, //                               . . . . . key: 1004 [ear_verifier_id]
+		0xa2,                                           // . . . . . value: map(2) [VerifierIdentity]
+		0x00,                                           // . . . . . . key: 0 [developer]
+		0x69,                                           // . . . . . . value: tstr(9)
+		0x41, 0x63, 0x6d, 0x65, 0x20, 0x49, 0x6e, 0x63, // . . . . . . . "Acme Inc"
+		0x2e,                                           // . . . . . . . "."
+		0x01,                                           // . . . . . . key: 1 [build]
+		0x6d,                                           // . . . . . . value: tstr(13)
+		0x72, 0x72, 0x74, 0x72, 0x61, 0x70, 0x2d, 0x76, // . . . . . . . "rrtrap-v"
+		0x31, 0x2e, 0x30, 0x2e, 0x30, //                // . . . . . . . "1.0.0"
+		0x58, 0x40, //                                     . . . [3]bstr(64) [signature]
+		0x86, 0x65, 0x9a, 0xe4, 0x50, 0x4f, 0xf9, 0xc6,
+		0x2e, 0xfd, 0x54, 0x31, 0x44, 0x5b, 0x65, 0x1e,
+		0x71, 0x21, 0x08, 0xc5, 0x15, 0x76, 0xf4, 0xef,
+		0x06, 0xa5, 0x1b, 0xf3, 0xfe, 0x17, 0x69, 0x30,
+		0xe2, 0xfb, 0x26, 0x17, 0x50, 0xe6, 0x3b, 0xe1,
+		0x39, 0x9a, 0x55, 0x87, 0x51, 0x46, 0x2f, 0x98,
+		0x8d, 0xc0, 0x02, 0x47, 0xe4, 0x34, 0xd0, 0xcd,
+		0xca, 0x95, 0x23, 0x4f, 0xcf, 0x99, 0xf2, 0x95,
+	}
 
 	testVidBuild     = "rrtrap-v1.0.0"
 	testVidDeveloper = "Acme Inc."
@@ -616,7 +681,20 @@ func TestUpdateStatusFromTrustVector(t *testing.T) {
 	require.NoError(t, err)
 
 	ar.Status = nil
-	ar.UpdateStatusFromSubmods(&JWTKeyEntry{jwa.ES256(), k})
+	ar.UpdateStatusFromSubmods(JWTKeyEntry{jwa.ES256(), k})
+	assert.Equal(t, TrustTierAffirming, *ar.Status)
+
+	ar = NewAttestationResult("test", "test")
+	ar.Submods.AddCWT("test", testCWT)
+
+	ar.UpdateStatusFromSubmods()
+	assert.Equal(t, TrustTierIncomplete, *ar.Status)
+
+	pubKey, err := jwk.Export[*ecdsa.PublicKey](k)
+	require.NoError(t, err)
+
+	ar.Status = nil
+	ar.UpdateStatusFromSubmods(CWTKeyEntry{cose.AlgorithmES256, pubKey})
 	assert.Equal(t, TrustTierAffirming, *ar.Status)
 }
 
@@ -683,6 +761,26 @@ func TestAttestationResultFromNestedToken(t *testing.T) {
 			},
 		},
 		{
+			title: "ok CBOR",
+			token: eat.NestedToken{
+				Type: eat.NestedTokenCBOR,
+				Data: testCWT,
+			},
+			expected: AttestationResult{
+				IssuedAt:   testIAT,
+				VerifierID: &testVerifierID,
+				Profile:    testProfile,
+				Submods: NewSubmods().AddAppraisal("test", &Appraisal{
+					Status: testStatus,
+					AppraisalPolicyIDs: []string{
+						"https://veraison.example/policy/1/60a0068d",
+					},
+					Extensions: NewExtensions(),
+				}),
+				Extensions: NewExtensions(),
+			},
+		},
+		{
 			title: "err bad JWT",
 			token: eat.NestedToken{
 				Type: eat.NestedTokenJWT,
@@ -697,14 +795,6 @@ func TestAttestationResultFromNestedToken(t *testing.T) {
 				Data: []byte(`[-16,"3q2-7w"]`),
 			},
 			err: "cannot create AttestationResult from DIGEST",
-		},
-		{
-			title: "err CBOR",
-			token: eat.NestedToken{
-				Type: eat.NestedTokenCBOR,
-				Data: []byte{0xde, 0xad, 0xbe, 0xef},
-			},
-			err: "CBOR encoding not supported",
 		},
 	}
 
@@ -1029,4 +1119,74 @@ func TestAttestationResult_bad_topology(t *testing.T) {
 
 	err := ar.Validate()
 	assert.ErrorContains(t, err, "ear_device_topology entries not in submods: nihil")
+}
+
+func TestAttestationResult_CWT(t *testing.T) {
+	key, err := jwk.ParseKey([]byte(testECDSAPrivateKey))
+	require.NoError(t, err)
+
+	alg, signer, err := SignerFromJWK(key)
+	require.NoError(t, err)
+
+	jwkPubKey, err := key.PublicKey()
+	require.NoError(t, err)
+
+	pubKey, err := jwk.Export[*ecdsa.PublicKey](jwkPubKey)
+	require.NoError(t, err)
+
+	result := AttestationResult{
+		Profile:    EatProfile,
+		IssuedAt:   1666091373,
+		VerifierID: NewVerifierIdentity("test-build", "test-developer"),
+		Submods: NewSubmods().AddAppraisal(
+			"test-appraisal",
+			&Appraisal{
+				Status:     TrustTierAffirming,
+				Extensions: NewExtensions(),
+			},
+		),
+		Extensions: NewExtensions(),
+	}
+
+	signedCWT, err := result.SignCWT(alg, signer, nil)
+	assert.NoError(t, err)
+
+	decoded, err := AttestationResultFromVerifiedCWT(signedCWT, &CWTKeyEntry{alg, pubKey})
+	assert.NoError(t, err)
+	assert.Equal(t, &result, decoded)
+
+	decoded, err = AttestationResultFromUnverifiedCWT(signedCWT)
+	assert.NoError(t, err)
+	assert.Equal(t, &result, decoded)
+
+	_, err = (&AttestationResult{}).SignCWT(alg, signer, nil)
+	assert.ErrorContains(t, err, "missing mandatory 'eat_profile', 'iat', 'ear_verifier_id', 'submods'")
+
+	cwtBytes := []byte{
+		0xd8, 0x3d, // tag(61) [CWT]
+		0xd2, //       . tag(18) [cose-sign1]
+		0x84, //       . . array(4) [COSE_Sign1]
+		0x43, //       . . . [0]bstr(3) [protected-header]
+		0xa1, //       . . . . map(1) [header_map]
+		0x01, //       . . . . . key: 1 [alg]
+		0x26, //       . . . . . value: -7 [ES256]
+		0xa0, //       . . . [1]map(0) [unprotected-header]
+		0x48, //       . . . [2]bstr(8) [payload]
+		0xde, 0xad, 0xbe, 0xef, 0xde, 0xad, 0xbe, 0xef,
+		0x58, 0x40, // . . . [3]bstr(64) [signature]
+		0x2d, 0xb5, 0x63, 0xa7, 0x44, 0xa6, 0x15, 0x4f,
+		0xd9, 0x8a, 0x3d, 0x73, 0x90, 0xc4, 0x85, 0x95,
+		0x0a, 0x35, 0x64, 0x2e, 0xcd, 0xa6, 0xd0, 0xbe,
+		0x76, 0xe3, 0x96, 0x71, 0x75, 0x07, 0x7d, 0xea,
+		0x4e, 0x6d, 0x0b, 0x28, 0x28, 0x1c, 0x8c, 0xbd,
+		0x6e, 0xb7, 0xef, 0xdf, 0xc0, 0x5b, 0xe1, 0x97,
+		0x19, 0xf4, 0x65, 0xa7, 0xa2, 0x3d, 0x5f, 0x31,
+		0x6c, 0x81, 0xc6, 0xc8, 0x73, 0x76, 0x01, 0x1d,
+	}
+
+	_, err = AttestationResultFromVerifiedCWT(cwtBytes, &CWTKeyEntry{alg, pubKey})
+	assert.ErrorContains(t, err, "invalid additional information 30 for type tag")
+
+	_, err = AttestationResultFromUnverifiedCWT(cwtBytes)
+	assert.ErrorContains(t, err, "invalid additional information 30 for type tag")
 }

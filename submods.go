@@ -303,6 +303,20 @@ func (o Submods) AddJWT(name string, jwtBytes []byte) Submods {
 	return o
 }
 
+// AddCWT adds the provided CWT bytes to the Submods as a NestedToken under the
+// specified name, overwriting any existing submod under that name. Pointer to
+// the Submods is returned to allow chaining with other adds. Panics if the
+// provided []byte does not appear to contain a valid CWT.
+func (o Submods) AddCWT(name string, cwtBytes []byte) Submods {
+	token, err := eat.NewNestedToken(eat.NestedTokenCBOR, cwtBytes)
+	if err != nil {
+		panic(err)
+	}
+
+	o.AddNestedToken(name, token)
+	return o
+}
+
 // Get retrieves a submod's value by name. If name is not in the collection,
 // nil is returned.
 func (o Submods) Get(name string) any {

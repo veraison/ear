@@ -4,6 +4,9 @@
 package ear
 
 import (
+	"crypto"
+	"crypto/ecdsa"
+	"crypto/elliptic"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -14,8 +17,10 @@ import (
 	"strings"
 	"time"
 
+	"github.com/lestrrat-go/jwx/v4/jwk"
 	"github.com/veraison/cmw"
 	"github.com/veraison/eat"
+	"github.com/veraison/go-cose"
 )
 
 // Int64FromAny converts provided value into an int64. If the conversion is not
@@ -90,6 +95,33 @@ func CMWFromAny(v any) (*cmw.CMW, error) {
 // `Field: Ptr("foo")` instead).
 func Ptr[T any](v T) *T {
 	return &v
+}
+
+const noAlg = cose.Algorithm(-65537)
+
+// SignerFromJWK converts provided jwk.Key into the corresponding
+// cose.Algorithm and crypto.Signer, returning an error if the conversion is
+// not possible.
+// Note: only ecdsa keys with P256, P384, and P512 curves are supported.
+func SignerFromJWK(jwkKey jwk.Key) (cose.Algorithm, crypto.Signer, error) {
+	key, err := jwk.Export[*ecdsa.PrivateKey](jwkKey)
+	if err != nil {
+		return noAlg, nil, err
+	}
+
+	var alg cose.Algorithm
+	switch key.Curve {
+	case elliptic.P256():
+		alg = cose.AlgorithmES256
+	case elliptic.P384():
+		alg = cose.AlgorithmES384
+	case elliptic.P521():
+		alg = cose.AlgorithmES512
+	default:
+		return noAlg, nil, fmt.Errorf("unknown elliptic curve %v", key.Curve)
+	}
+
+	return alg, key, nil
 }
 
 func getTagLabels(source any, tagType string) map[eat.IntOrString]bool {
