@@ -1,4 +1,4 @@
-// Copyright 2022 Contributors to the Veraison project.
+// Copyright 2022-2026 Contributors to the Veraison project.
 // SPDX-License-Identifier: Apache-2.0
 package cmd
 
@@ -18,18 +18,20 @@ var (
 	createSKey   string
 	createAlg    string
 	createOutput string
+	createCWT    bool
 )
 
 var createCmd = NewCreateCmd()
 
 func NewCreateCmd() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "create [flags] <jwt-file>",
-		Short: "Read the EAR claims-set from a JSON file, sign it and save the resulting JWT to jwt-file",
-		Long: `Read the EAR claims-set from a JSON file, sign it and save the resulting JWT to jwt-file
-
+		Use:   "create [flags] <outfile>",
+		Short: "Read the EAR claims-set from a JSON file, sign it and save the resulting JWT (or CWT) to outfile",
+		Long: `Read the EAR claims-set from a JSON file, sign it and save the resulting JWT (or CWT) to outfile
 Create an EAR from the default claims-set file "ear-claims.json".  Sign it with
 the key in the default key file "skey.json", and save the result to "my-ear.jwt".
+
+Note: for CWT, only ES256, ES384, and ES512 signature algorithms are supported.
 
 	arc create my-ear.jwt
 	`,
@@ -65,12 +67,23 @@ the key in the default key file "skey.json", and save the result to "my-ear.jwt"
 				return fmt.Errorf("parsing signing key from %q: %w", createSKey, err)
 			}
 
-			if alg, err = jwa.KeyAlgorithmFrom(createAlg); err != nil {
-				return fmt.Errorf("parsing algorithm from %q: %w", createAlg, err)
-			}
+			if createCWT {
+				signerAlg, signer, err := ear.SignerFromJWK(sigK)
+				if err != nil {
+					return fmt.Errorf("obtaining signer from key: %w", err)
+				}
 
-			if arBytes, err = ar.SignJWT(alg, sigK); err != nil {
-				return fmt.Errorf("signing EAR: %w", err)
+				if arBytes, err = ar.SignCWT(signerAlg, signer, nil); err != nil {
+					return fmt.Errorf("signing EAR: %w", err)
+				}
+			} else {
+				if alg, err = jwa.KeyAlgorithmFrom(createAlg); err != nil {
+					return fmt.Errorf("parsing algorithm from %q: %w", createAlg, err)
+				}
+
+				if arBytes, err = ar.SignJWT(alg, sigK); err != nil {
+					return fmt.Errorf("signing EAR: %w", err)
+				}
 			}
 
 			// save to createOutput
@@ -93,7 +106,11 @@ the key in the default key file "skey.json", and save the result to "my-ear.jwt"
 	)
 
 	cmd.Flags().StringVarP(
-		&createAlg, "alg", "a", "ES256", "signing algorithm ("+algList()+")",
+		&createAlg, "alg", "a", "ES256", "JWT signing algorithm ("+algList()+"); (this is not used for CWT)",
+	)
+
+	cmd.Flags().BoolVarP(
+		&createCWT, "cwt", "C", false, "Create a CWT (JWT is created by default)",
 	)
 
 	return cmd

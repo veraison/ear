@@ -3,6 +3,7 @@ module github.com/veraison/ear
 go 1.26.0
 
 require (
+	github.com/fxamacker/cbor/v2 v2.9.6
 	github.com/huandu/xstrings v1.6.2
 	github.com/lestrrat-go/jwx/v4 v4.5.0
 	github.com/spf13/afero v1.15.0
@@ -11,11 +12,11 @@ require (
 	github.com/stretchr/testify v1.12.1
 	github.com/veraison/cmw v0.3.0
 	github.com/veraison/eat v0.0.0-20261009144514-752feb05b2e9
+	github.com/veraison/go-cose v1.3.0
 )
 
 require (
 	github.com/fsnotify/fsnotify v1.10.1 // indirect
-	github.com/fxamacker/cbor/v2 v2.9.6 // indirect
 	github.com/go-viper/mapstructure/v2 v2.5.0 // indirect
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
@@ -27,7 +28,6 @@ require (
 	github.com/spf13/pflag v1.0.10 // indirect
 	github.com/subosito/gotenv v1.6.0 // indirect
 	github.com/valyala/fastjson v1.6.10 // indirect
-	github.com/veraison/go-cose v1.3.0 // indirect
 	github.com/veraison/swid v1.1.0 // indirect
 	github.com/x448/float16 v0.8.4 // indirect
 	go.yaml.in/yaml/v3 v3.0.5 // indirect

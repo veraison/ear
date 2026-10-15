@@ -4,6 +4,7 @@
 package ear
 
 import (
+	"crypto"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -15,6 +16,7 @@ import (
 	"github.com/lestrrat-go/jwx/v4/jwt"
 	"github.com/veraison/cmw"
 	"github.com/veraison/eat"
+	"github.com/veraison/go-cose"
 )
 
 var (
@@ -35,9 +37,17 @@ type JWTKeyEntry struct {
 	Key any
 }
 
+// CWTKeyEntry contains a key used to verify CWT signatures.
+type CWTKeyEntry struct {
+	// Alg is the algorithm the Key is intended to be used with.
+	Alg cose.Algorithm
+	// Key is the key used to verify CWT signatures.
+	Key crypto.PublicKey
+}
+
 // AttestationResult represents the result of one or more evidence Appraisals
-// by the verifier.  It is serialized to JSON and signed by the verifier using
-// JWT.
+// by the verifier.  It may be serialized and signed as either JSON/JWT or
+// CBOR/CWT.
 type AttestationResult struct {
 	Profile        *eat.Profile      `cbor:"265,keyasint" json:"eat_profile"`
 	Status         *TrustTier        `cbor:"1000,keyasint,omitempty" json:"ear_status,omitempty"`
@@ -106,6 +116,32 @@ func AttestationResultFromUnverifiedJWT(data []byte) (*AttestationResult, error)
 	return &ret, nil
 }
 
+// AttestationResultFromVerifiedCWT returns a pointer to an AttestationResult
+// extracted from the provided CWT after verifying its signature using the
+// provided key and algorithm.
+func AttestationResultFromVerifiedCWT(
+	data []byte,
+	keyEntry *CWTKeyEntry,
+) (*AttestationResult, error) {
+	var ret AttestationResult
+	if err := ret.FromVerifiedCWT(data, keyEntry.Alg, keyEntry.Key); err != nil {
+		return nil, err
+	}
+
+	return &ret, nil
+}
+
+// AttestationResultFromUnverifiedCWT returns a pointer to an AttestationResult
+// extracted from the provided CWT without verifying its signature.
+func AttestationResultFromUnverifiedCWT(data []byte) (*AttestationResult, error) {
+	var ret AttestationResult
+	if err := ret.FromUnverifiedCWT(data); err != nil {
+		return nil, err
+	}
+
+	return &ret, nil
+}
+
 // AttestationResultFromNestedToken returns a pointer to an AttestationResult
 // extracted from the provided NestedToken. An error is returned if the
 // NestedToken does not contain a valid AttestationResult. No signature
@@ -115,8 +151,7 @@ func AttestationResultFromNestedToken(token *eat.NestedToken) (*AttestationResul
 	case eat.NestedTokenBundle, eat.NestedTokenDigest, eat.NestedTokenInvalid:
 		return nil, fmt.Errorf("cannot create AttestationResult from %s", token.Type.String())
 	case eat.NestedTokenCBOR:
-		// TODO(setrofim): this requires CBOR/CWT support
-		return nil, fmt.Errorf("CBOR encoding not supported")
+		return AttestationResultFromUnverifiedCWT(token.Data)
 	case eat.NestedTokenJWT:
 		var encodedToken string
 		if err := json.Unmarshal(token.Data, &encodedToken); err != nil {
@@ -255,8 +290,11 @@ func (o *AttestationResult) Map() map[eat.IntOrString]any {
 // trustworthy if had been manually set that way). If submods contain nested
 // tokens, an attempt is made to verify its signature using provided keys. If
 // no keys were provided, or if verification fails using all provided keys,
-// status is set to TrustTierIncomplete.
-func (o *AttestationResult) UpdateStatusFromSubmods(keys ...*JWTKeyEntry) {
+// status is set to TrustTierIncomplete. Keys must be specified as
+// JWTKeyEntry's for JWTs and CWTKeyEntry's for CWTs (pointers to key entries
+// are also acceptable in both cases). Any unrecognised key entries will be
+// ignored.
+func (o *AttestationResult) UpdateStatusFromSubmods(keys ...any) {
 	status := TrustTierNone
 	if o.Status != nil {
 		status = *o.Status
@@ -279,34 +317,79 @@ func (o *AttestationResult) UpdateStatusFromSubmods(keys ...*JWTKeyEntry) {
 				status = *t.Status
 			}
 		case *eat.NestedToken:
-			if t.Type != eat.NestedTokenJWT {
-				status = TrustTierIncomplete
-				continue
-			}
-
-			var jwtText string
-			if err := json.Unmarshal(t.Data, &jwtText); err != nil {
-				status = TrustTierIncomplete
-				continue
-			}
-
-			verified := false
-			for _, keyEntry := range keys {
-				result, err := AttestationResultFromVerifiedJWT([]byte(jwtText), keyEntry)
-				if err != nil {
+			switch t.Type {
+			case eat.NestedTokenJWT:
+				var jwtText string
+				if err := json.Unmarshal(t.Data, &jwtText); err != nil {
+					status = TrustTierIncomplete
 					continue
 				}
 
-				verified = true
-
-				result.UpdateStatusFromSubmods(keys...)
-				if result.Status.WorseThan(status) {
-					status = *result.Status
+				keyEntries := make([]*JWTKeyEntry, 0, len(keys))
+				for _, key := range keys {
+					switch kt := key.(type) {
+					case JWTKeyEntry:
+						keyEntries = append(keyEntries, &kt)
+					case *JWTKeyEntry:
+						keyEntries = append(keyEntries, kt)
+					}
 				}
-			}
 
-			if !verified {
+				verified := false
+				for _, keyEntry := range keyEntries {
+					result, err := AttestationResultFromVerifiedJWT([]byte(jwtText), keyEntry)
+					if err != nil {
+						continue
+					}
+
+					verified = true
+
+					result.UpdateStatusFromSubmods(keys...)
+					if result.Status.WorseThan(status) {
+						status = *result.Status
+					}
+
+					break
+				}
+
+				if !verified {
+					status = TrustTierIncomplete
+				}
+			case eat.NestedTokenCBOR:
+				keyEntries := make([]*CWTKeyEntry, 0, len(keys))
+				for _, key := range keys {
+					switch kt := key.(type) {
+					case CWTKeyEntry:
+						keyEntries = append(keyEntries, &kt)
+					case *CWTKeyEntry:
+						keyEntries = append(keyEntries, kt)
+					}
+				}
+
+				verified := false
+				for _, keyEntry := range keyEntries {
+					result, err := AttestationResultFromVerifiedCWT(t.Data, keyEntry)
+					if err != nil {
+						continue
+					}
+
+					verified = true
+
+					result.UpdateStatusFromSubmods(keys...)
+					if result.Status.WorseThan(status) {
+						status = *result.Status
+					}
+
+					break
+				}
+
+				if !verified {
+					status = TrustTierIncomplete
+				}
+			default:
+				// unsupported nested token type
 				status = TrustTierIncomplete
+				continue
 			}
 		default:
 			// cases are exhaustive
@@ -422,6 +505,53 @@ func (o *AttestationResult) FromUnverifiedJWT(data []byte) error {
 	}
 
 	return o.fromJWTToken(token)
+}
+
+// SignCWT validates the AttestationResult object, encodes it to CBOR and wraps it
+// in a CWT using the supplied private key for signing.  The key must be
+// compatible with the requested signing algorithm. Optionally, COSE headers
+// may also be provided, in which case it is the caller's responsibility to
+// ensure that the correct algorithm is set therein. On success, the complete
+// CWT token is returned.
+func (o *AttestationResult) SignCWT(
+	alg cose.Algorithm,
+	key crypto.Signer,
+	headers *cose.Headers,
+) ([]byte, error) {
+	if err := o.Validate(); err != nil {
+		return nil, err
+	}
+
+	payload, err := o.MarshalCBOR()
+	if err != nil {
+		return nil, err
+	}
+
+	return signCWT(payload, alg, key, headers)
+}
+
+// FromVerifiedCWT cryptographically verifies the CWT data using the supplied key and
+// algorithm.  The payload is then parsed and validated.  On success, the target
+// AttestationResult object is populated with the decoded claims (possibly
+// including the Trustworthiness vector).
+func (o *AttestationResult) FromVerifiedCWT(data []byte, alg cose.Algorithm, key crypto.PublicKey) error {
+	payload, err := verifyAndUnwrapCWT(data, alg, key)
+	if err != nil {
+		return err
+	}
+
+	return o.UnmarshalCBOR(payload)
+}
+
+// FromUnverifiedCWT populates the AttestationResult using claims parsed from
+// the provided CWT. No signature verification is performed.
+func (o *AttestationResult) FromUnverifiedCWT(data []byte) error {
+	payload, err := unwrapCWT(data)
+	if err != nil {
+		return err
+	}
+
+	return o.UnmarshalCBOR(payload)
 }
 
 // MarshalJSON validates and serializes to JSON an AttestationResult object
