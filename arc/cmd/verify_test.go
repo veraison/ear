@@ -1,4 +1,4 @@
-// Copyright 2022 Contributors to the Veraison project.
+// Copyright 2022-2026 Contributors to the Veraison project.
 // SPDX-License-Identifier: Apache-2.0
 package cmd
 
@@ -107,7 +107,7 @@ func Test_VerifyCmd_input_file_bad_format(t *testing.T) {
 	}
 	cmd.SetArgs(args)
 
-	expectedErr := `verifying signed EAR from "ear.jwt" using "pkey.json" key: jwt: jwt.Parse: failed to parse token`
+	expectedErr := `truncated input`
 
 	err := cmd.Execute()
 	assert.ErrorContains(t, err, expectedErr)
@@ -245,4 +245,65 @@ func Test_VerifyCmd_ok(t *testing.T) {
 
 	err := cmd.Execute()
 	assert.NoError(t, err)
+}
+
+func Test_VerifyCmd_CWT_ok(t *testing.T) {
+	cmd := NewVerifyCmd()
+
+	files := []fileEntry{
+		{"pkey.json", testPKey},
+		{"ear.cwt", testCWT},
+	}
+	makeFS(t, files)
+
+	args := []string{
+		"--pkey=pkey.json",
+		"--alg=ES256",
+		"ear.cwt",
+	}
+	cmd.SetArgs(args)
+
+	err := cmd.Execute()
+	assert.NoError(t, err)
+}
+
+func Test_VerifyCmd_CWT_no_key(t *testing.T) {
+	cmd := NewVerifyCmd()
+
+	files := []fileEntry{
+		{"ear.cwt", testCWT},
+	}
+	makeFS(t, files)
+
+	args := []string{
+		"--alg=ES256",
+		"ear.cwt",
+	}
+	cmd.SetArgs(args)
+
+	err := cmd.Execute()
+	assert.ErrorContains(t, err, "please provide pkey.json or specify an alternative with --pkey")
+}
+
+func Test_VerifyCmd_CWT_bad_token(t *testing.T) {
+	cmd := NewVerifyCmd()
+
+	files := []fileEntry{
+		{"pkey.json", testPKey},
+		{"ear.cwt", []byte{
+			0xd2,
+			0xde, 0xad, 0xbe, 0xef, 0xde, 0xad, 0xbe, 0xef,
+		}},
+	}
+	makeFS(t, files)
+
+	args := []string{
+		"--pkey=pkey.json",
+		"--alg=ES256",
+		"ear.cwt",
+	}
+	cmd.SetArgs(args)
+
+	err := cmd.Execute()
+	assert.ErrorContains(t, err, `verifying signed EAR from "ear.cwt" using "pkey.json" key: cbor: invalid additional information 30 for type tag`)
 }

@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"github.com/veraison/eat"
 )
 
@@ -104,6 +105,7 @@ func TestAppraisal_round_trip(t *testing.T) {
 		title        string
 		appraisal    Appraisal
 		expectedJSON string
+		expectedCBOR []byte
 	}{
 		{
 			title: "ok minimal",
@@ -112,6 +114,11 @@ func TestAppraisal_round_trip(t *testing.T) {
 				Extensions: NewExtensions(),
 			},
 			expectedJSON: `{"ear_status": "affirming"}`,
+			expectedCBOR: []byte{
+				0xa1,             // map(1)
+				0x19, 0x03, 0xe8, // . key: 1000 [ear_status]
+				0x02, //             . value: 2 [affirming]
+			},
 		},
 		{
 			title: "ok with extensions",
@@ -120,6 +127,14 @@ func TestAppraisal_round_trip(t *testing.T) {
 				Extensions: NewExtensions().StringSet("foo", true),
 			},
 			expectedJSON: `{"ear_status": "affirming", "foo": true}`,
+			expectedCBOR: []byte{
+				0xa2,             // map(2)
+				0x19, 0x03, 0xe8, // . key: 1000 [ear_status]
+				0x02,             // . value: 2 [affirming]
+				0x63,             // . key: tstr(3)
+				0x66, 0x6f, 0x6f, // . . "foo"
+				0xf5, //             . value: true
+			},
 		},
 		{
 			title: "ok full",
@@ -147,6 +162,45 @@ func TestAppraisal_round_trip(t *testing.T) {
 				),
 			},
 			expectedJSON: `{"ear_appraisal_policy_ids":["test-policy"],"ear_attester_claims":{"ac-1":"foo"},"ear_status":"affirming","ear_trustworthiness_vector":{"instance-identity":2},"ear_verifier_claims":{"1":"foo"},"eat_nonce":"3q2-796tvu8","eat_profile":"http://test-profile","foo":{"bar":true}}`,
+			expectedCBOR: []byte{
+				0xa8, //                                           map(8)
+				0x0a, //                                           . key: 10 [eat_nonce]
+				0x48, //                                           . value: bstr(8)
+				0xde, 0xad, 0xbe, 0xef, 0xde, 0xad, 0xbe, 0xef,
+				0x19, 0x01, 0x09, //                               . key: 265 [eat_profile]
+				0x73,                                           // . value: tstr(19)
+				0x68, 0x74, 0x74, 0x70, 0x3a, 0x2f, 0x2f, 0x74, // . . "http://t"
+				0x65, 0x73, 0x74, 0x2d, 0x70, 0x72, 0x6f, 0x66, // . . "est-prof"
+				0x69, 0x6c, 0x65, //                               . . "ile"
+				0x19, 0x03, 0xe8, //                               . key: 1000 [ear_status]
+				0x02,             //                               . value: 2 [affirming]
+				0x19, 0x03, 0xe9, //                               . key: 1001 [ear_trustworthiness_vector]
+				0xa1,             //                               . value: map(1) [TrustVector]
+				0x00,             //                               . . key: 0 [instance-identity]
+				0x02,             //                               . . value: 2 [recognized_instance]
+				0x19, 0x03, 0xeb, //                               . key: 1003 [ear_appraisal_policy_ids]
+				0x81,                                           // . value: array(1)
+				0x6b,                                           // . . [0]tstr(11)
+				0x74, 0x65, 0x73, 0x74, 0x2d, 0x70, 0x6f, 0x6c, // . . . "test-pol"
+				0x69, 0x63, 0x79, //                               . . . "icy"
+				0x19, 0x03, 0xed, //                               . key: 1005 [ear_attester_claims]
+				0xa1,                   //                         . value: map(1)
+				0x64,                   //                         . . key: tstr(4)
+				0x61, 0x63, 0x2d, 0x31, //                         . . . "ac-1"
+				0x63,             //                               . . value: tstr(3)
+				0x66, 0x6f, 0x6f, //                               . . . "foo"
+				0x19, 0x03, 0xee, //                               . key: 1006 [ear_verifier_claims]
+				0xa1,             //                               . value: map(1)
+				0x01,             //                               . . key: 1
+				0x63,             //                               . . value: tstr(3)
+				0x66, 0x6f, 0x6f, //                               . . . "foo"
+				0x63,             //                               . key: tstr(3) [extension]
+				0x66, 0x6f, 0x6f, //                               . . "foo"
+				0xa1,             //                               . value: map(1)
+				0x63,             //                               . . key: tstr(3)
+				0x62, 0x61, 0x72, //                               . . . "bar"
+				0xf5, //                                           . . value: true
+			},
 		},
 	}
 
@@ -159,6 +213,31 @@ func TestAppraisal_round_trip(t *testing.T) {
 			var decoded Appraisal
 			err = json.Unmarshal(encodedJSON, &decoded)
 			assert.NoError(t, err)
+			assert.EqualValues(t, tc.appraisal, decoded)
+
+			encodedCBOR, err := tc.appraisal.MarshalCBOR()
+			assert.NoError(t, err)
+			assert.Equal(t, tc.expectedCBOR, encodedCBOR)
+
+			err = decoded.UnmarshalCBOR(encodedCBOR)
+			assert.NoError(t, err)
+
+			if tc.title == "ok full" {
+				// the map inside extension value gets
+				// unmarshaled as map[any]any in CBOR (but as
+				// map[string] any in JSON). So we need to
+				// manually adjust that here.
+				extMap, err := decoded.Extensions.GetMap("foo")
+				require.NoError(t, err)
+
+				adjusted := make(map[string]any)
+				for key, value := range extMap {
+					adjusted[key.(string)] = value
+				}
+
+				decoded.Extensions.StringSet("foo", adjusted)
+			}
+
 			assert.EqualValues(t, tc.appraisal, decoded)
 		})
 	}

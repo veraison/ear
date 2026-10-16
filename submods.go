@@ -108,7 +108,7 @@ func (o *Submod) UnmarshalJSON(data []byte) error {
 		}
 
 		o.value = &token
-	case '{':
+	case '{': // nolint:dupl
 		// object -> Appraisal or AttestationResult
 		type resultChecker struct {
 			Iat *int64 `json:"iat"`
@@ -139,6 +139,61 @@ func (o *Submod) UnmarshalJSON(data []byte) error {
 		}
 	default:
 		return fmt.Errorf("invalid JSON type (expected object or array): %q", text)
+	}
+
+	return nil
+}
+
+func (o Submod) MarshalCBOR() ([]byte, error) {
+	return em.Marshal(o.value)
+}
+
+func (o *Submod) UnmarshalCBOR(data []byte) error {
+	if len(data) == 0 {
+		return errors.New("truncated input")
+	}
+
+	majorType := (data[0] & 0xe0) >> 5
+	switch majorType {
+	case 3, 4:
+		// ( string -> JWT | array -> JSON-Selector ) -> Nested-Token
+		var token eat.NestedToken
+		if err := token.UnmarshalCBOR(data); err != nil {
+			return fmt.Errorf("nested token: %w", err)
+		}
+
+		o.value = &token
+	case 5: // nolint:dupl
+		// map -> Appraisal or AttestationResult
+		type resultChecker struct {
+			Iat *int64 `cbor:"6,keyasint"`
+		}
+
+		var checker resultChecker
+
+		if err := dm.Unmarshal(data, &checker); err != nil {
+			return err
+		}
+
+		if checker.Iat == nil {
+			// missing iat -> Appraisal
+			var appraisal Appraisal
+			if err := appraisal.UnmarshalCBOR(data); err != nil {
+				return fmt.Errorf("appraisal: %w", err)
+			}
+
+			o.value = &appraisal
+		} else {
+			// iat present -> AttestationResult
+			var result AttestationResult
+			if err := result.UnmarshalCBOR(data); err != nil {
+				return fmt.Errorf("attestation result: %w", err)
+			}
+
+			o.value = &result
+		}
+	default:
+		return fmt.Errorf("unexpected CBOR major type %d (expected 3, 4, or 5)", majorType)
 	}
 
 	return nil
@@ -240,6 +295,20 @@ func (o Submods) AddJWT(name string, jwtBytes []byte) Submods {
 	tokenBytes := []byte(fmt.Sprintf("%q", string(jwtBytes)))
 
 	token, err := eat.NewNestedToken(eat.NestedTokenJWT, tokenBytes)
+	if err != nil {
+		panic(err)
+	}
+
+	o.AddNestedToken(name, token)
+	return o
+}
+
+// AddCWT adds the provided CWT bytes to the Submods as a NestedToken under the
+// specified name, overwriting any existing submod under that name. Pointer to
+// the Submods is returned to allow chaining with other adds. Panics if the
+// provided []byte does not appear to contain a valid CWT.
+func (o Submods) AddCWT(name string, cwtBytes []byte) Submods {
+	token, err := eat.NewNestedToken(eat.NestedTokenCBOR, cwtBytes)
 	if err != nil {
 		panic(err)
 	}

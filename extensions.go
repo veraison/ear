@@ -140,6 +140,13 @@ func (o *Extensions) GetInt64Map(key any) (map[int64]any, error) {
 	return getTyped[map[int64]any](o, key)
 }
 
+// GetMap returns the map[any]any value associated with the specified key (must
+// be int, string or eat.IntOrString). An Error is returned if the key is
+// invalid or doesn't exist, or the associated value is of the wrong type.
+func (o *Extensions) GetMap(key any) (map[any]any, error) {
+	return getTyped[map[any]any](o, key)
+}
+
 // GetStringMap returns the map[string]any value associated with the specified
 // key (must be int, string or eat.IntOrString). An Error is returned if the
 // key is invalid or doesn't exist, or the associated value is of the wrong
