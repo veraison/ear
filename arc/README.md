@@ -4,7 +4,6 @@
 
 * synthesising attestation results in EAR (EAT Attestation Result) format,
 * cryptographically verifying and displaying the contents of an EAR
-* printing the EAR header and payload without verification
 
 ## Create
 
@@ -15,7 +14,7 @@ arc create \
     [--claims <file>] \
     [--skey <signing key>] \
     [--alg <alg>] \
-    <jwt-file>
+    <ear-file>
 ```
 
 ### Parameters
@@ -25,11 +24,11 @@ arc create \
 | `--claims` | EAR claims-set in JSON (default to `${PWD}/ear-claims.json`) |
 | `--skey`  | signing key in JWK format (default to `${PWD}/skey.json`) |
 | `--alg`  | JWS algorithm |
-| `<jwt-file>` | the signed EAR claims-set in JWT format |
+| `<ear-file>` | the signed EAR claims-set in JWT or CWT format |
 
 ### Output
 
-A one-liner saying success status and path of the JWT file that was created.
+A one-liner saying success status and path of the EAR file that was created.
 
 ## Verify
 
@@ -41,7 +40,7 @@ arc verify \
     [--alg <alg>] \
     [--verbose] \
     [--color] \
-    <jwt-file>
+    <ear-file>
 ```
 
 ### Parameters
@@ -52,11 +51,12 @@ arc verify \
 | `--alg`  | JWS algorithm |
 | `--verbose` | trustworthiness vector detailed report (default is brief) |
 | `--color` | trustworthiness vector report colourises the tiers (default is B&W) |
-| `<jwt-file>` | a JWT wrapping an EAR claims-set |
+| `<ear-file>` | a JWT or CWT wrapping an EAR claims-set |
 
 If the `--pkey` parameter is omitted or the default file name is specified,
-the key from the file will be used if it exists, ignoring the keys in the JWT header.
-Instead, if the file is missing, the public key and algorithm from the JWT header will be used.
+the key from the file will be used if it exists, ignoring the keys in the JWT
+header. Instead, if the file is missing, the public key and algorithm from the
+JWT header will be used (for CWT, an error will be reported instead).
 
 ### Output
 
@@ -73,14 +73,14 @@ The `print` sub-command is used to print the contents of a EAR, including the he
 Neither EAR validation nor verification is executed.
 
 ```sh
-arc print <jwt-file>
+arc print <ear-file>
 ```
 
 ### Parameters
 
 | parameter | meaning |
 | --- | --- |
-| `<jwt-file>` | a JWT wrapping an EAR claims-set |
+| `<ear-file>` | a JWT or CWT wrapping an EAR claims-set |
 
 ### Output
 
