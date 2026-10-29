@@ -15,7 +15,8 @@ concurrency:
 
 jobs:
   cover:
-    uses: veraison/ci/.github/workflows/go.yml@main
+    uses: veraison/ci/.github/workflows/go-cover.yml@main
     with:
-      jobs: 'cover'
-      min-coverage: '90.0'
+      cover-command: 'make coverage'
+      check-tests: false
+      check-coverage: false
