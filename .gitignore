@@ -20,7 +20,7 @@ coverage.html
 
 # tools-bin directory is created automatically when running make. It contains
 # pre-built tools needs for the make process (such as golanci-lint)
-tools-bin/*
+tools-bin/
 
 # nvim context spellfile
 .context.utf-8.add*
