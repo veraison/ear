@@ -9,7 +9,7 @@ import sys
 
 
 COVERAGE_REPORT_REGEX = re.compile(
-    r'^(?:ok)?\s+(?P<package>\S+)\s+(?:\(cached\)\s+)?'
+    r'^(?:ok)?\s+(?P<package>\S+)\s+(?:(?:\(cached\)|[\d.]+s)\s+)?'
     r'coverage: (?P<coverage>\d+.\d+)% of statements'
 )
 
@@ -18,7 +18,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('-t', '--threshold', type=float, default=80.0,
                        help='Report error if coverage falls below this percentage threshsold.')
-    parser.add_argument('-i', '--ignore', action='append', metavar='PACKAGE',
+    parser.add_argument('-i', '--ignore', action='append', default=[], metavar='PACKAGE',
                         help='Specified Go package will not be checked '
                              '(can be specified multiple times).')
     parser.add_argument('-v', '--verbose', action='store_true',
@@ -52,7 +52,7 @@ if __name__ == "__main__":
             below_threshold.append((package, cover))
 
     if below_threshold:
-        print(f'ERROR: {len(below_threshold)} packages are below coverage threshold:\n')
+        print(f'\033[1;31mERROR\033[0m: {len(below_threshold)} packages are below coverage threshold:\n')
         for package, cover in below_threshold:
             print(f'\t{package}: {cover}%')
         print('')
