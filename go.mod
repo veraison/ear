@@ -4,7 +4,7 @@ go 1.26.0
 
 require (
 	github.com/fxamacker/cbor/v2 v2.9.6
-	github.com/huandu/xstrings v1.6.2
+	github.com/huandu/xstrings v1.6.3
 	github.com/lestrrat-go/jwx/v4 v4.5.0
 	github.com/spf13/afero v1.15.0
 	github.com/spf13/cobra v1.10.2
