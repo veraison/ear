@@ -191,12 +191,12 @@ func (o TrustTier) String() string {
 // surrounded by color ANSI escape sequences.
 func (o TrustTier) ColorString() string {
 	const (
-		reset      = `\033[0m`
-		red        = `\033[41m`
-		yellow     = `\033[43m`
-		green      = `\033[42m`
-		white      = `\033[47m`
-		incomplete = `\033[1;33;41m`
+		reset      = "\033[0m"
+		red        = "\033[41m"
+		yellow     = "\033[43m"
+		green      = "\033[42m"
+		white      = "\033[47m"
+		incomplete = "\033[1;33;41m"
 	)
 
 	var color string

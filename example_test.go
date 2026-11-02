@@ -5,6 +5,7 @@ package ear
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/veraison/cmw"
 	"github.com/veraison/eat"
@@ -172,7 +173,8 @@ func Example_colors() {
 
 	short, color := true, true
 
-	fmt.Print(ar.Submods["test"].Appraisal().TrustVector.Report(short, color))
+	report := ar.Submods["test"].Appraisal().TrustVector.Report(short, color)
+	fmt.Print(strings.ReplaceAll(report, "\033", "\\033"))
 
 	// Output:
 	// Instance Identity [\033[41mcontraindicated\033[0m]: recognized but not trustworthy

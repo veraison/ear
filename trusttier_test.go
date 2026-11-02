@@ -255,9 +255,9 @@ func TestTrustTier_Int8(t *testing.T) {
 }
 
 func TestTrustTier_ColorString(t *testing.T) {
-	assert.Equal(t, "\\033[47mnone\\033[0m", TrustTierNone.ColorString())
-	assert.Equal(t, "\\033[42maffirming\\033[0m", TrustTierAffirming.ColorString())
-	assert.Equal(t, "\\033[43mwarning\\033[0m", TrustTierWarning.ColorString())
-	assert.Equal(t, "\\033[41mcontraindicated\\033[0m", TrustTierContraindicated.ColorString())
-	assert.Equal(t, "\\033[1;33;41mincomplete\\033[0m", TrustTierIncomplete.ColorString())
+	assert.Equal(t, "\033[47mnone\033[0m", TrustTierNone.ColorString())
+	assert.Equal(t, "\033[42maffirming\033[0m", TrustTierAffirming.ColorString())
+	assert.Equal(t, "\033[43mwarning\033[0m", TrustTierWarning.ColorString())
+	assert.Equal(t, "\033[41mcontraindicated\033[0m", TrustTierContraindicated.ColorString())
+	assert.Equal(t, "\033[1;33;41mincomplete\033[0m", TrustTierIncomplete.ColorString())
 }
