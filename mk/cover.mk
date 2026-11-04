@@ -1,24 +1,14 @@
 # Copyright 2023-2026 Contributors to the Veraison project.
 # SPDX-License-Identifier: Apache-2.0
-#
-# variables:
-# * COVERAGE_THRESHOLD  - a float expressing the precentage minimum threshold for
-#                         acceptible test coverage.
-# * IGNORE_COVERAGE - a list of go packages for which coverage threshold will
-#                     not be checked.
-#
-#
-# targets:
-# * coverage - generate coverage reports and ensure they're above COVER_THRESHOLD
-#              for everything in current dirtory.
-#
 
-COVERAGE_THRESHOLD ?= 80.0
+ROOT_REPO_DIR :=  $(realpath $(dir $(lastword $(MAKEFILE_LIST)))/..)
+GO_TEST_COVERAGE_VERSION = v2.21.0
+GO_TEST_COVERAGE = $(ROOT_REPO_DIR)/tools-bin/$(GO_TEST_COVERAGE_VERSION)/go-test-coverage
 
-IGNORE_FLAGS = $(foreach P,$(IGNORE_COVERAGE),--ignore $(P))
+$(GO_TEST_COVERAGE):
+	GOBIN=$(@D) go install github.com/vladopajic/go-test-coverage/v2@$(GOLINT_VERSION)
 
 .PHONY: coverage cover test-cover
-coverage cover test-cover:
-	make TEST_ARGS="-short -cover" all test | grep "coverage:.*of statements"  | sort -u | \
-		python3 scripts/check-coverage --threshold $(COVERAGE_THRESHOLD) $(IGNORE_FLAGS)
-
+coverage cover test-cover: $(GO_TEST_COVERAGE)
+	@go test $(ROOT_REPO_DIR)/./... -coverprofile=$(ROOT_REPO_DIR)/cover.out -covermode=atomic -coverpkg=./... > /dev/null
+	@$(GO_TEST_COVERAGE) --config=$(ROOT_REPO_DIR)/.testcoverage.yml | sed "/Files with uncovered lines/Q"
