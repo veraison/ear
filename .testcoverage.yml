@@ -1,0 +1,10 @@
+# cover.out is generated during make coverage
+profile: cover.out
+
+threshold:
+  package: 84.6
+  total: 90.7
+
+exclude:
+  paths:
+    - ^arc # commandline tooling has no tests
