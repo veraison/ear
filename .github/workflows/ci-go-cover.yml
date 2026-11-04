@@ -17,6 +17,7 @@ jobs:
   cover:
     uses: veraison/ci/.github/workflows/go-cover.yml@main
     with:
+      go-version: '1.27'
       cover-command: 'make coverage'
       check-tests: false
       check-coverage: false
