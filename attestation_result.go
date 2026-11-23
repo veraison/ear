@@ -59,6 +59,7 @@ type AttestationResult struct {
 	Submods        Submods           `cbor:"266,keyasint" json:"submods"`
 	Nonce          *eat.Nonce        `cbor:"10,keyasint,omitempty" json:"eat_nonce,omitempty"`
 	DeviceTopology DeviceTopology    `cbor:"1007,keyasint,omitempty" json:"ear_device_topology,omitempty"`
+	InputDigest    *Digest           `cbor:"1008,keyasint,omitempty" json:"ear_input_digest,omitempty"`
 	Extensions     *Extensions       `cbor:"-" json:"-"`
 }
 
@@ -267,6 +268,13 @@ func AttestationResultFromAny(input any) (*AttestationResult, error) {
 			}
 
 			result.DeviceTopology = topology
+		case eat.IntOrStringFromString("ear_input_digest"), eat.IntOrStringFromInt(1008):
+			digest, err := DigestFromAny(value)
+			if err != nil {
+				return nil, fmt.Errorf("ear_input_digest: %w", err)
+			}
+
+			result.InputDigest = digest
 		default:
 			extensions.Set(key, value)
 		}
@@ -414,6 +422,21 @@ func (o *AttestationResult) UpdateStatusFromSubmods(keys ...any) {
 	}
 }
 
+// VerifyInputDigest checks that ear_input_digest is the digest of input, which
+// must be the exact bytes of the appraisal request input sent to the
+// verifier. An error is returned if the claim is absent or does not match.
+func (o *AttestationResult) VerifyInputDigest(input []byte) error {
+	if o.InputDigest == nil {
+		return errors.New("ear_input_digest not present")
+	}
+
+	if err := o.InputDigest.Verify(input); err != nil {
+		return fmt.Errorf("ear_input_digest: %w", err)
+	}
+
+	return nil
+}
+
 // Validate returns an error if any of the AttestationResult fields contain
 // invalid values or if mandatory claims are missing.
 func (o *AttestationResult) Validate() error {
@@ -458,6 +481,12 @@ func (o *AttestationResult) Validate() error {
 	if len(badTopologyEntries) != 0 {
 		bad := strings.Join(badTopologyEntries, ",")
 		invalid = append(invalid, fmt.Sprintf("ear_device_topology entries not in submods: %s", bad))
+	}
+
+	if o.InputDigest != nil {
+		if err := o.InputDigest.Validate(); err != nil {
+			invalid = append(invalid, fmt.Sprintf("ear_input_digest (%s)", err.Error()))
+		}
 	}
 
 	if len(missing) == 0 && len(invalid) == 0 {
