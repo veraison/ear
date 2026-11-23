@@ -27,6 +27,7 @@ type Appraisal struct {
 	VerifierClaims               map[eat.IntOrString]any `cbor:"1006,keyasint,omitempty" json:"ear_verifier_claims,omitempty"`
 	EndorserClaims               SupplyChainClaims       `cbor:"1014,keyasint,omitempty" json:"ear_endorser_claims,omitempty"`
 	ReferenceValueProviderClaims SupplyChainClaims       `cbor:"1015,keyasint,omitempty" json:"ear_reference_value_provider_claims,omitempty"`
+	TransportIdentityKey         *TransportIdentityKey   `cbor:"1012,keyasint,omitempty" json:"eat_transport_identity_key,omitempty"`
 	Extensions                   *Extensions             `cbor:"-" json:"-"`
 }
 
@@ -160,6 +161,13 @@ func AppraisalFromAny(input any) (*Appraisal, error) {
 			}
 
 			appraisal.ReferenceValueProviderClaims = claims
+		case eat.IntOrStringFromString("eat_transport_identity_key"), eat.IntOrStringFromInt(1012):
+			key, err := TransportIdentityKeyFromAny(value)
+			if err != nil {
+				return nil, fmt.Errorf("eat_transport_identity_key: %w", err)
+			}
+
+			appraisal.TransportIdentityKey = key
 		default:
 			extensions.Set(key, value)
 		}
@@ -225,6 +233,12 @@ func (o *Appraisal) Validate() error {
 	if o.ReferenceValueProviderClaims != nil {
 		if err := o.ReferenceValueProviderClaims.Validate(); err != nil {
 			return fmt.Errorf("ear_reference_value_provider_claims: %w", err)
+		}
+	}
+
+	if o.TransportIdentityKey != nil {
+		if err := o.TransportIdentityKey.Validate(); err != nil {
+			return fmt.Errorf("eat_transport_identity_key: %w", err)
 		}
 	}
 
