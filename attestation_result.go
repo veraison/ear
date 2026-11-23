@@ -49,18 +49,19 @@ type CWTKeyEntry struct {
 // by the verifier.  It may be serialized and signed as either JSON/JWT or
 // CBOR/CWT.
 type AttestationResult struct {
-	Profile        *eat.Profile      `cbor:"265,keyasint" json:"eat_profile"`
-	Status         *TrustTier        `cbor:"1000,keyasint,omitempty" json:"ear_status,omitempty"`
-	StatusDetails  []string          `cbor:"1010,keyasint,omitempty" json:"ear_status_details,omitempty"`
-	IssuedAt       int64             `cbor:"6,keyasint" json:"iat"`
-	Expiry         *int64            `cbor:"4,keyasint,omitempty" json:"exp,omitempty"`
-	VerifierID     *VerifierIdentity `cbor:"1004,keyasint" json:"ear_verifier_id"`
-	RawEvidence    *cmw.CMW          `cbor:"1002,keyasint,omitempty" json:"ear_raw_evidence,omitempty"`
-	Submods        Submods           `cbor:"266,keyasint" json:"submods"`
-	Nonce          *eat.Nonce        `cbor:"10,keyasint,omitempty" json:"eat_nonce,omitempty"`
-	DeviceTopology DeviceTopology    `cbor:"1007,keyasint,omitempty" json:"ear_device_topology,omitempty"`
-	InputDigest    *Digest           `cbor:"1008,keyasint,omitempty" json:"ear_input_digest,omitempty"`
-	Extensions     *Extensions       `cbor:"-" json:"-"`
+	Profile         *eat.Profile      `cbor:"265,keyasint" json:"eat_profile"`
+	Status          *TrustTier        `cbor:"1000,keyasint,omitempty" json:"ear_status,omitempty"`
+	StatusDetails   []string          `cbor:"1010,keyasint,omitempty" json:"ear_status_details,omitempty"`
+	IssuedAt        int64             `cbor:"6,keyasint" json:"iat"`
+	Expiry          *int64            `cbor:"4,keyasint,omitempty" json:"exp,omitempty"`
+	VerifierID      *VerifierIdentity `cbor:"1004,keyasint" json:"ear_verifier_id"`
+	RawEvidence     *cmw.CMW          `cbor:"1002,keyasint,omitempty" json:"ear_raw_evidence,omitempty"`
+	Submods         Submods           `cbor:"266,keyasint" json:"submods"`
+	Nonce           *eat.Nonce        `cbor:"10,keyasint,omitempty" json:"eat_nonce,omitempty"`
+	DeviceTopology  DeviceTopology    `cbor:"1007,keyasint,omitempty" json:"ear_device_topology,omitempty"`
+	InputDigest     *Digest           `cbor:"1008,keyasint,omitempty" json:"ear_input_digest,omitempty"`
+	ComponentsBound *ComponentsBound  `cbor:"1009,keyasint,omitempty" json:"ear_components_bound,omitempty"`
+	Extensions      *Extensions       `cbor:"-" json:"-"`
 }
 
 // NewAttestationResult returns a pointer to a new AttestationResult.
@@ -275,6 +276,13 @@ func AttestationResultFromAny(input any) (*AttestationResult, error) {
 			}
 
 			result.InputDigest = digest
+		case eat.IntOrStringFromString("ear_components_bound"), eat.IntOrStringFromInt(1009):
+			bound, err := ComponentsBoundFromAny(value)
+			if err != nil {
+				return nil, fmt.Errorf("ear_components_bound: %w", err)
+			}
+
+			result.ComponentsBound = bound
 		default:
 			extensions.Set(key, value)
 		}
@@ -309,11 +317,28 @@ func (o *AttestationResult) Map() map[eat.IntOrString]any {
 // status is set to TrustTierIncomplete. Keys must be specified as
 // JWTKeyEntry's for JWTs and CWTKeyEntry's for CWTs (pointers to key entries
 // are also acceptable in both cases). Any unrecognised key entries will be
-// ignored.
+// ignored. ComponentsBound is combined with the values of nested
+// AttestationResults by taking the one of lowest trust, and the status is set
+// to no higher trust than its tier.
 func (o *AttestationResult) UpdateStatusFromSubmods(keys ...any) {
 	status := TrustTierNone
 	if o.Status != nil {
 		status = *o.Status
+	}
+
+	bound := o.ComponentsBound
+
+	merge := func(result *AttestationResult) {
+		result.UpdateStatusFromSubmods(keys...)
+		if result.Status != nil && result.Status.WorseThan(status) {
+			status = *result.Status
+		}
+
+		if result.ComponentsBound != nil &&
+			(bound == nil || result.ComponentsBound.WorseThan(*bound)) {
+			worse := *result.ComponentsBound
+			bound = &worse
+		}
 	}
 
 	for _, submod := range o.Submods {
@@ -328,10 +353,7 @@ func (o *AttestationResult) UpdateStatusFromSubmods(keys ...any) {
 				status = t.Status
 			}
 		case *AttestationResult:
-			t.UpdateStatusFromSubmods(keys...)
-			if t.Status != nil && t.Status.WorseThan(status) {
-				status = *t.Status
-			}
+			merge(t)
 		case *eat.NestedToken:
 			switch t.Type {
 			case eat.NestedTokenJWT:
@@ -359,11 +381,7 @@ func (o *AttestationResult) UpdateStatusFromSubmods(keys ...any) {
 					}
 
 					verified = true
-
-					result.UpdateStatusFromSubmods(keys...)
-					if result.Status != nil && result.Status.WorseThan(status) {
-						status = *result.Status
-					}
+					merge(result)
 
 					break
 				}
@@ -390,11 +408,7 @@ func (o *AttestationResult) UpdateStatusFromSubmods(keys ...any) {
 					}
 
 					verified = true
-
-					result.UpdateStatusFromSubmods(keys...)
-					if result.Status != nil && result.Status.WorseThan(status) {
-						status = *result.Status
-					}
+					merge(result)
 
 					break
 				}
@@ -411,6 +425,11 @@ func (o *AttestationResult) UpdateStatusFromSubmods(keys ...any) {
 			// cases are exhaustive
 			panic(fmt.Sprintf("unexpected submod type %T", t))
 		}
+	}
+
+	o.ComponentsBound = bound
+	if bound != nil && bound.Tier().WorseThan(status) {
+		status = bound.Tier()
 	}
 
 	// "none" is the neutral element of the rollup and is not a valid value
@@ -481,6 +500,14 @@ func (o *AttestationResult) Validate() error {
 	if len(badTopologyEntries) != 0 {
 		bad := strings.Join(badTopologyEntries, ",")
 		invalid = append(invalid, fmt.Sprintf("ear_device_topology entries not in submods: %s", bad))
+	}
+
+	if o.Status != nil && o.ComponentsBound != nil &&
+		o.ComponentsBound.Tier().WorseThan(*o.Status) {
+		invalid = append(invalid, fmt.Sprintf(
+			"ear_status (%s has higher trustworthiness than ear_components_bound %s)",
+			o.Status.String(), o.ComponentsBound.String(),
+		))
 	}
 
 	if o.InputDigest != nil {
