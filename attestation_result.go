@@ -313,7 +313,7 @@ func (o *AttestationResult) UpdateStatusFromSubmods(keys ...any) {
 			}
 		case *AttestationResult:
 			t.UpdateStatusFromSubmods(keys...)
-			if t.Status.WorseThan(status) {
+			if t.Status != nil && t.Status.WorseThan(status) {
 				status = *t.Status
 			}
 		case *eat.NestedToken:
@@ -345,7 +345,7 @@ func (o *AttestationResult) UpdateStatusFromSubmods(keys ...any) {
 					verified = true
 
 					result.UpdateStatusFromSubmods(keys...)
-					if result.Status.WorseThan(status) {
+					if result.Status != nil && result.Status.WorseThan(status) {
 						status = *result.Status
 					}
 
@@ -376,7 +376,7 @@ func (o *AttestationResult) UpdateStatusFromSubmods(keys ...any) {
 					verified = true
 
 					result.UpdateStatusFromSubmods(keys...)
-					if result.Status.WorseThan(status) {
+					if result.Status != nil && result.Status.WorseThan(status) {
 						status = *result.Status
 					}
 
@@ -397,7 +397,13 @@ func (o *AttestationResult) UpdateStatusFromSubmods(keys ...any) {
 		}
 	}
 
-	o.Status = &status
+	// "none" is the neutral element of the rollup and is not a valid value
+	// for ear_status, in which case the claim is omitted.
+	if status == TrustTierNone {
+		o.Status = nil
+	} else {
+		o.Status = &status
+	}
 }
 
 // Validate returns an error if any of the AttestationResult fields contain
@@ -410,6 +416,10 @@ func (o *AttestationResult) Validate() error {
 	} else if o.Profile.String() != EatProfile.String() &&
 		o.Profile.String() != EatTrusteeProfile.String() {
 		invalid = append(invalid, fmt.Sprintf("eat_profile (%s)", *o.Profile))
+	}
+
+	if o.Status != nil && *o.Status == TrustTierNone {
+		invalid = append(invalid, "ear_status (none)")
 	}
 
 	if o.IssuedAt == 0 {

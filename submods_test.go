@@ -408,14 +408,24 @@ func TestSubmodsFromAny(t *testing.T) {
 			title: "ok map[string]any",
 			input: map[string]any{
 				"test": map[string]any{
-					"ear_status": "none",
+					"ear_status": "affirming",
 				},
 			},
 			expected: Submods{
 				"test": &Submod{&Appraisal{
+					Status:     TrustTierAffirming,
 					Extensions: NewExtensions(),
 				}},
 			},
+		},
+		{
+			title: "err map[string]any none status",
+			input: map[string]any{
+				"test": map[string]any{
+					"ear_status": "none",
+				},
+			},
+			err: `"none" is not a valid value for ear_status`,
 		},
 		{
 			title: "err nil pointer",
@@ -512,7 +522,7 @@ func TestSubmods_Validate(t *testing.T) {
 		{
 			title: "ok",
 			submods: Submods{
-				"test": &Submod{&Appraisal{}},
+				"test": &Submod{&Appraisal{Status: TrustTierAffirming}},
 			},
 		},
 		{

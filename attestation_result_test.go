@@ -362,6 +362,21 @@ func TestAttestationResult_MarshalJSON_negative(t *testing.T) {
 			},
 			err: `missing mandatory 'iat', 'ear_verifier_id'; invalid value(s) for eat_profile (1.2.3.4.5)`,
 		},
+		{
+			title: "none status",
+			result: AttestationResult{
+				Profile:    EatProfile,
+				Status:     &TrustTierNone,
+				IssuedAt:   testIAT,
+				VerifierID: &testVerifierID,
+				Submods: Submods{
+					"test": &Submod{&Appraisal{
+						Status: TrustTierAffirming,
+					}},
+				},
+			},
+			err: `invalid value(s) for ear_status (none)`,
+		},
 	}
 
 	for _, tc := range testCases {
@@ -638,6 +653,7 @@ func TestUpdateStatusFromTrustVector(t *testing.T) {
 
 	ar.UpdateStatusFromSubmods()
 	assert.Equal(t, TrustTierNone, ar.Submods["test"].Appraisal().Status)
+	assert.Nil(t, ar.Status)
 
 	ar.Submods["test"].Appraisal().TrustVector.Configuration = ApprovedConfigClaim
 	ar.UpdateStatusFromSubmods()
@@ -709,6 +725,10 @@ func TestNewAttestationResultWithAppraisal(t *testing.T) {
 	ar := NewAttestationResultWithAppraisal("test", "testBuild", "testDev")
 
 	_, err := ar.MarshalJSON()
+	assert.ErrorContains(t, err, `"none" is not a valid value for ear_status`)
+
+	ar.Submods["test"].Appraisal().Status = TrustTierAffirming
+	_, err = ar.MarshalJSON()
 	assert.NoError(t, err)
 }
 

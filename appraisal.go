@@ -27,7 +27,9 @@ type Appraisal struct {
 }
 
 // NewAppraisal returns a new Appraisal with its status set to TrustTierNone
-// and all its claims set to NoClaim.
+// and all its claims set to NoClaim. TrustTierNone is not a valid ear_status
+// value, so the status must be set (e.g., via UpdateStatusFromTrustVector)
+// before the Appraisal is serialized.
 func NewAppraisal() *Appraisal {
 	return &Appraisal{
 		Status:      TrustTierNone,
@@ -159,18 +161,20 @@ func (o *Appraisal) UpdateStatusFromTrustVector() {
 	}
 }
 
-// Validate makes sure that the value of status is no better than any of the
-// elements of the trust vector. This makes sure that it is always no more
-// trustworthy than the trust vector components.
+// Validate makes sure that status is not TrustTierNone and that its value is
+// no better than any of the elements of the trust vector. This makes sure that
+// it is always no more trustworthy than the trust vector components.
 func (o *Appraisal) Validate() error {
-	if o.Status != TrustTierNone {
-		claimName, claimTier := o.TrustVector.WorstTier()
-		if claimTier.WorseThan(o.Status) {
-			return fmt.Errorf(
-				"status %d has higher trustworthiness than %s trust vector element(%d)",
-				o.Status.Int(), claimName, claimTier.Int(),
-			)
-		}
+	if o.Status == TrustTierNone {
+		return errors.New(`"none" is not a valid value for ear_status`)
+	}
+
+	claimName, claimTier := o.TrustVector.WorstTier()
+	if claimTier.WorseThan(o.Status) {
+		return fmt.Errorf(
+			"status %d has higher trustworthiness than %s trust vector element(%d)",
+			o.Status.Int(), claimName, claimTier.Int(),
+		)
 	}
 
 	return nil
