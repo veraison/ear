@@ -51,6 +51,7 @@ type CWTKeyEntry struct {
 type AttestationResult struct {
 	Profile        *eat.Profile      `cbor:"265,keyasint" json:"eat_profile"`
 	Status         *TrustTier        `cbor:"1000,keyasint,omitempty" json:"ear_status,omitempty"`
+	StatusDetails  []string          `cbor:"1010,keyasint,omitempty" json:"ear_status_details,omitempty"`
 	IssuedAt       int64             `cbor:"6,keyasint" json:"iat"`
 	Expiry         *int64            `cbor:"4,keyasint,omitempty" json:"exp,omitempty"`
 	VerifierID     *VerifierIdentity `cbor:"1004,keyasint" json:"ear_verifier_id"`
@@ -210,6 +211,13 @@ func AttestationResultFromAny(input any) (*AttestationResult, error) {
 			}
 
 			result.Status = &tier
+		case eat.IntOrStringFromString("ear_status_details"), eat.IntOrStringFromInt(1010):
+			details, err := DetailsFromAny(value)
+			if err != nil {
+				return nil, fmt.Errorf("ear_status_details: %w", err)
+			}
+
+			result.StatusDetails = details
 		case eat.IntOrStringFromString("iat"), eat.IntOrStringFromInt(6):
 			iat, err := Int64FromAny(value)
 			if err != nil {
@@ -420,6 +428,10 @@ func (o *AttestationResult) Validate() error {
 
 	if o.Status != nil && *o.Status == TrustTierNone {
 		invalid = append(invalid, "ear_status (none)")
+	}
+
+	if err := validateDetails(o.StatusDetails); err != nil {
+		invalid = append(invalid, fmt.Sprintf("ear_status_details (%s)", err.Error()))
 	}
 
 	if o.IssuedAt == 0 {

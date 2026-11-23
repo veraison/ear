@@ -18,7 +18,9 @@ import (
 type Appraisal struct {
 	Profile            *eat.Profile            `cbor:"265,keyasint,omitempty" json:"eat_profile,omitempty"`
 	Status             TrustTier               `cbor:"1000,keyasint" json:"ear_status"`
+	StatusDetails      []string                `cbor:"1010,keyasint,omitempty" json:"ear_status_details,omitempty"`
 	TrustVector        *TrustVector            `cbor:"1001,keyasint,omitempty" json:"ear_trustworthiness_vector,omitzero"`
+	TrustVectorDetails *TrustVectorDetails     `cbor:"1011,keyasint,omitempty" json:"ear_trustworthiness_vector_details,omitzero"`
 	AppraisalPolicyIDs []string                `cbor:"1003,keyasint,omitempty" json:"ear_appraisal_policy_ids,omitempty"`
 	Nonce              *eat.Nonce              `cbor:"10,keyasint,omitempty" json:"eat_nonce,omitempty"`
 	AttesterClaims     map[eat.IntOrString]any `cbor:"1005,keyasint,omitempty" json:"ear_attester_claims,omitempty"`
@@ -79,6 +81,20 @@ func AppraisalFromAny(input any) (*Appraisal, error) {
 			}
 
 			appraisal.Status = tier
+		case eat.IntOrStringFromString("ear_status_details"), eat.IntOrStringFromInt(1010):
+			details, err := DetailsFromAny(value)
+			if err != nil {
+				return nil, fmt.Errorf("ear_status_details: %w", err)
+			}
+
+			appraisal.StatusDetails = details
+		case eat.IntOrStringFromString("ear_trustworthiness_vector_details"), eat.IntOrStringFromInt(1011):
+			details, err := TrustVectorDetailsFromAny(value)
+			if err != nil {
+				return nil, fmt.Errorf("ear_trustworthiness_vector_details: %w", err)
+			}
+
+			appraisal.TrustVectorDetails = details
 		case eat.IntOrStringFromString("ear_trustworthiness_vector"), eat.IntOrStringFromInt(1001):
 			vector, err := TrustVectorFromAny(value)
 			if err != nil {
@@ -163,7 +179,10 @@ func (o *Appraisal) UpdateStatusFromTrustVector() {
 
 // Validate makes sure that status is not TrustTierNone and that its value is
 // no better than any of the elements of the trust vector. This makes sure that
-// it is always no more trustworthy than the trust vector components.
+// it is always no more trustworthy than the trust vector components. It also
+// checks that the details claims are well-formed and that
+// ear_trustworthiness_vector_details only refers to categories present in the
+// trust vector.
 func (o *Appraisal) Validate() error {
 	if o.Status == TrustTierNone {
 		return errors.New(`"none" is not a valid value for ear_status`)
@@ -175,6 +194,16 @@ func (o *Appraisal) Validate() error {
 			"status %d has higher trustworthiness than %s trust vector element(%d)",
 			o.Status.Int(), claimName, claimTier.Int(),
 		)
+	}
+
+	if err := validateDetails(o.StatusDetails); err != nil {
+		return fmt.Errorf("ear_status_details: %w", err)
+	}
+
+	if o.TrustVectorDetails != nil {
+		if err := o.TrustVectorDetails.Validate(o.TrustVector); err != nil {
+			return fmt.Errorf("ear_trustworthiness_vector_details: %w", err)
+		}
 	}
 
 	return nil
