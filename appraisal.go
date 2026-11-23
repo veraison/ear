@@ -16,16 +16,18 @@ import (
 // other metadata that are relevant to establish the appraisal context - the
 // evidence itself, the appraisal policy used, the time of appraisal.
 type Appraisal struct {
-	Profile            *eat.Profile            `cbor:"265,keyasint,omitempty" json:"eat_profile,omitempty"`
-	Status             TrustTier               `cbor:"1000,keyasint" json:"ear_status"`
-	StatusDetails      []string                `cbor:"1010,keyasint,omitempty" json:"ear_status_details,omitempty"`
-	TrustVector        *TrustVector            `cbor:"1001,keyasint,omitempty" json:"ear_trustworthiness_vector,omitzero"`
-	TrustVectorDetails *TrustVectorDetails     `cbor:"1011,keyasint,omitempty" json:"ear_trustworthiness_vector_details,omitzero"`
-	AppraisalPolicyIDs []string                `cbor:"1003,keyasint,omitempty" json:"ear_appraisal_policy_ids,omitempty"`
-	Nonce              *eat.Nonce              `cbor:"10,keyasint,omitempty" json:"eat_nonce,omitempty"`
-	AttesterClaims     map[eat.IntOrString]any `cbor:"1005,keyasint,omitempty" json:"ear_attester_claims,omitempty"`
-	VerifierClaims     map[eat.IntOrString]any `cbor:"1006,keyasint,omitempty" json:"ear_verifier_claims,omitempty"`
-	Extensions         *Extensions             `cbor:"-" json:"-"`
+	Profile                      *eat.Profile            `cbor:"265,keyasint,omitempty" json:"eat_profile,omitempty"`
+	Status                       TrustTier               `cbor:"1000,keyasint" json:"ear_status"`
+	StatusDetails                []string                `cbor:"1010,keyasint,omitempty" json:"ear_status_details,omitempty"`
+	TrustVector                  *TrustVector            `cbor:"1001,keyasint,omitempty" json:"ear_trustworthiness_vector,omitzero"`
+	TrustVectorDetails           *TrustVectorDetails     `cbor:"1011,keyasint,omitempty" json:"ear_trustworthiness_vector_details,omitzero"`
+	AppraisalPolicyIDs           []string                `cbor:"1003,keyasint,omitempty" json:"ear_appraisal_policy_ids,omitempty"`
+	Nonce                        *eat.Nonce              `cbor:"10,keyasint,omitempty" json:"eat_nonce,omitempty"`
+	AttesterClaims               map[eat.IntOrString]any `cbor:"1005,keyasint,omitempty" json:"ear_attester_claims,omitempty"`
+	VerifierClaims               map[eat.IntOrString]any `cbor:"1006,keyasint,omitempty" json:"ear_verifier_claims,omitempty"`
+	EndorserClaims               SupplyChainClaims       `cbor:"1014,keyasint,omitempty" json:"ear_endorser_claims,omitempty"`
+	ReferenceValueProviderClaims SupplyChainClaims       `cbor:"1015,keyasint,omitempty" json:"ear_reference_value_provider_claims,omitempty"`
+	Extensions                   *Extensions             `cbor:"-" json:"-"`
 }
 
 // NewAppraisal returns a new Appraisal with its status set to TrustTierNone
@@ -144,6 +146,20 @@ func AppraisalFromAny(input any) (*Appraisal, error) {
 			}
 
 			appraisal.VerifierClaims = claims
+		case eat.IntOrStringFromString("ear_endorser_claims"), eat.IntOrStringFromInt(1014):
+			claims, err := SupplyChainClaimsFromAny(value)
+			if err != nil {
+				return nil, fmt.Errorf("ear_endorser_claims: %w", err)
+			}
+
+			appraisal.EndorserClaims = claims
+		case eat.IntOrStringFromString("ear_reference_value_provider_claims"), eat.IntOrStringFromInt(1015):
+			claims, err := SupplyChainClaimsFromAny(value)
+			if err != nil {
+				return nil, fmt.Errorf("ear_reference_value_provider_claims: %w", err)
+			}
+
+			appraisal.ReferenceValueProviderClaims = claims
 		default:
 			extensions.Set(key, value)
 		}
@@ -198,6 +214,18 @@ func (o *Appraisal) Validate() error {
 
 	if err := validateDetails(o.StatusDetails); err != nil {
 		return fmt.Errorf("ear_status_details: %w", err)
+	}
+
+	if o.EndorserClaims != nil {
+		if err := o.EndorserClaims.Validate(); err != nil {
+			return fmt.Errorf("ear_endorser_claims: %w", err)
+		}
+	}
+
+	if o.ReferenceValueProviderClaims != nil {
+		if err := o.ReferenceValueProviderClaims.Validate(); err != nil {
+			return fmt.Errorf("ear_reference_value_provider_claims: %w", err)
+		}
 	}
 
 	if o.TrustVectorDetails != nil {
