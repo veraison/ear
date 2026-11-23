@@ -350,7 +350,7 @@ func TestAppraisalFromAny(t *testing.T) {
 				"ear_status":               TrustTierAffirming,
 				"ear_appraisal_policy_ids": 1,
 			},
-			err: "ear_appraisal_policy_ids: expected an []any, got int",
+			err: "ear_appraisal_policy_ids: expected a list of strings, got int",
 		},
 		{
 			title: "err bad nonce",

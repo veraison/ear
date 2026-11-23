@@ -89,6 +89,61 @@ func CMWFromAny(v any) (*cmw.CMW, error) {
 	return &c, nil
 }
 
+// setClaim converts value using conv and stores the result in dst. Errors are
+// prefixed with the claim name.
+func setClaim[T any](name string, dst *T, value any, conv func(any) (T, error)) error {
+	ret, err := conv(value)
+	if err != nil {
+		return fmt.Errorf("%s: %w", name, err)
+	}
+
+	*dst = ret
+
+	return nil
+}
+
+// ptrFromAny turns a conversion function returning T into one returning *T.
+func ptrFromAny[T any](conv func(any) (T, error)) func(any) (*T, error) {
+	return func(value any) (*T, error) {
+		ret, err := conv(value)
+		if err != nil {
+			return nil, err
+		}
+
+		return &ret, nil
+	}
+}
+
+func profileFromAny(value any) (*eat.Profile, error) {
+	profileText, ok := value.(string)
+	if !ok {
+		return nil, fmt.Errorf("expected a string, got %T", value)
+	}
+
+	return eat.NewProfile(profileText)
+}
+
+func stringsFromAny(value any) ([]string, error) {
+	switch t := value.(type) {
+	case []string:
+		return t, nil
+	case []any:
+		ret := make([]string, len(t))
+		for i, elt := range t {
+			s, ok := elt.(string)
+			if !ok {
+				return nil, fmt.Errorf("[%d]: expected a string, got %T", i, elt)
+			}
+
+			ret[i] = s
+		}
+
+		return ret, nil
+	default:
+		return nil, fmt.Errorf("expected a list of strings, got %T", value)
+	}
+}
+
 // Ptr returns the pointer to the specified value. This is useful when specifying
 // literal values for fields that pointers to types for which directly taking a
 // pointer of a literal is not possible (e.g. `Field: &"foo"` is not valid, do

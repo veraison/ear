@@ -195,96 +195,35 @@ func AttestationResultFromAny(input any) (*AttestationResult, error) {
 	for key, value := range claims {
 		switch key {
 		case eat.IntOrStringFromString("eat_profile"), eat.IntOrStringFromInt(265):
-			profileText, ok := value.(string)
-			if !ok {
-				return nil, fmt.Errorf("eat_profile: expected a string, got %T", value)
-			}
-
-			profile, err := eat.NewProfile(profileText)
-			if err != nil {
-				return nil, fmt.Errorf("eat_profile: %w", err)
-			}
-
-			result.Profile = profile
+			err = setClaim("eat_profile", &result.Profile, value, profileFromAny)
 		case eat.IntOrStringFromString("ear_status"), eat.IntOrStringFromInt(1000):
-			tier, err := TrustTierFromAny(value)
-			if err != nil {
-				return nil, fmt.Errorf("ear_status: %w", err)
-			}
-
-			result.Status = &tier
+			err = setClaim("ear_status", &result.Status, value, ptrFromAny(TrustTierFromAny))
 		case eat.IntOrStringFromString("ear_status_details"), eat.IntOrStringFromInt(1010):
-			details, err := DetailsFromAny(value)
-			if err != nil {
-				return nil, fmt.Errorf("ear_status_details: %w", err)
-			}
-
-			result.StatusDetails = details
+			err = setClaim("ear_status_details", &result.StatusDetails, value, DetailsFromAny)
 		case eat.IntOrStringFromString("iat"), eat.IntOrStringFromInt(6):
-			iat, err := Int64FromAny(value)
-			if err != nil {
-				return nil, fmt.Errorf("iat: %w", err)
-			}
-
-			result.IssuedAt = iat
+			err = setClaim("iat", &result.IssuedAt, value, Int64FromAny)
 		case eat.IntOrStringFromString("exp"), eat.IntOrStringFromInt(4):
-			exp, err := Int64FromAny(value)
-			if err != nil {
-				return nil, fmt.Errorf("exp: %w", err)
-			}
-
-			result.Expiry = &exp
+			err = setClaim("exp", &result.Expiry, value, ptrFromAny(Int64FromAny))
 		case eat.IntOrStringFromString("ear_verifier_id"), eat.IntOrStringFromInt(1004):
-			verifierID, err := VerifierIdentityFromAny(value)
-			if err != nil {
-				return nil, fmt.Errorf("ear_verifier_id: %w", err)
-			}
-
-			result.VerifierID = verifierID
+			err = setClaim("ear_verifier_id", &result.VerifierID, value, VerifierIdentityFromAny)
 		case eat.IntOrStringFromString("ear_raw_evidence"), eat.IntOrStringFromInt(1002):
-			evidence, err := CMWFromAny(value)
-			if err != nil {
-				return nil, fmt.Errorf("ear_raw_evidence: %w", err)
-			}
-
-			result.RawEvidence = evidence
+			err = setClaim("ear_raw_evidence", &result.RawEvidence, value, CMWFromAny)
 		case eat.IntOrStringFromString("submods"), eat.IntOrStringFromInt(266):
-			submods, err := SubmodsFromAny(value)
-			if err != nil {
-				return nil, fmt.Errorf("submods: %w", err)
-			}
-
-			result.Submods = submods
+			err = setClaim("submods", &result.Submods, value, SubmodsFromAny)
 		case eat.IntOrStringFromString("eat_nonce"), eat.IntOrStringFromInt(10):
-			nonce, err := eat.NonceFromAny(value)
-			if err != nil {
-				return nil, fmt.Errorf("eat_nonce: %w", err)
-			}
-
-			result.Nonce = nonce
+			err = setClaim("eat_nonce", &result.Nonce, value, eat.NonceFromAny)
 		case eat.IntOrStringFromString("ear_device_topology"), eat.IntOrStringFromInt(1007):
-			topology, err := DeviceTopologyFromAny(value)
-			if err != nil {
-				return nil, fmt.Errorf("ear_device_topology: %w", err)
-			}
-
-			result.DeviceTopology = topology
+			err = setClaim("ear_device_topology", &result.DeviceTopology, value, DeviceTopologyFromAny)
 		case eat.IntOrStringFromString("ear_input_digest"), eat.IntOrStringFromInt(1008):
-			digest, err := DigestFromAny(value)
-			if err != nil {
-				return nil, fmt.Errorf("ear_input_digest: %w", err)
-			}
-
-			result.InputDigest = digest
+			err = setClaim("ear_input_digest", &result.InputDigest, value, DigestFromAny)
 		case eat.IntOrStringFromString("ear_components_bound"), eat.IntOrStringFromInt(1009):
-			bound, err := ComponentsBoundFromAny(value)
-			if err != nil {
-				return nil, fmt.Errorf("ear_components_bound: %w", err)
-			}
-
-			result.ComponentsBound = bound
+			err = setClaim("ear_components_bound", &result.ComponentsBound, value, ComponentsBoundFromAny)
 		default:
 			extensions.Set(key, value)
+		}
+
+		if err != nil {
+			return nil, err
 		}
 	}
 
@@ -355,72 +294,13 @@ func (o *AttestationResult) UpdateStatusFromSubmods(keys ...any) {
 		case *AttestationResult:
 			merge(t)
 		case *eat.NestedToken:
-			switch t.Type {
-			case eat.NestedTokenJWT:
-				var jwtText string
-				if err := json.Unmarshal(t.Data, &jwtText); err != nil {
-					status = TrustTierIncomplete
-					continue
-				}
-
-				keyEntries := make([]*JWTKeyEntry, 0, len(keys))
-				for _, key := range keys {
-					switch kt := key.(type) {
-					case JWTKeyEntry:
-						keyEntries = append(keyEntries, &kt)
-					case *JWTKeyEntry:
-						keyEntries = append(keyEntries, kt)
-					}
-				}
-
-				verified := false
-				for _, keyEntry := range keyEntries {
-					result, err := AttestationResultFromVerifiedJWT([]byte(jwtText), keyEntry)
-					if err != nil {
-						continue
-					}
-
-					verified = true
-					merge(result)
-
-					break
-				}
-
-				if !verified {
-					status = TrustTierIncomplete
-				}
-			case eat.NestedTokenCBOR:
-				keyEntries := make([]*CWTKeyEntry, 0, len(keys))
-				for _, key := range keys {
-					switch kt := key.(type) {
-					case CWTKeyEntry:
-						keyEntries = append(keyEntries, &kt)
-					case *CWTKeyEntry:
-						keyEntries = append(keyEntries, kt)
-					}
-				}
-
-				verified := false
-				for _, keyEntry := range keyEntries {
-					result, err := AttestationResultFromVerifiedCWT(t.Data, keyEntry)
-					if err != nil {
-						continue
-					}
-
-					verified = true
-					merge(result)
-
-					break
-				}
-
-				if !verified {
-					status = TrustTierIncomplete
-				}
-			default:
-				// unsupported nested token type
+			result := verifiedNestedResult(t, keys)
+			if result == nil {
 				status = TrustTierIncomplete
 				continue
 			}
+
+			merge(result)
 		default:
 			// cases are exhaustive
 			panic(fmt.Sprintf("unexpected submod type %T", t))
@@ -439,6 +319,57 @@ func (o *AttestationResult) UpdateStatusFromSubmods(keys ...any) {
 	} else {
 		o.Status = &status
 	}
+}
+
+// verifiedNestedResult returns the AttestationResult inside the nested token
+// if its signature can be verified using one of the provided keys (see
+// UpdateStatusFromSubmods), and nil otherwise.
+func verifiedNestedResult(token *eat.NestedToken, keys []any) *AttestationResult {
+	switch token.Type {
+	case eat.NestedTokenJWT:
+		var jwtText string
+		if err := json.Unmarshal(token.Data, &jwtText); err != nil {
+			return nil
+		}
+
+		for _, key := range keys {
+			var keyEntry *JWTKeyEntry
+			switch kt := key.(type) {
+			case JWTKeyEntry:
+				keyEntry = &kt
+			case *JWTKeyEntry:
+				keyEntry = kt
+			default:
+				continue
+			}
+
+			result, err := AttestationResultFromVerifiedJWT([]byte(jwtText), keyEntry)
+			if err == nil {
+				return result
+			}
+		}
+	case eat.NestedTokenCBOR:
+		for _, key := range keys {
+			var keyEntry *CWTKeyEntry
+			switch kt := key.(type) {
+			case CWTKeyEntry:
+				keyEntry = &kt
+			case *CWTKeyEntry:
+				keyEntry = kt
+			default:
+				continue
+			}
+
+			result, err := AttestationResultFromVerifiedCWT(token.Data, keyEntry)
+			if err == nil {
+				return result
+			}
+		}
+	default:
+		// unsupported nested token type
+	}
+
+	return nil
 }
 
 // VerifyInputDigest checks that ear_input_digest is the digest of input, which

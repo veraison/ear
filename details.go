@@ -172,23 +172,9 @@ func (o *TrustVectorDetails) field(key eat.IntOrString) *[]string {
 // obtained from the provided value. An error is returned if the value is not
 // a non-empty list of strings.
 func DetailsFromAny(value any) ([]string, error) {
-	var ret []string
-
-	switch t := value.(type) {
-	case []string:
-		ret = t
-	case []any:
-		ret = make([]string, len(t))
-		for i, elt := range t {
-			s, ok := elt.(string)
-			if !ok {
-				return nil, fmt.Errorf("[%d]: expected a string, got %T", i, elt)
-			}
-
-			ret[i] = s
-		}
-	default:
-		return nil, fmt.Errorf("expected a list of strings, got %T", value)
+	ret, err := stringsFromAny(value)
+	if err != nil {
+		return nil, err
 	}
 
 	if err := validateDetails(ret); err != nil {

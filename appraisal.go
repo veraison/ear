@@ -66,110 +66,35 @@ func AppraisalFromAny(input any) (*Appraisal, error) {
 	for key, value := range claims {
 		switch key {
 		case eat.IntOrStringFromString("eat_profile"), eat.IntOrStringFromInt(265):
-			profileText, ok := value.(string)
-			if !ok {
-				return nil, fmt.Errorf("eat_profile: expected a string, got %T", value)
-			}
-
-			profile, err := eat.NewProfile(profileText)
-			if err != nil {
-				return nil, fmt.Errorf("eat_profile: %w", err)
-			}
-
-			appraisal.Profile = profile
+			err = setClaim("eat_profile", &appraisal.Profile, value, profileFromAny)
 		case eat.IntOrStringFromString("ear_status"), eat.IntOrStringFromInt(1000):
-			tier, err := TrustTierFromAny(value)
-			if err != nil {
-				return nil, fmt.Errorf("ear_status: %w", err)
-			}
-
-			appraisal.Status = tier
+			err = setClaim("ear_status", &appraisal.Status, value, TrustTierFromAny)
 		case eat.IntOrStringFromString("ear_status_details"), eat.IntOrStringFromInt(1010):
-			details, err := DetailsFromAny(value)
-			if err != nil {
-				return nil, fmt.Errorf("ear_status_details: %w", err)
-			}
-
-			appraisal.StatusDetails = details
-		case eat.IntOrStringFromString("ear_trustworthiness_vector_details"), eat.IntOrStringFromInt(1011):
-			details, err := TrustVectorDetailsFromAny(value)
-			if err != nil {
-				return nil, fmt.Errorf("ear_trustworthiness_vector_details: %w", err)
-			}
-
-			appraisal.TrustVectorDetails = details
+			err = setClaim("ear_status_details", &appraisal.StatusDetails, value, DetailsFromAny)
 		case eat.IntOrStringFromString("ear_trustworthiness_vector"), eat.IntOrStringFromInt(1001):
-			vector, err := TrustVectorFromAny(value)
-			if err != nil {
-				return nil, fmt.Errorf("ear_trustworthiness_vector: %w", err)
-			}
-
-			appraisal.TrustVector = vector
+			err = setClaim("ear_trustworthiness_vector", &appraisal.TrustVector, value, TrustVectorFromAny)
+		case eat.IntOrStringFromString("ear_trustworthiness_vector_details"), eat.IntOrStringFromInt(1011):
+			err = setClaim("ear_trustworthiness_vector_details", &appraisal.TrustVectorDetails, value, TrustVectorDetailsFromAny)
 		case eat.IntOrStringFromString("ear_appraisal_policy_ids"), eat.IntOrStringFromInt(1003):
-			rawIds, ok := value.([]any)
-			if !ok {
-				return nil, fmt.Errorf(
-					"ear_appraisal_policy_ids: expected an []any, got %T",
-					value,
-				)
-			}
-
-			ids := make([]string, len(rawIds))
-			for i, id := range rawIds {
-				ids[i], ok = id.(string)
-				if !ok {
-					return nil, fmt.Errorf(
-						"ear_appraisal_policy_ids[%d]: expected a string, got %T",
-						i, value,
-					)
-				}
-			}
-
-			appraisal.AppraisalPolicyIDs = ids
+			err = setClaim("ear_appraisal_policy_ids", &appraisal.AppraisalPolicyIDs, value, stringsFromAny)
 		case eat.IntOrStringFromString("eat_nonce"), eat.IntOrStringFromInt(10):
-			nonce, err := eat.NonceFromAny(value)
-			if err != nil {
-				return nil, fmt.Errorf("eat_nonce: %w", err)
-			}
-
-			appraisal.Nonce = nonce
+			err = setClaim("eat_nonce", &appraisal.Nonce, value, eat.NonceFromAny)
 		case eat.IntOrStringFromString("ear_attester_claims"), eat.IntOrStringFromInt(1005):
-			claims, err := eat.IntOrStringMapFromAny(value)
-			if err != nil {
-				return nil, fmt.Errorf("ear_attester_claims: %w", err)
-			}
-
-			appraisal.AttesterClaims = claims
+			err = setClaim("ear_attester_claims", &appraisal.AttesterClaims, value, eat.IntOrStringMapFromAny)
 		case eat.IntOrStringFromString("ear_verifier_claims"), eat.IntOrStringFromInt(1006):
-			claims, err := eat.IntOrStringMapFromAny(value)
-			if err != nil {
-				return nil, fmt.Errorf("ear_verifier_claims: %w", err)
-			}
-
-			appraisal.VerifierClaims = claims
+			err = setClaim("ear_verifier_claims", &appraisal.VerifierClaims, value, eat.IntOrStringMapFromAny)
 		case eat.IntOrStringFromString("ear_endorser_claims"), eat.IntOrStringFromInt(1014):
-			claims, err := SupplyChainClaimsFromAny(value)
-			if err != nil {
-				return nil, fmt.Errorf("ear_endorser_claims: %w", err)
-			}
-
-			appraisal.EndorserClaims = claims
+			err = setClaim("ear_endorser_claims", &appraisal.EndorserClaims, value, SupplyChainClaimsFromAny)
 		case eat.IntOrStringFromString("ear_reference_value_provider_claims"), eat.IntOrStringFromInt(1015):
-			claims, err := SupplyChainClaimsFromAny(value)
-			if err != nil {
-				return nil, fmt.Errorf("ear_reference_value_provider_claims: %w", err)
-			}
-
-			appraisal.ReferenceValueProviderClaims = claims
+			err = setClaim("ear_reference_value_provider_claims", &appraisal.ReferenceValueProviderClaims, value, SupplyChainClaimsFromAny)
 		case eat.IntOrStringFromString("eat_transport_identity_key"), eat.IntOrStringFromInt(1012):
-			key, err := TransportIdentityKeyFromAny(value)
-			if err != nil {
-				return nil, fmt.Errorf("eat_transport_identity_key: %w", err)
-			}
-
-			appraisal.TransportIdentityKey = key
+			err = setClaim("eat_transport_identity_key", &appraisal.TransportIdentityKey, value, TransportIdentityKeyFromAny)
 		default:
 			extensions.Set(key, value)
+		}
+
+		if err != nil {
+			return nil, err
 		}
 	}
 
