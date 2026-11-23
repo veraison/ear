@@ -21,7 +21,7 @@ import (
 
 var (
 	// EatProfile is the EAT profile implemented by this package
-	EatProfile = eat.MustNewProfile("tag:ietf.org,2026:rats/ear#04")
+	EatProfile = eat.MustNewProfile("tag:ietf.org,2026:rats/ear#05")
 
 	// Trustee profile name which is an alias for the Veraison one.
 	// Both names will be replaced with a neutral one:

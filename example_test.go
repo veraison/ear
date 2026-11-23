@@ -23,7 +23,7 @@ func Example_encode_minimalist() {
 			Build:     "rrtrap-v1.0.0",
 			Developer: "Acme Inc.",
 		},
-		Profile: eat.MustNewProfile("tag:ietf.org,2026:rats/ear#04"),
+		Profile: eat.MustNewProfile("tag:ietf.org,2026:rats/ear#05"),
 	}
 
 	j, _ := ar.MarshalJSON()
@@ -31,7 +31,7 @@ func Example_encode_minimalist() {
 	fmt.Println(string(j))
 
 	// Output:
-	// {"ear_verifier_id":{"developer":"Acme Inc.","build":"rrtrap-v1.0.0"},"eat_profile":"tag:ietf.org,2026:rats/ear#04","iat":1666091373,"submods":{"test":{"ear_appraisal_policy_ids":["policy://test/01234"],"ear_status":"affirming"}}}
+	// {"ear_verifier_id":{"developer":"Acme Inc.","build":"rrtrap-v1.0.0"},"eat_profile":"tag:ietf.org,2026:rats/ear#05","iat":1666091373,"submods":{"test":{"ear_appraisal_policy_ids":["policy://test/01234"],"ear_status":"affirming"}}}
 }
 
 func Example_encode_hefty() {
@@ -59,7 +59,7 @@ func Example_encode_hefty() {
 			Build:     "rrtrap-v1.0.0",
 			Developer: "Acme Inc.",
 		},
-		Profile: eat.MustNewProfile("tag:ietf.org,2026:rats/ear#04"),
+		Profile: eat.MustNewProfile("tag:ietf.org,2026:rats/ear#05"),
 	}
 
 	j, _ := ar.MarshalJSON()
@@ -67,7 +67,7 @@ func Example_encode_hefty() {
 	fmt.Println(string(j))
 
 	// Output:
-	// {"ear_raw_evidence":["application/octet-stream","3q2-7w"],"ear_verifier_id":{"developer":"Acme Inc.","build":"rrtrap-v1.0.0"},"eat_profile":"tag:ietf.org,2026:rats/ear#04","iat":1666091373,"submods":{"test":{"ear_appraisal_policy_ids":["policy://test/01234"],"ear_status":"affirming","ear_trustworthiness_vector":{"instance-identity":2,"configuration":2,"executables":3,"file-system":2,"hardware":2,"runtime-opaque":2,"storage-opaque":2,"sourced-data":2}}}}
+	// {"ear_raw_evidence":["application/octet-stream","3q2-7w"],"ear_verifier_id":{"developer":"Acme Inc.","build":"rrtrap-v1.0.0"},"eat_profile":"tag:ietf.org,2026:rats/ear#05","iat":1666091373,"submods":{"test":{"ear_appraisal_policy_ids":["policy://test/01234"],"ear_status":"affirming","ear_trustworthiness_vector":{"instance-identity":2,"configuration":2,"executables":3,"file-system":2,"hardware":2,"runtime-opaque":2,"storage-opaque":2,"sourced-data":2}}}}
 }
 
 func Example_encode_veraison_extensions() {
@@ -96,7 +96,7 @@ func Example_encode_veraison_extensions() {
 			Build:     "rrtrap-v1.0.0",
 			Developer: "Acme Inc.",
 		},
-		Profile: eat.MustNewProfile("tag:ietf.org,2026:rats/ear#04"),
+		Profile: eat.MustNewProfile("tag:ietf.org,2026:rats/ear#05"),
 	}
 
 	j, _ := ar.MarshalJSON()
@@ -104,12 +104,12 @@ func Example_encode_veraison_extensions() {
 	fmt.Println(string(j))
 
 	// Output:
-	// {"ear_verifier_id":{"developer":"Acme Inc.","build":"rrtrap-v1.0.0"},"eat_profile":"tag:ietf.org,2026:rats/ear#04","iat":1666091373,"submods":{"test":{"ear_appraisal_policy_ids":["policy://test/01234"],"ear_attester_claims":{"k1":"v1","k2":"v2"},"ear_status":"affirming","ear_veraison_key_attestation":{"akpub":"YWtwdWIK"},"ear_verifier_claims":{"bar":"baz","foo":"bar"}}}}
+	// {"ear_verifier_id":{"developer":"Acme Inc.","build":"rrtrap-v1.0.0"},"eat_profile":"tag:ietf.org,2026:rats/ear#05","iat":1666091373,"submods":{"test":{"ear_appraisal_policy_ids":["policy://test/01234"],"ear_attester_claims":{"k1":"v1","k2":"v2"},"ear_status":"affirming","ear_veraison_key_attestation":{"akpub":"YWtwdWIK"},"ear_verifier_claims":{"bar":"baz","foo":"bar"}}}}
 }
 
 func Example_decode_veraison_extensions() {
 	j := `{
-		"eat_profile": "tag:ietf.org,2026:rats/ear#04",
+		"eat_profile": "tag:ietf.org,2026:rats/ear#05",
 		"iat": 1666091373,
 		"submods": {
 			"test": {
@@ -165,7 +165,7 @@ func Example_colors() {
 			}
 		},
 		"iat":1666091373,
-		"eat_profile": "tag:ietf.org,2026:rats/ear#04"
+		"eat_profile": "tag:ietf.org,2026:rats/ear#05"
 	}`
 
 	var ar AttestationResult
