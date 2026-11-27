@@ -105,7 +105,7 @@ func TestSubmod_accessors(t *testing.T) {
 
 	token := eat.NestedToken{
 		Type: eat.NestedTokenJWT,
-		Data: []byte(`"eyJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCJ9.eyJlYXJfdmVyaWZpZXJfaWQiOnsiYnVpbGQiOiJycnRyYXAtdjEuMC4wIiwiZGV2ZWxvcGVyIjoiQWNtZSBJbmMuIn0sImVhdF9wcm9maWxlIjoidGFnOmlldGYub3JnLDIwMjY6cmF0cy9lYXIjMDQiLCJpYXQiOjE2NjYwOTEzNzMsInN1Ym1vZHMiOnsidGVzdCI6eyJlYXJfYXBwcmFpc2FsX3BvbGljeV9pZHMiOlsicG9saWN5Oi8vdGVzdC8wMTIzNCJdLCJlYXJfYXR0ZXN0ZXJfY2xhaW1zIjp7ImsxIjoidjEiLCJrMiI6InYyIn0sImVhcl9zdGF0dXMiOiJhZmZpcm1pbmciLCJlYXJfdmVyYWlzb25fa2V5X2F0dGVzdGF0aW9uIjp7ImFrcHViIjoiWVd0d2RXSUsifSwiZWFyX3ZlcmlmaWVyX2NsYWltcyI6eyJiYXIiOiJiYXoiLCJmb28iOiJiYXIifX19fQ.aLyO-JRxqyvEFIZyvqhVebdLar9KSAeShB-DbZZ1yqfdGzk6-5nu1tU0Dgx_Mjoyo13hgNpW19iHvvj1pBCgtg"`), // #nosec G101
+		Data: []byte(`"eyJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCJ9.eyJlYXJfdmVyaWZpZXJfaWQiOnsiYnVpbGQiOiJycnRyYXAtdjEuMC4wIiwiZGV2ZWxvcGVyIjoiQWNtZSBJbmMuIn0sImVhdF9wcm9maWxlIjoidGFnOmlldGYub3JnLDIwMjY6cmF0cy9lYXIjMDUiLCJpYXQiOjE2NjYwOTEzNzMsInN1Ym1vZHMiOnsidGVzdCI6eyJlYXJfYXBwcmFpc2FsX3BvbGljeV9pZHMiOlsicG9saWN5Oi8vdGVzdC8wMTIzNCJdLCJlYXJfYXR0ZXN0ZXJfY2xhaW1zIjp7ImsxIjoidjEiLCJrMiI6InYyIn0sImVhcl9zdGF0dXMiOiJhZmZpcm1pbmciLCJlYXJfdmVyYWlzb25fa2V5X2F0dGVzdGF0aW9uIjp7ImFrcHViIjoiWVd0d2RXSUsifSwiZWFyX3ZlcmlmaWVyX2NsYWltcyI6eyJiYXIiOiJiYXoiLCJmb28iOiJiYXIifX19fQ.sQTDdZJwCZwIAmnA3RblNKZwHRSm5jdcWf4dhgtPrmMiybchUMJVHkRJ5U7LYiTxkdaI36s1QH9xmMVIwaq-ow"`), // #nosec G101
 	}
 
 	submod = Submod{&token}
@@ -155,7 +155,7 @@ func TestSubmod_round_trip(t *testing.T) {
 					Extensions: NewExtensions(),
 				},
 			},
-			expectedJSON: `{"ear_verifier_id":{"developer":"test-developer","build":"test-build"},"eat_profile":"tag:ietf.org,2026:rats/ear#04","iat":1666091373,"submods":{"test-appraisal":{"ear_status":"affirming"}}}`,
+			expectedJSON: `{"ear_verifier_id":{"developer":"test-developer","build":"test-build"},"eat_profile":"tag:ietf.org,2026:rats/ear#05","iat":1666091373,"submods":{"test-appraisal":{"ear_status":"affirming"}}}`,
 			expectedCBOR: []byte{
 				0xa4,                         //                   map(4)
 				0x06,                         //                   . key: 6 [iat]
@@ -165,7 +165,7 @@ func TestSubmod_round_trip(t *testing.T) {
 				0x74, 0x61, 0x67, 0x3a, 0x69, 0x65, 0x74, 0x66, // . . "tag:ietf"
 				0x2e, 0x6f, 0x72, 0x67, 0x2c, 0x32, 0x30, 0x32, // . . ".org,202"
 				0x36, 0x3a, 0x72, 0x61, 0x74, 0x73, 0x2f, 0x65, // . . "6:rats/e"
-				0x61, 0x72, 0x23, 0x30, 0x34, //                   . . "ar#04"
+				0x61, 0x72, 0x23, 0x30, 0x35, //                   . . "ar#05"
 				0x19, 0x01, 0x0a, //                               . key: 266 [submods]
 				0xa1,                                           // . value: map(1) [Submods]
 				0x6e,                                           // . key: tstr(14)
@@ -191,10 +191,10 @@ func TestSubmod_round_trip(t *testing.T) {
 			submod: Submod{
 				&eat.NestedToken{
 					Type: eat.NestedTokenJWT,
-					Data: []byte(`"eyJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCJ9.eyJlYXJfdmVyaWZpZXJfaWQiOnsiYnVpbGQiOiJycnRyYXAtdjEuMC4wIiwiZGV2ZWxvcGVyIjoiQWNtZSBJbmMuIn0sImVhdF9wcm9maWxlIjoidGFnOmlldGYub3JnLDIwMjY6cmF0cy9lYXIjMDQiLCJpYXQiOjE2NjYwOTEzNzMsInN1Ym1vZHMiOnsidGVzdCI6eyJlYXJfYXBwcmFpc2FsX3BvbGljeV9pZHMiOlsicG9saWN5Oi8vdGVzdC8wMTIzNCJdLCJlYXJfYXR0ZXN0ZXJfY2xhaW1zIjp7ImsxIjoidjEiLCJrMiI6InYyIn0sImVhcl9zdGF0dXMiOiJhZmZpcm1pbmciLCJlYXJfdmVyYWlzb25fa2V5X2F0dGVzdGF0aW9uIjp7ImFrcHViIjoiWVd0d2RXSUsifSwiZWFyX3ZlcmlmaWVyX2NsYWltcyI6eyJiYXIiOiJiYXoiLCJmb28iOiJiYXIifX19fQ.aLyO-JRxqyvEFIZyvqhVebdLar9KSAeShB-DbZZ1yqfdGzk6-5nu1tU0Dgx_Mjoyo13hgNpW19iHvvj1pBCgtg"`), // #nosec G101
+					Data: []byte(`"eyJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCJ9.eyJlYXJfdmVyaWZpZXJfaWQiOnsiYnVpbGQiOiJycnRyYXAtdjEuMC4wIiwiZGV2ZWxvcGVyIjoiQWNtZSBJbmMuIn0sImVhdF9wcm9maWxlIjoidGFnOmlldGYub3JnLDIwMjY6cmF0cy9lYXIjMDUiLCJpYXQiOjE2NjYwOTEzNzMsInN1Ym1vZHMiOnsidGVzdCI6eyJlYXJfYXBwcmFpc2FsX3BvbGljeV9pZHMiOlsicG9saWN5Oi8vdGVzdC8wMTIzNCJdLCJlYXJfYXR0ZXN0ZXJfY2xhaW1zIjp7ImsxIjoidjEiLCJrMiI6InYyIn0sImVhcl9zdGF0dXMiOiJhZmZpcm1pbmciLCJlYXJfdmVyYWlzb25fa2V5X2F0dGVzdGF0aW9uIjp7ImFrcHViIjoiWVd0d2RXSUsifSwiZWFyX3ZlcmlmaWVyX2NsYWltcyI6eyJiYXIiOiJiYXoiLCJmb28iOiJiYXIifX19fQ.sQTDdZJwCZwIAmnA3RblNKZwHRSm5jdcWf4dhgtPrmMiybchUMJVHkRJ5U7LYiTxkdaI36s1QH9xmMVIwaq-ow"`), // #nosec G101
 				},
 			},
-			expectedJSON: `["JWT","eyJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCJ9.eyJlYXJfdmVyaWZpZXJfaWQiOnsiYnVpbGQiOiJycnRyYXAtdjEuMC4wIiwiZGV2ZWxvcGVyIjoiQWNtZSBJbmMuIn0sImVhdF9wcm9maWxlIjoidGFnOmlldGYub3JnLDIwMjY6cmF0cy9lYXIjMDQiLCJpYXQiOjE2NjYwOTEzNzMsInN1Ym1vZHMiOnsidGVzdCI6eyJlYXJfYXBwcmFpc2FsX3BvbGljeV9pZHMiOlsicG9saWN5Oi8vdGVzdC8wMTIzNCJdLCJlYXJfYXR0ZXN0ZXJfY2xhaW1zIjp7ImsxIjoidjEiLCJrMiI6InYyIn0sImVhcl9zdGF0dXMiOiJhZmZpcm1pbmciLCJlYXJfdmVyYWlzb25fa2V5X2F0dGVzdGF0aW9uIjp7ImFrcHViIjoiWVd0d2RXSUsifSwiZWFyX3ZlcmlmaWVyX2NsYWltcyI6eyJiYXIiOiJiYXoiLCJmb28iOiJiYXIifX19fQ.aLyO-JRxqyvEFIZyvqhVebdLar9KSAeShB-DbZZ1yqfdGzk6-5nu1tU0Dgx_Mjoyo13hgNpW19iHvvj1pBCgtg"]`,
+			expectedJSON: `["JWT","eyJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCJ9.eyJlYXJfdmVyaWZpZXJfaWQiOnsiYnVpbGQiOiJycnRyYXAtdjEuMC4wIiwiZGV2ZWxvcGVyIjoiQWNtZSBJbmMuIn0sImVhdF9wcm9maWxlIjoidGFnOmlldGYub3JnLDIwMjY6cmF0cy9lYXIjMDUiLCJpYXQiOjE2NjYwOTEzNzMsInN1Ym1vZHMiOnsidGVzdCI6eyJlYXJfYXBwcmFpc2FsX3BvbGljeV9pZHMiOlsicG9saWN5Oi8vdGVzdC8wMTIzNCJdLCJlYXJfYXR0ZXN0ZXJfY2xhaW1zIjp7ImsxIjoidjEiLCJrMiI6InYyIn0sImVhcl9zdGF0dXMiOiJhZmZpcm1pbmciLCJlYXJfdmVyYWlzb25fa2V5X2F0dGVzdGF0aW9uIjp7ImFrcHViIjoiWVd0d2RXSUsifSwiZWFyX3ZlcmlmaWVyX2NsYWltcyI6eyJiYXIiOiJiYXoiLCJmb28iOiJiYXIifX19fQ.sQTDdZJwCZwIAmnA3RblNKZwHRSm5jdcWf4dhgtPrmMiybchUMJVHkRJ5U7LYiTxkdaI36s1QH9xmMVIwaq-ow"]`,
 			expectedCBOR: []byte{
 				0x79, 0x02, 0x70, // tstr(624)
 				0x22, 0x65, 0x79, 0x4a, 0x68, 0x62, 0x47, 0x63,
@@ -220,7 +220,7 @@ func TestSubmod_round_trip(t *testing.T) {
 				0x59, 0x75, 0x62, 0x33, 0x4a, 0x6e, 0x4c, 0x44,
 				0x49, 0x77, 0x4d, 0x6a, 0x59, 0x36, 0x63, 0x6d,
 				0x46, 0x30, 0x63, 0x79, 0x39, 0x6c, 0x59, 0x58,
-				0x49, 0x6a, 0x4d, 0x44, 0x51, 0x69, 0x4c, 0x43,
+				0x49, 0x6a, 0x4d, 0x44, 0x55, 0x69, 0x4c, 0x43,
 				0x4a, 0x70, 0x59, 0x58, 0x51, 0x69, 0x4f, 0x6a,
 				0x45, 0x32, 0x4e, 0x6a, 0x59, 0x77, 0x4f, 0x54,
 				0x45, 0x7a, 0x4e, 0x7a, 0x4d, 0x73, 0x49, 0x6e,
@@ -264,17 +264,17 @@ func TestSubmod_round_trip(t *testing.T) {
 				0x6f, 0x69, 0x4c, 0x43, 0x4a, 0x6d, 0x62, 0x32,
 				0x38, 0x69, 0x4f, 0x69, 0x4a, 0x69, 0x59, 0x58,
 				0x49, 0x69, 0x66, 0x58, 0x31, 0x39, 0x66, 0x51,
-				0x2e, 0x61, 0x4c, 0x79, 0x4f, 0x2d, 0x4a, 0x52,
-				0x78, 0x71, 0x79, 0x76, 0x45, 0x46, 0x49, 0x5a,
-				0x79, 0x76, 0x71, 0x68, 0x56, 0x65, 0x62, 0x64,
-				0x4c, 0x61, 0x72, 0x39, 0x4b, 0x53, 0x41, 0x65,
-				0x53, 0x68, 0x42, 0x2d, 0x44, 0x62, 0x5a, 0x5a,
-				0x31, 0x79, 0x71, 0x66, 0x64, 0x47, 0x7a, 0x6b,
-				0x36, 0x2d, 0x35, 0x6e, 0x75, 0x31, 0x74, 0x55,
-				0x30, 0x44, 0x67, 0x78, 0x5f, 0x4d, 0x6a, 0x6f,
-				0x79, 0x6f, 0x31, 0x33, 0x68, 0x67, 0x4e, 0x70,
-				0x57, 0x31, 0x39, 0x69, 0x48, 0x76, 0x76, 0x6a,
-				0x31, 0x70, 0x42, 0x43, 0x67, 0x74, 0x67, 0x22,
+				0x2e, 0x73, 0x51, 0x54, 0x44, 0x64, 0x5a, 0x4a,
+				0x77, 0x43, 0x5a, 0x77, 0x49, 0x41, 0x6d, 0x6e,
+				0x41, 0x33, 0x52, 0x62, 0x6c, 0x4e, 0x4b, 0x5a,
+				0x77, 0x48, 0x52, 0x53, 0x6d, 0x35, 0x6a, 0x64,
+				0x63, 0x57, 0x66, 0x34, 0x64, 0x68, 0x67, 0x74,
+				0x50, 0x72, 0x6d, 0x4d, 0x69, 0x79, 0x62, 0x63,
+				0x68, 0x55, 0x4d, 0x4a, 0x56, 0x48, 0x6b, 0x52,
+				0x4a, 0x35, 0x55, 0x37, 0x4c, 0x59, 0x69, 0x54,
+				0x78, 0x6b, 0x64, 0x61, 0x49, 0x33, 0x36, 0x73,
+				0x31, 0x51, 0x48, 0x39, 0x78, 0x6d, 0x4d, 0x56,
+				0x49, 0x77, 0x61, 0x71, 0x2d, 0x6f, 0x77, 0x22,
 			},
 		},
 	}
@@ -408,14 +408,24 @@ func TestSubmodsFromAny(t *testing.T) {
 			title: "ok map[string]any",
 			input: map[string]any{
 				"test": map[string]any{
-					"ear_status": "none",
+					"ear_status": "affirming",
 				},
 			},
 			expected: Submods{
 				"test": &Submod{&Appraisal{
+					Status:     TrustTierAffirming,
 					Extensions: NewExtensions(),
 				}},
 			},
+		},
+		{
+			title: "err map[string]any none status",
+			input: map[string]any{
+				"test": map[string]any{
+					"ear_status": "none",
+				},
+			},
+			err: `"none" is not a valid value for ear_status`,
 		},
 		{
 			title: "err nil pointer",
@@ -463,7 +473,7 @@ func TestSubmods_set_get(t *testing.T) {
 			},
 		),
 	}
-	jwtBytes := []byte("eyJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCJ9.eyJlYXJfdmVyaWZpZXJfaWQiOnsiYnVpbGQiOiJycnRyYXAtdjEuMC4wIiwiZGV2ZWxvcGVyIjoiQWNtZSBJbmMuIn0sImVhdF9wcm9maWxlIjoidGFnOmlldGYub3JnLDIwMjY6cmF0cy9lYXIjMDQiLCJpYXQiOjE2NjYwOTEzNzMsInN1Ym1vZHMiOnsidGVzdCI6eyJlYXJfYXBwcmFpc2FsX3BvbGljeV9pZHMiOlsicG9saWN5Oi8vdGVzdC8wMTIzNCJdLCJlYXJfYXR0ZXN0ZXJfY2xhaW1zIjp7ImsxIjoidjEiLCJrMiI6InYyIn0sImVhcl9zdGF0dXMiOiJhZmZpcm1pbmciLCJlYXJfdmVyYWlzb25fa2V5X2F0dGVzdGF0aW9uIjp7ImFrcHViIjoiWVd0d2RXSUsifSwiZWFyX3ZlcmlmaWVyX2NsYWltcyI6eyJiYXIiOiJiYXoiLCJmb28iOiJiYXIifX19fQ.aLyO-JRxqyvEFIZyvqhVebdLar9KSAeShB-DbZZ1yqfdGzk6-5nu1tU0Dgx_Mjoyo13hgNpW19iHvvj1pBCgtg") // #nosec G101
+	jwtBytes := []byte("eyJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCJ9.eyJlYXJfdmVyaWZpZXJfaWQiOnsiYnVpbGQiOiJycnRyYXAtdjEuMC4wIiwiZGV2ZWxvcGVyIjoiQWNtZSBJbmMuIn0sImVhdF9wcm9maWxlIjoidGFnOmlldGYub3JnLDIwMjY6cmF0cy9lYXIjMDUiLCJpYXQiOjE2NjYwOTEzNzMsInN1Ym1vZHMiOnsidGVzdCI6eyJlYXJfYXBwcmFpc2FsX3BvbGljeV9pZHMiOlsicG9saWN5Oi8vdGVzdC8wMTIzNCJdLCJlYXJfYXR0ZXN0ZXJfY2xhaW1zIjp7ImsxIjoidjEiLCJrMiI6InYyIn0sImVhcl9zdGF0dXMiOiJhZmZpcm1pbmciLCJlYXJfdmVyYWlzb25fa2V5X2F0dGVzdGF0aW9uIjp7ImFrcHViIjoiWVd0d2RXSUsifSwiZWFyX3ZlcmlmaWVyX2NsYWltcyI6eyJiYXIiOiJiYXoiLCJmb28iOiJiYXIifX19fQ.sQTDdZJwCZwIAmnA3RblNKZwHRSm5jdcWf4dhgtPrmMiybchUMJVHkRJ5U7LYiTxkdaI36s1QH9xmMVIwaq-ow") // #nosec G101
 
 	submods := NewSubmods()
 	assert.True(t, submods.IsEmpty())
@@ -512,7 +522,7 @@ func TestSubmods_Validate(t *testing.T) {
 		{
 			title: "ok",
 			submods: Submods{
-				"test": &Submod{&Appraisal{}},
+				"test": &Submod{&Appraisal{Status: TrustTierAffirming}},
 			},
 		},
 		{

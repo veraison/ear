@@ -60,7 +60,7 @@ func TestAppraisal_UpdateStatusFromTrustVector_respects_negative(t *testing.T) {
 
 func TestAppraisal_Validate_new(t *testing.T) {
 	appraisal := NewAppraisal()
-	assert.Nil(t, appraisal.Validate())
+	assert.EqualError(t, appraisal.Validate(), `"none" is not a valid value for ear_status`)
 }
 
 func TestAppraisal_Validate_basic(t *testing.T) {
@@ -71,7 +71,7 @@ func TestAppraisal_Validate_basic(t *testing.T) {
 		Hardware:         32,
 	}
 	appraisal.TrustVector = &trustVector
-	assert.Nil(t, appraisal.Validate())
+	assert.Error(t, appraisal.Validate())
 
 	appraisal.Status = TrustTierAffirming
 	assert.Error(t, appraisal.Validate(), "status 2 has higher trustworthiness than Hardware trust vector element(32)")
@@ -88,7 +88,7 @@ func TestAppraisal_Validate_respects_negative(t *testing.T) {
 		Hardware:         -54,
 	}
 	appraisal.TrustVector = &trustVector
-	assert.Nil(t, appraisal.Validate())
+	assert.Error(t, appraisal.Validate())
 
 	appraisal.Status = TrustTierAffirming
 	assert.Error(t, appraisal.Validate(), "status 2 has higher trustworthiness than Hardware trust vector element(32)")
@@ -350,7 +350,7 @@ func TestAppraisalFromAny(t *testing.T) {
 				"ear_status":               TrustTierAffirming,
 				"ear_appraisal_policy_ids": 1,
 			},
-			err: "ear_appraisal_policy_ids: expected an []any, got int",
+			err: "ear_appraisal_policy_ids: expected a list of strings, got int",
 		},
 		{
 			title: "err bad nonce",

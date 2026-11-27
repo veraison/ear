@@ -25,7 +25,7 @@ var testClaimsSetIssue22 = []byte(`{
 			}
 		}
 	},
-	"eat_profile": "tag:ietf.org,2026:rats/ear#04",
+	"eat_profile": "tag:ietf.org,2026:rats/ear#05",
         "ear_verifier_id": {
                 "build": "rrtrap-v1.0.0",
                 "developer": "Acme Inc."

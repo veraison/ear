@@ -58,7 +58,7 @@ var (
 		0x74, 0x61, 0x67, 0x3a, 0x69, 0x65, 0x74, 0x66, // . . . . . . "tag:ietf"
 		0x2e, 0x6f, 0x72, 0x67, 0x2c, 0x32, 0x30, 0x32, // . . . . . . ".org,202"
 		0x36, 0x3a, 0x72, 0x61, 0x74, 0x73, 0x2f, 0x65, // . . . . . . "6:rats/e"
-		0x61, 0x72, 0x23, 0x30, 0x34, //                   . . . . . . "ar#04"
+		0x61, 0x72, 0x23, 0x30, 0x35, //                   . . . . . . "ar#05"
 		0x19, 0x01, 0x0a, //                               . . . . . key: 266 [submods]
 		0xa1,                   //                         . . . . . value: map(1) [Submods]
 		0x64,                   //                         . . . . . . key: tstr(4)
@@ -86,14 +86,14 @@ var (
 		0x72, 0x72, 0x74, 0x72, 0x61, 0x70, 0x2d, 0x76, // . . . . . . . "rrtrap-v"
 		0x31, 0x2e, 0x30, 0x2e, 0x30, //                // . . . . . . . "1.0.0"
 		0x58, 0x40, //                                     . . . [3]bstr(64) [signature]
-		0x86, 0x65, 0x9a, 0xe4, 0x50, 0x4f, 0xf9, 0xc6,
-		0x2e, 0xfd, 0x54, 0x31, 0x44, 0x5b, 0x65, 0x1e,
-		0x71, 0x21, 0x08, 0xc5, 0x15, 0x76, 0xf4, 0xef,
-		0x06, 0xa5, 0x1b, 0xf3, 0xfe, 0x17, 0x69, 0x30,
-		0xe2, 0xfb, 0x26, 0x17, 0x50, 0xe6, 0x3b, 0xe1,
-		0x39, 0x9a, 0x55, 0x87, 0x51, 0x46, 0x2f, 0x98,
-		0x8d, 0xc0, 0x02, 0x47, 0xe4, 0x34, 0xd0, 0xcd,
-		0xca, 0x95, 0x23, 0x4f, 0xcf, 0x99, 0xf2, 0x95,
+		0xe6, 0x93, 0xc3, 0x60, 0x01, 0x04, 0x6d, 0x70,
+		0x9a, 0x8b, 0xd9, 0x33, 0x10, 0xc6, 0xf0, 0x3c,
+		0xdd, 0x8d, 0x78, 0x67, 0x23, 0x23, 0xd6, 0x8e,
+		0x69, 0x29, 0xac, 0xd8, 0xf0, 0x97, 0xcf, 0xbb,
+		0xaa, 0x40, 0x37, 0x88, 0xa8, 0xd6, 0x73, 0x97,
+		0xc0, 0x74, 0x4f, 0xd5, 0xaf, 0xa8, 0x11, 0x3e,
+		0xd1, 0xd6, 0xa6, 0xe5, 0x02, 0xc1, 0x32, 0x08,
+		0x9b, 0xa5, 0x79, 0x71, 0xe1, 0x1a, 0x84, 0x33,
 	}
 
 	testVidBuild     = "rrtrap-v1.0.0"
@@ -152,7 +152,7 @@ func TestAttestationResult_round_trip(t *testing.T) {
 				),
 				Extensions: NewExtensions(),
 			},
-			expectedJSON: `{"ear_verifier_id":{"build":"test-build","developer":"test-developer"},"eat_profile":"tag:ietf.org,2026:rats/ear#04","iat":1666091373,"submods":{"test-appraisal":{"ear_status":"affirming"}}}`,
+			expectedJSON: `{"ear_verifier_id":{"build":"test-build","developer":"test-developer"},"eat_profile":"tag:ietf.org,2026:rats/ear#05","iat":1666091373,"submods":{"test-appraisal":{"ear_status":"affirming"}}}`,
 			expectedCBOR: []byte{
 				0xa4,                         //                   map(4)
 				0x06,                         //                   . key: 6 [iat]
@@ -162,7 +162,7 @@ func TestAttestationResult_round_trip(t *testing.T) {
 				0x74, 0x61, 0x67, 0x3a, 0x69, 0x65, 0x74, 0x66, // . . "tag:ietf"
 				0x2e, 0x6f, 0x72, 0x67, 0x2c, 0x32, 0x30, 0x32, // . . ".org,202"
 				0x36, 0x3a, 0x72, 0x61, 0x74, 0x73, 0x2f, 0x65, // . . "6:rats/e"
-				0x61, 0x72, 0x23, 0x30, 0x34, //                   . . "ar#04"
+				0x61, 0x72, 0x23, 0x30, 0x35, //                   . . "ar#05"
 				0x19, 0x01, 0x0a, //                               . key: 266 [submods]
 				0xa1,                                           // . value: map(1) [Submods]
 				0x6e,                                           // . . key: tstr(15)
@@ -212,7 +212,7 @@ func TestAttestationResult_round_trip(t *testing.T) {
 					Add("test-appraisal", []string{"foo", "bar"}),
 				Extensions: NewExtensions(),
 			},
-			expectedJSON: `{"ear_device_topology":{"test-appraisal":["foo","bar"]},"ear_raw_evidence":["application/x-test","3q2-7w"],"ear_status":"affirming","ear_verifier_id":{"build":"test-build","developer":"test-developer"},"eat_nonce":"3q2-796tvu8","eat_profile":"tag:ietf.org,2026:rats/ear#04","exp":9999999999,"iat":1666091373,"submods":{"test-appraisal":{"ear_status":"affirming"}}}`,
+			expectedJSON: `{"ear_device_topology":{"test-appraisal":["foo","bar"]},"ear_raw_evidence":["application/x-test","3q2-7w"],"ear_status":"affirming","ear_verifier_id":{"build":"test-build","developer":"test-developer"},"eat_nonce":"3q2-796tvu8","eat_profile":"tag:ietf.org,2026:rats/ear#05","exp":9999999999,"iat":1666091373,"submods":{"test-appraisal":{"ear_status":"affirming"}}}`,
 			expectedCBOR: []byte{
 				0xa8,                                           // map(4)
 				0x04,                                           // . key: 4 [exp]
@@ -228,7 +228,7 @@ func TestAttestationResult_round_trip(t *testing.T) {
 				0x74, 0x61, 0x67, 0x3a, 0x69, 0x65, 0x74, 0x66, // . . "tag:ietf"
 				0x2e, 0x6f, 0x72, 0x67, 0x2c, 0x32, 0x30, 0x32, // . . ".org,202"
 				0x36, 0x3a, 0x72, 0x61, 0x74, 0x73, 0x2f, 0x65, // . . "6:rats/e"
-				0x61, 0x72, 0x23, 0x30, 0x34, //                   . . "ar#04"
+				0x61, 0x72, 0x23, 0x30, 0x35, //                   . . "ar#05"
 				0x19, 0x01, 0x0a, //                               . key: 266 [submods]
 				0xa1,                                           // . value: map(1) [Submods]
 				0x6e,                                           // . . key: tstr(15)
@@ -362,6 +362,21 @@ func TestAttestationResult_MarshalJSON_negative(t *testing.T) {
 			},
 			err: `missing mandatory 'iat', 'ear_verifier_id'; invalid value(s) for eat_profile (1.2.3.4.5)`,
 		},
+		{
+			title: "none status",
+			result: AttestationResult{
+				Profile:    EatProfile,
+				Status:     &TrustTierNone,
+				IssuedAt:   testIAT,
+				VerifierID: &testVerifierID,
+				Submods: Submods{
+					"test": &Submod{&Appraisal{
+						Status: TrustTierAffirming,
+					}},
+				},
+			},
+			err: `invalid value(s) for ear_status (none)`,
+		},
 	}
 
 	for _, tc := range testCases {
@@ -413,7 +428,7 @@ func TestVerify_pass(t *testing.T) {
 	}{
 		{
 			title: "ok",
-			token: `eyJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCJ9.eyJlYXJfdmVyaWZpZXJfaWQiOnsiYnVpbGQiOiJycnRyYXAtdjEuMC4wIiwiZGV2ZWxvcGVyIjoiQWNtZSBJbmMuIn0sImVhdF9wcm9maWxlIjoidGFnOmlldGYub3JnLDIwMjY6cmF0cy9lYXIjMDQiLCJpYXQiOjE2NjYwOTEzNzMsInN1Ym1vZHMiOnsidGVzdCI6eyJlYXJfYXBwcmFpc2FsX3BvbGljeV9pZHMiOlsicG9saWN5Oi8vdGVzdC8wMTIzNCJdLCJlYXJfYXR0ZXN0ZXJfY2xhaW1zIjp7ImsxIjoidjEiLCJrMiI6InYyIn0sImVhcl9zdGF0dXMiOiJhZmZpcm1pbmciLCJlYXJfdmVyYWlzb25fa2V5X2F0dGVzdGF0aW9uIjp7ImFrcHViIjoiWVd0d2RXSUsifSwiZWFyX3ZlcmlmaWVyX2NsYWltcyI6eyJiYXIiOiJiYXoiLCJmb28iOiJiYXIifX19fQ.aLyO-JRxqyvEFIZyvqhVebdLar9KSAeShB-DbZZ1yqfdGzk6-5nu1tU0Dgx_Mjoyo13hgNpW19iHvvj1pBCgtg`, // #nosec G101
+			token: `eyJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCJ9.eyJlYXJfdmVyaWZpZXJfaWQiOnsiYnVpbGQiOiJycnRyYXAtdjEuMC4wIiwiZGV2ZWxvcGVyIjoiQWNtZSBJbmMuIn0sImVhdF9wcm9maWxlIjoidGFnOmlldGYub3JnLDIwMjY6cmF0cy9lYXIjMDUiLCJpYXQiOjE2NjYwOTEzNzMsInN1Ym1vZHMiOnsidGVzdCI6eyJlYXJfYXBwcmFpc2FsX3BvbGljeV9pZHMiOlsicG9saWN5Oi8vdGVzdC8wMTIzNCJdLCJlYXJfYXR0ZXN0ZXJfY2xhaW1zIjp7ImsxIjoidjEiLCJrMiI6InYyIn0sImVhcl9zdGF0dXMiOiJhZmZpcm1pbmciLCJlYXJfdmVyYWlzb25fa2V5X2F0dGVzdGF0aW9uIjp7ImFrcHViIjoiWVd0d2RXSUsifSwiZWFyX3ZlcmlmaWVyX2NsYWltcyI6eyJiYXIiOiJiYXoiLCJmb28iOiJiYXIifX19fQ.sQTDdZJwCZwIAmnA3RblNKZwHRSm5jdcWf4dhgtPrmMiybchUMJVHkRJ5U7LYiTxkdaI36s1QH9xmMVIwaq-ow`, // #nosec G101
 			expected: AttestationResult{
 				IssuedAt:   testIAT,
 				VerifierID: &testVerifierID,
@@ -638,6 +653,7 @@ func TestUpdateStatusFromTrustVector(t *testing.T) {
 
 	ar.UpdateStatusFromSubmods()
 	assert.Equal(t, TrustTierNone, ar.Submods["test"].Appraisal().Status)
+	assert.Nil(t, ar.Status)
 
 	ar.Submods["test"].Appraisal().TrustVector.Configuration = ApprovedConfigClaim
 	ar.UpdateStatusFromSubmods()
@@ -670,7 +686,7 @@ func TestUpdateStatusFromTrustVector(t *testing.T) {
 	ar.UpdateStatusFromSubmods()
 	assert.Equal(t, TrustTierWarning, *ar.Status)
 
-	jwtBytes := []byte("eyJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCJ9.eyJlYXJfdmVyaWZpZXJfaWQiOnsiYnVpbGQiOiJycnRyYXAtdjEuMC4wIiwiZGV2ZWxvcGVyIjoiQWNtZSBJbmMuIn0sImVhdF9wcm9maWxlIjoidGFnOmlldGYub3JnLDIwMjY6cmF0cy9lYXIjMDQiLCJpYXQiOjE2NjYwOTEzNzMsInN1Ym1vZHMiOnsidGVzdCI6eyJlYXJfYXBwcmFpc2FsX3BvbGljeV9pZHMiOlsicG9saWN5Oi8vdGVzdC8wMTIzNCJdLCJlYXJfYXR0ZXN0ZXJfY2xhaW1zIjp7ImsxIjoidjEiLCJrMiI6InYyIn0sImVhcl9zdGF0dXMiOiJhZmZpcm1pbmciLCJlYXJfdmVyYWlzb25fa2V5X2F0dGVzdGF0aW9uIjp7ImFrcHViIjoiWVd0d2RXSUsifSwiZWFyX3ZlcmlmaWVyX2NsYWltcyI6eyJiYXIiOiJiYXoiLCJmb28iOiJiYXIifX19fQ.aLyO-JRxqyvEFIZyvqhVebdLar9KSAeShB-DbZZ1yqfdGzk6-5nu1tU0Dgx_Mjoyo13hgNpW19iHvvj1pBCgtg") // #nosec G101
+	jwtBytes := []byte("eyJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCJ9.eyJlYXJfdmVyaWZpZXJfaWQiOnsiYnVpbGQiOiJycnRyYXAtdjEuMC4wIiwiZGV2ZWxvcGVyIjoiQWNtZSBJbmMuIn0sImVhdF9wcm9maWxlIjoidGFnOmlldGYub3JnLDIwMjY6cmF0cy9lYXIjMDUiLCJpYXQiOjE2NjYwOTEzNzMsInN1Ym1vZHMiOnsidGVzdCI6eyJlYXJfYXBwcmFpc2FsX3BvbGljeV9pZHMiOlsicG9saWN5Oi8vdGVzdC8wMTIzNCJdLCJlYXJfYXR0ZXN0ZXJfY2xhaW1zIjp7ImsxIjoidjEiLCJrMiI6InYyIn0sImVhcl9zdGF0dXMiOiJhZmZpcm1pbmciLCJlYXJfdmVyYWlzb25fa2V5X2F0dGVzdGF0aW9uIjp7ImFrcHViIjoiWVd0d2RXSUsifSwiZWFyX3ZlcmlmaWVyX2NsYWltcyI6eyJiYXIiOiJiYXoiLCJmb28iOiJiYXIifX19fQ.sQTDdZJwCZwIAmnA3RblNKZwHRSm5jdcWf4dhgtPrmMiybchUMJVHkRJ5U7LYiTxkdaI36s1QH9xmMVIwaq-ow") // #nosec G101
 	ar = NewAttestationResult("test", "test")
 	ar.Submods.AddJWT("test", jwtBytes)
 
@@ -709,11 +725,15 @@ func TestNewAttestationResultWithAppraisal(t *testing.T) {
 	ar := NewAttestationResultWithAppraisal("test", "testBuild", "testDev")
 
 	_, err := ar.MarshalJSON()
+	assert.ErrorContains(t, err, `"none" is not a valid value for ear_status`)
+
+	ar.Submods["test"].Appraisal().Status = TrustTierAffirming
+	_, err = ar.MarshalJSON()
 	assert.NoError(t, err)
 }
 
 func TestAttestationResultFromUnverifiedJWT(t *testing.T) {
-	token := `eyJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCJ9.eyJlYXJfdmVyaWZpZXJfaWQiOnsiYnVpbGQiOiJycnRyYXAtdjEuMC4wIiwiZGV2ZWxvcGVyIjoiQWNtZSBJbmMuIn0sImVhdF9wcm9maWxlIjoidGFnOmlldGYub3JnLDIwMjY6cmF0cy9lYXIjMDQiLCJpYXQiOjE2NjYwOTEzNzMsInN1Ym1vZHMiOnsidGVzdCI6eyJlYXJfYXBwcmFpc2FsX3BvbGljeV9pZHMiOlsicG9saWN5Oi8vdGVzdC8wMTIzNCJdLCJlYXJfYXR0ZXN0ZXJfY2xhaW1zIjp7ImsxIjoidjEiLCJrMiI6InYyIn0sImVhcl9zdGF0dXMiOiJhZmZpcm1pbmciLCJlYXJfdmVyYWlzb25fa2V5X2F0dGVzdGF0aW9uIjp7ImFrcHViIjoiWVd0d2RXSUsifSwiZWFyX3ZlcmlmaWVyX2NsYWltcyI6eyJiYXIiOiJiYXoiLCJmb28iOiJiYXIifX19fQ.aLyO-JRxqyvEFIZyvqhVebdLar9KSAeShB-DbZZ1yqfdGzk6-5nu1tU0Dgx_Mjoyo13hgNpW19iHvvj1pBCgtg` // #nosec G101
+	token := `eyJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCJ9.eyJlYXJfdmVyaWZpZXJfaWQiOnsiYnVpbGQiOiJycnRyYXAtdjEuMC4wIiwiZGV2ZWxvcGVyIjoiQWNtZSBJbmMuIn0sImVhdF9wcm9maWxlIjoidGFnOmlldGYub3JnLDIwMjY6cmF0cy9lYXIjMDUiLCJpYXQiOjE2NjYwOTEzNzMsInN1Ym1vZHMiOnsidGVzdCI6eyJlYXJfYXBwcmFpc2FsX3BvbGljeV9pZHMiOlsicG9saWN5Oi8vdGVzdC8wMTIzNCJdLCJlYXJfYXR0ZXN0ZXJfY2xhaW1zIjp7ImsxIjoidjEiLCJrMiI6InYyIn0sImVhcl9zdGF0dXMiOiJhZmZpcm1pbmciLCJlYXJfdmVyYWlzb25fa2V5X2F0dGVzdGF0aW9uIjp7ImFrcHViIjoiWVd0d2RXSUsifSwiZWFyX3ZlcmlmaWVyX2NsYWltcyI6eyJiYXIiOiJiYXoiLCJmb28iOiJiYXIifX19fQ.sQTDdZJwCZwIAmnA3RblNKZwHRSm5jdcWf4dhgtPrmMiybchUMJVHkRJ5U7LYiTxkdaI36s1QH9xmMVIwaq-ow` // #nosec G101
 
 	_, err := AttestationResultFromUnverifiedJWT([]byte(token))
 	assert.NoError(t, err)
@@ -733,7 +753,7 @@ func TestAttestationResultFromNestedToken(t *testing.T) {
 			title: "ok",
 			token: eat.NestedToken{
 				Type: eat.NestedTokenJWT,
-				Data: []byte(`"eyJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCJ9.eyJlYXJfdmVyaWZpZXJfaWQiOnsiYnVpbGQiOiJycnRyYXAtdjEuMC4wIiwiZGV2ZWxvcGVyIjoiQWNtZSBJbmMuIn0sImVhdF9wcm9maWxlIjoidGFnOmlldGYub3JnLDIwMjY6cmF0cy9lYXIjMDQiLCJpYXQiOjE2NjYwOTEzNzMsInN1Ym1vZHMiOnsidGVzdCI6eyJlYXJfYXBwcmFpc2FsX3BvbGljeV9pZHMiOlsicG9saWN5Oi8vdGVzdC8wMTIzNCJdLCJlYXJfYXR0ZXN0ZXJfY2xhaW1zIjp7ImsxIjoidjEiLCJrMiI6InYyIn0sImVhcl9zdGF0dXMiOiJhZmZpcm1pbmciLCJlYXJfdmVyYWlzb25fa2V5X2F0dGVzdGF0aW9uIjp7ImFrcHViIjoiWVd0d2RXSUsifSwiZWFyX3ZlcmlmaWVyX2NsYWltcyI6eyJiYXIiOiJiYXoiLCJmb28iOiJiYXIifX19fQ.aLyO-JRxqyvEFIZyvqhVebdLar9KSAeShB-DbZZ1yqfdGzk6-5nu1tU0Dgx_Mjoyo13hgNpW19iHvvj1pBCgtg"`), // #nosec G101
+				Data: []byte(`"eyJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCJ9.eyJlYXJfdmVyaWZpZXJfaWQiOnsiYnVpbGQiOiJycnRyYXAtdjEuMC4wIiwiZGV2ZWxvcGVyIjoiQWNtZSBJbmMuIn0sImVhdF9wcm9maWxlIjoidGFnOmlldGYub3JnLDIwMjY6cmF0cy9lYXIjMDUiLCJpYXQiOjE2NjYwOTEzNzMsInN1Ym1vZHMiOnsidGVzdCI6eyJlYXJfYXBwcmFpc2FsX3BvbGljeV9pZHMiOlsicG9saWN5Oi8vdGVzdC8wMTIzNCJdLCJlYXJfYXR0ZXN0ZXJfY2xhaW1zIjp7ImsxIjoidjEiLCJrMiI6InYyIn0sImVhcl9zdGF0dXMiOiJhZmZpcm1pbmciLCJlYXJfdmVyYWlzb25fa2V5X2F0dGVzdGF0aW9uIjp7ImFrcHViIjoiWVd0d2RXSUsifSwiZWFyX3ZlcmlmaWVyX2NsYWltcyI6eyJiYXIiOiJiYXoiLCJmb28iOiJiYXIifX19fQ.sQTDdZJwCZwIAmnA3RblNKZwHRSm5jdcWf4dhgtPrmMiybchUMJVHkRJ5U7LYiTxkdaI36s1QH9xmMVIwaq-ow"`), // #nosec G101
 			},
 			expected: AttestationResult{
 				Profile:    EatProfile,
@@ -833,7 +853,7 @@ func TestAttestationResultFromAny(t *testing.T) {
 			title: "ok NestedToken",
 			input: eat.NestedToken{
 				Type: eat.NestedTokenJWT,
-				Data: []byte(`"eyJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCJ9.eyJlYXJfdmVyaWZpZXJfaWQiOnsiYnVpbGQiOiJycnRyYXAtdjEuMC4wIiwiZGV2ZWxvcGVyIjoiQWNtZSBJbmMuIn0sImVhdF9wcm9maWxlIjoidGFnOmlldGYub3JnLDIwMjY6cmF0cy9lYXIjMDQiLCJpYXQiOjE2NjYwOTEzNzMsInN1Ym1vZHMiOnsidGVzdCI6eyJlYXJfYXBwcmFpc2FsX3BvbGljeV9pZHMiOlsicG9saWN5Oi8vdGVzdC8wMTIzNCJdLCJlYXJfYXR0ZXN0ZXJfY2xhaW1zIjp7ImsxIjoidjEiLCJrMiI6InYyIn0sImVhcl9zdGF0dXMiOiJhZmZpcm1pbmciLCJlYXJfdmVyYWlzb25fa2V5X2F0dGVzdGF0aW9uIjp7ImFrcHViIjoiWVd0d2RXSUsifSwiZWFyX3ZlcmlmaWVyX2NsYWltcyI6eyJiYXIiOiJiYXoiLCJmb28iOiJiYXIifX19fQ.aLyO-JRxqyvEFIZyvqhVebdLar9KSAeShB-DbZZ1yqfdGzk6-5nu1tU0Dgx_Mjoyo13hgNpW19iHvvj1pBCgtg"`), // #nosec G101
+				Data: []byte(`"eyJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCJ9.eyJlYXJfdmVyaWZpZXJfaWQiOnsiYnVpbGQiOiJycnRyYXAtdjEuMC4wIiwiZGV2ZWxvcGVyIjoiQWNtZSBJbmMuIn0sImVhdF9wcm9maWxlIjoidGFnOmlldGYub3JnLDIwMjY6cmF0cy9lYXIjMDUiLCJpYXQiOjE2NjYwOTEzNzMsInN1Ym1vZHMiOnsidGVzdCI6eyJlYXJfYXBwcmFpc2FsX3BvbGljeV9pZHMiOlsicG9saWN5Oi8vdGVzdC8wMTIzNCJdLCJlYXJfYXR0ZXN0ZXJfY2xhaW1zIjp7ImsxIjoidjEiLCJrMiI6InYyIn0sImVhcl9zdGF0dXMiOiJhZmZpcm1pbmciLCJlYXJfdmVyYWlzb25fa2V5X2F0dGVzdGF0aW9uIjp7ImFrcHViIjoiWVd0d2RXSUsifSwiZWFyX3ZlcmlmaWVyX2NsYWltcyI6eyJiYXIiOiJiYXoiLCJmb28iOiJiYXIifX19fQ.sQTDdZJwCZwIAmnA3RblNKZwHRSm5jdcWf4dhgtPrmMiybchUMJVHkRJ5U7LYiTxkdaI36s1QH9xmMVIwaq-ow"`), // #nosec G101
 			},
 			expected: AttestationResult{
 				Profile:    EatProfile,
@@ -864,7 +884,7 @@ func TestAttestationResultFromAny(t *testing.T) {
 			title: "ok NestedToken pointer",
 			input: &eat.NestedToken{
 				Type: eat.NestedTokenJWT,
-				Data: []byte(`"eyJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCJ9.eyJlYXJfdmVyaWZpZXJfaWQiOnsiYnVpbGQiOiJycnRyYXAtdjEuMC4wIiwiZGV2ZWxvcGVyIjoiQWNtZSBJbmMuIn0sImVhdF9wcm9maWxlIjoidGFnOmlldGYub3JnLDIwMjY6cmF0cy9lYXIjMDQiLCJpYXQiOjE2NjYwOTEzNzMsInN1Ym1vZHMiOnsidGVzdCI6eyJlYXJfYXBwcmFpc2FsX3BvbGljeV9pZHMiOlsicG9saWN5Oi8vdGVzdC8wMTIzNCJdLCJlYXJfYXR0ZXN0ZXJfY2xhaW1zIjp7ImsxIjoidjEiLCJrMiI6InYyIn0sImVhcl9zdGF0dXMiOiJhZmZpcm1pbmciLCJlYXJfdmVyYWlzb25fa2V5X2F0dGVzdGF0aW9uIjp7ImFrcHViIjoiWVd0d2RXSUsifSwiZWFyX3ZlcmlmaWVyX2NsYWltcyI6eyJiYXIiOiJiYXoiLCJmb28iOiJiYXIifX19fQ.aLyO-JRxqyvEFIZyvqhVebdLar9KSAeShB-DbZZ1yqfdGzk6-5nu1tU0Dgx_Mjoyo13hgNpW19iHvvj1pBCgtg"`), // #nosec G101
+				Data: []byte(`"eyJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCJ9.eyJlYXJfdmVyaWZpZXJfaWQiOnsiYnVpbGQiOiJycnRyYXAtdjEuMC4wIiwiZGV2ZWxvcGVyIjoiQWNtZSBJbmMuIn0sImVhdF9wcm9maWxlIjoidGFnOmlldGYub3JnLDIwMjY6cmF0cy9lYXIjMDUiLCJpYXQiOjE2NjYwOTEzNzMsInN1Ym1vZHMiOnsidGVzdCI6eyJlYXJfYXBwcmFpc2FsX3BvbGljeV9pZHMiOlsicG9saWN5Oi8vdGVzdC8wMTIzNCJdLCJlYXJfYXR0ZXN0ZXJfY2xhaW1zIjp7ImsxIjoidjEiLCJrMiI6InYyIn0sImVhcl9zdGF0dXMiOiJhZmZpcm1pbmciLCJlYXJfdmVyYWlzb25fa2V5X2F0dGVzdGF0aW9uIjp7ImFrcHViIjoiWVd0d2RXSUsifSwiZWFyX3ZlcmlmaWVyX2NsYWltcyI6eyJiYXIiOiJiYXoiLCJmb28iOiJiYXIifX19fQ.sQTDdZJwCZwIAmnA3RblNKZwHRSm5jdcWf4dhgtPrmMiybchUMJVHkRJ5U7LYiTxkdaI36s1QH9xmMVIwaq-ow"`), // #nosec G101
 			},
 			expected: AttestationResult{
 				Profile:    EatProfile,
@@ -894,7 +914,7 @@ func TestAttestationResultFromAny(t *testing.T) {
 		{
 			title: "ok map[string]any",
 			input: map[string]any{
-				"eat_profile":     "tag:ietf.org,2026:rats/ear#04",
+				"eat_profile":     "tag:ietf.org,2026:rats/ear#05",
 				"iat":             1666091373,
 				"exp":             Ptr(int64(9999999999)),
 				"ear_verifier_id": NewVerifierIdentity("test-build", "test-developer"),
@@ -983,7 +1003,7 @@ func TestAttestationResultFromAny(t *testing.T) {
 		{
 			title: "err bad verifier ID",
 			input: map[string]any{
-				"eat_profile":     "tag:ietf.org,2026:rats/ear#04",
+				"eat_profile":     "tag:ietf.org,2026:rats/ear#05",
 				"iat":             1666091373,
 				"ear_verifier_id": 1,
 				"submods": NewSubmods().AddAppraisal(
@@ -998,7 +1018,7 @@ func TestAttestationResultFromAny(t *testing.T) {
 		{
 			title: "err bad submods",
 			input: map[string]any{
-				"eat_profile":     "tag:ietf.org,2026:rats/ear#04",
+				"eat_profile":     "tag:ietf.org,2026:rats/ear#05",
 				"iat":             1666091373,
 				"ear_verifier_id": NewVerifierIdentity("test-build", "test-developer"),
 				"submods":         1,
@@ -1008,7 +1028,7 @@ func TestAttestationResultFromAny(t *testing.T) {
 		{
 			title: "err bad status",
 			input: map[string]any{
-				"eat_profile":     "tag:ietf.org,2026:rats/ear#04",
+				"eat_profile":     "tag:ietf.org,2026:rats/ear#05",
 				"ear_status":      -1,
 				"iat":             1666091373,
 				"ear_verifier_id": NewVerifierIdentity("test-build", "test-developer"),
@@ -1024,7 +1044,7 @@ func TestAttestationResultFromAny(t *testing.T) {
 		{
 			title: "err bad exp",
 			input: map[string]any{
-				"eat_profile":     "tag:ietf.org,2026:rats/ear#04",
+				"eat_profile":     "tag:ietf.org,2026:rats/ear#05",
 				"iat":             1666091373,
 				"exp":             "foo",
 				"ear_verifier_id": NewVerifierIdentity("test-build", "test-developer"),
@@ -1040,7 +1060,7 @@ func TestAttestationResultFromAny(t *testing.T) {
 		{
 			title: "err bad raw evidence",
 			input: map[string]any{
-				"eat_profile":      "tag:ietf.org,2026:rats/ear#04",
+				"eat_profile":      "tag:ietf.org,2026:rats/ear#05",
 				"iat":              1666091373,
 				"ear_verifier_id":  NewVerifierIdentity("test-build", "test-developer"),
 				"ear_raw_evidence": 1,
@@ -1056,7 +1076,7 @@ func TestAttestationResultFromAny(t *testing.T) {
 		{
 			title: "err bad nonce",
 			input: map[string]any{
-				"eat_profile":     "tag:ietf.org,2026:rats/ear#04",
+				"eat_profile":     "tag:ietf.org,2026:rats/ear#05",
 				"iat":             1666091373,
 				"ear_verifier_id": NewVerifierIdentity("test-build", "test-developer"),
 				"eat_nonce":       1,
@@ -1072,7 +1092,7 @@ func TestAttestationResultFromAny(t *testing.T) {
 		{
 			title: "err bad device topology",
 			input: map[string]any{
-				"eat_profile":         "tag:ietf.org,2026:rats/ear#04",
+				"eat_profile":         "tag:ietf.org,2026:rats/ear#05",
 				"iat":                 1666091373,
 				"ear_verifier_id":     NewVerifierIdentity("test-build", "test-developer"),
 				"ear_device_topology": 1,
